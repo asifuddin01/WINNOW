@@ -1,0 +1,113 @@
+# Development stack: `make dev` (foreground) or `make up` (background, waits until healthy).
+# Only Caddy is published, on 127.0.0.1:8080. Postgres and Redis stay on the internal
+# network (guide 12.7). Production uses docker-compose.prod.yml (Phase 9).
+name: winnow
+
+x-backend: &backend
+  build:
+    context: ./backend
+    target: dev
+  env_file: .env
+  volumes:
+    - ./backend:/app
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-winnow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-winnow}
+      POSTGRES_DB: ${POSTGRES_DB:-winnow}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # One-shot: brings the database to the latest migration before the API starts.
+  migrate:
+    <<: *backend
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+
+  api:
+    <<: *backend
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import sys, urllib.request; sys.exit(urllib.request.urlopen('http://127.0.0.1:8000/api/v1/healthz', timeout=2).status != 200)"
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  worker:
+    <<: *backend
+    command: ["arq", "app.workers.settings.WorkerSettings", "--watch", "app"]
+    healthcheck:
+      test: ["CMD", "arq", "--check", "app.workers.settings.WorkerSettings"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  web:
+    build:
+      context: ./frontend
+      target: dev
+    volumes:
+      - ./frontend:/app
+      # Keep the image's Linux node_modules; never mix in the host's.
+      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5173/"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "127.0.0.1:${WINNOW_PORT:-8080}:8080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  redisdata:
+  caddy_data:
+  caddy_config:

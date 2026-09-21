@@ -1,0 +1,33 @@
+# Edge proxy (guide 4). Development serves plain HTTP on :8080; production (Phase 9)
+# sets SITE_ADDRESS to a domain and Caddy obtains HTTPS automatically.
+{
+	admin off
+	auto_https off
+}
+
+{$SITE_ADDRESS::8080} {
+	encode zstd gzip
+
+	# Headers that are safe in every environment. The Content-Security-Policy and HSTS
+	# from guide 12.5 arrive with the Phase 1 security work.
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options DENY
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Cross-Origin-Opener-Policy same-origin
+		-Server
+	}
+
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	handle {
+		# Vite only answers hosts it knows; present ourselves as its service name so any
+		# address that reaches Caddy (localhost, a LAN IP for phone testing) works.
+		reverse_proxy web:5173 {
+			header_up Host {upstream_hostport}
+		}
+	}
+}
