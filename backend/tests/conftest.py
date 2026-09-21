@@ -10,6 +10,7 @@ import base64
 import os
 import re
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -97,7 +98,9 @@ def db_settings(database_url: str) -> Settings:
     )
 
 
-async def _running(app: FastAPI) -> AsyncIterator[AsyncClient]:
+@asynccontextmanager
+async def running_client(app: FastAPI) -> AsyncIterator[AsyncClient]:
+    """Run the app's lifespan and yield a client; resources close on exit, not at GC."""
     async with (
         app.router.lifespan_context(app),
         AsyncClient(
@@ -116,12 +119,12 @@ def app(settings: Settings) -> FastAPI:
 @pytest.fixture
 async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
     """Client for an app whose database and Redis are never contacted."""
-    async for client in _running(app):
+    async with running_client(app) as client:
         yield client
 
 
 @pytest.fixture
 async def db_client(db_settings: Settings) -> AsyncIterator[AsyncClient]:
     """Client for an app wired to the test database and Redis."""
-    async for client in _running(create_app(db_settings)):
+    async with running_client(create_app(db_settings)) as client:
         yield client
