@@ -2,7 +2,8 @@
 # clone needs only Docker and make. `make help` lists the targets.
 
 COMPOSE ?= docker compose
-PNPM ?= corepack pnpm
+# The pnpm pinned in e2e/package.json, run through npx (works without corepack).
+PNPM ?= npx --yes $(shell node -p "require('./e2e/package.json').packageManager" 2>/dev/null || echo pnpm)
 API := $(COMPOSE) run --rm api
 API_NO_DEPS := $(COMPOSE) run --rm --no-deps api
 WEB := $(COMPOSE) run --rm --no-deps web
