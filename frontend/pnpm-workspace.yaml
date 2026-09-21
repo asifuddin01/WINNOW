@@ -1,0 +1,5 @@
+# Single-package workspace; this file holds pnpm settings.
+peerDependencyRules:
+  allowedVersions:
+    # openapi-typescript declares TypeScript 5 but generates correct types with 6.
+    openapi-typescript>typescript: "6"
