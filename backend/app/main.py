@@ -1,0 +1,72 @@
+"""Application factory: `uvicorn app.main:create_app --factory`."""
+
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from typing import Any
+
+from fastapi import FastAPI
+from fastapi.openapi.utils import get_openapi
+from fastapi.routing import APIRoute
+
+from app import __version__
+from app.api.v1 import api_router
+from app.config import Settings, get_settings
+from app.db import create_engine, create_sessionmaker
+from app.errors import document_problem_responses, install_error_handlers
+from app.logging_config import configure_logging
+from app.middleware import RequestContextMiddleware
+from app.redis_client import create_redis
+
+API_PREFIX = "/api/v1"
+
+
+def _operation_id(route: APIRoute) -> str:
+    """Stable, readable operation ids for the generated frontend types."""
+    return route.name
+
+
+class WinnowAPI(FastAPI):
+    def openapi(self) -> dict[str, Any]:
+        if not self.openapi_schema:
+            schema = get_openapi(
+                title=self.title,
+                version=self.version,
+                summary=self.summary,
+                routes=self.routes,
+            )
+            self.openapi_schema = document_problem_responses(schema)
+        return self.openapi_schema
+
+
+def create_app(settings: Settings | None = None) -> FastAPI:
+    settings = settings or get_settings()
+    configure_logging(settings)
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        engine = create_engine(settings)
+        redis = create_redis(settings)
+        app.state.engine = engine
+        app.state.sessionmaker = create_sessionmaker(engine)
+        app.state.redis = redis
+        try:
+            yield
+        finally:
+            await redis.aclose()
+            await engine.dispose()
+
+    app = WinnowAPI(
+        title="Winnow API",
+        version=__version__,
+        summary="Screening for systematic, scoping and rapid reviews.",
+        lifespan=lifespan,
+        docs_url="/api/docs" if settings.docs_enabled else None,
+        openapi_url="/api/openapi.json" if settings.docs_enabled else None,
+        redoc_url=None,
+        generate_unique_id_function=_operation_id,
+    )
+    app.state.settings = settings
+    install_error_handlers(app)
+    app.add_middleware(RequestContextMiddleware)
+    app.include_router(api_router, prefix=API_PREFIX)
+    return app

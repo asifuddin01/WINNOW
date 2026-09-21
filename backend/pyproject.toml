@@ -1,0 +1,94 @@
+[project]
+name = "winnow"
+version = "0.1.0"
+description = "Winnow API: systematic, scoping and rapid review screening."
+license = "AGPL-3.0-or-later"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "alembic>=1.20.0",
+    "arq>=0.28.0",
+    "asyncpg>=0.31.0",
+    "fastapi>=0.141.1",
+    "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
+    "redis>=5.3.1",
+    "sqlalchemy[asyncio]>=2.0.54",
+    "structlog>=26.1.0",
+    "uvicorn[standard]>=0.53.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "mypy>=2.3.1",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.8",
+]
+
+[tool.uv]
+# The API is an application, not a library: nothing to build or install.
+package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["alembic/versions/*.py.mako"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F", "I", "B", "UP", "N", "S", "ASYNC", "C4", "SIM", "RUF",
+    "PT", "RET", "PTH", "TID", "TC", "DTZ", "LOG", "G",
+]
+ignore = [
+    "TC001", "TC002", "TC003", # FastAPI and pydantic resolve annotations at runtime
+]
+
+[tool.ruff.lint.isort]
+# backend/alembic/ holds migrations; the import name still means the installed package.
+known-third-party = ["alembic"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"sqlalchemy.text".msg = "Build queries with SQLAlchemy expressions; text() needs bound params and review (guide 12.3)."
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+files = ["app", "tests", "alembic"]
+
+[[tool.mypy.overrides]]
+# asyncpg ships no type information; only tests use it directly.
+module = ["asyncpg", "asyncpg.*"]
+ignore_missing_imports = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = ["--strict-markers", "--strict-config", "-ra"]
+filterwarnings = [
+    "error",
+    # arq's Worker.close() still calls redis-py's deprecated close(); not our code.
+    "ignore:Call to deprecated close:DeprecationWarning:arq\\..*",
+]
+
+[tool.coverage.run]
+source = ["app"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+skip_covered = true
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
