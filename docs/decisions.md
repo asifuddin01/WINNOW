@@ -184,3 +184,24 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   edge proxy is still Caddy; the production compose file (Phase 9) must pin a Caddy build
   that scans clean.
 
+### Sign in with Google (added at the owner's request, 2026-09-22)
+- **OpenID Connect, authorization code flow with PKCE, done on the server.** The browser
+  follows a plain link to `/api/v1/auth/google/start`; no Google script loads, so the CSP
+  stays `script-src 'self'`. A one-time `state` is bound to the browser by an HttpOnly
+  cookie (login CSRF), a `nonce` ties the ID token to this sign-in, and PKCE makes an
+  intercepted code useless. The ID token is verified against Google's published keys
+  (RS256, issuer, audience, `azp`, expiry, nonce), and Google must say the email is verified.
+- **Linking by verified email.** A Google identity (keyed by Google's stable `sub`, not the
+  email) signs in as its linked account; otherwise it links to the account with the same
+  email, which Google's verification proves the person controls, the same proof a
+  password-reset link relies on. New addresses get a new account only when registration is
+  open. Accounts created this way have no password (`NO_PASSWORD`, not a valid hash) until
+  their owner sets one by email link.
+- **Two-factor still applies.** A Google sign-in on a 2FA account parks in a five-minute,
+  single-use record and asks for the code; wrong codes count toward the sign-in limit.
+- **The callback's state cookie is SameSite=Lax,** because the browser returns from Google
+  on a cross-site navigation; everything else stays Strict or Lax as before.
+- **Off by default.** Without `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` the button is
+  hidden and the routes answer 404. The flow is tested against a fake Google that signs
+  real RS256 tokens; a live run needs real credentials.
+

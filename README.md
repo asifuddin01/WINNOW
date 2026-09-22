@@ -46,6 +46,22 @@ Everything except `make e2e` runs inside the containers, so a fresh clone needs 
 For editor support you can also install the dependencies locally: `uv sync` in `backend/`,
 `pnpm install` in `frontend/`.
 
+## Sign in with Google (optional)
+
+The "Continue with Google" button appears once Winnow has Google credentials:
+
+1. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials), set up the
+   OAuth consent screen (app name "Winnow"; the scopes are `openid`, `email` and `profile`,
+   which need no Google review), then create an **OAuth client ID** of type
+   **Web application**.
+2. Add the authorized redirect URI `http://localhost:8080/api/v1/auth/google/callback`
+   (for a server: `https://your-domain/api/v1/auth/google/callback`).
+3. Put the client ID and secret in `.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`,
+   then run `make up`.
+
+A Google sign-in joins the Winnow account with the same verified email, or creates one if
+registration is open. Accounts with two-factor authentication still ask for their code.
+
 ## What runs where
 
 | Service | Role |

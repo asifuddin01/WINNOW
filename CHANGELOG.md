@@ -24,6 +24,9 @@ All notable changes, one section per build phase (guide Section 17).
 - Email through the worker (SMTP with STARTTLS or TLS); Mailpit catches it in development.
 - Sign-in, registration, confirmation, password reset and setup pages; an account page for
   the password, two-factor and devices; a user menu; a "confirm your email" banner.
+- Sign in with Google (OpenID Connect with PKCE, state and nonce), linking to the account
+  with the same verified email or creating one; two-factor still applies. Off until
+  `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set.
 - CI: gitleaks, pip-audit, pnpm audit, semgrep and Trivy; Dependabot.
 - Tests: security suite from guide 12.10 (fixation, CSRF, lockout, rate limits, sign-in
   required on every private route, 2FA replay, append-only audit, no secrets in logs), the
