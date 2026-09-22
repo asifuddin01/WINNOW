@@ -1,0 +1,14 @@
+# Secret scanning (guide 12.9). Default rules, plus an allowlist for the throwaway values
+# tests and CI use on purpose. List exact strings here; never whole directories.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fixture keys that protect nothing"
+regexes = [
+  '''ci-only-secret-key-that-guards-nothing-0123456789''',
+  '''Y2ktb25seS0zMi1ieXRlLWtleS1ub3QtYS1zZWNyZXQ=''',
+  '''unit-test-secret-key-with-plenty-of-bytes-0123456789''',
+  '''test-only-secret-key-that-is-long-enough-0123456789''',
+  '''change-me-to-64-random-chars''',
+]

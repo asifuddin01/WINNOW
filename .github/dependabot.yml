@@ -1,0 +1,23 @@
+# Keeps pinned dependencies and action SHAs current (guide 12.9). Weekly, grouped, so the
+# pull requests stay reviewable.
+version: 2
+updates:
+  - package-ecosystem: uv
+    directory: /backend
+    schedule: { interval: weekly }
+    groups: { python: { patterns: ["*"] } }
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule: { interval: weekly }
+    groups: { frontend: { patterns: ["*"] } }
+  - package-ecosystem: npm
+    directory: /e2e
+    schedule: { interval: weekly }
+    groups: { e2e: { patterns: ["*"] } }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    groups: { actions: { patterns: ["*"] } }
+  - package-ecosystem: docker
+    directories: [/backend, /frontend]
+    schedule: { interval: weekly }
