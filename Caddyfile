@@ -24,13 +24,23 @@
 	# Swagger UI (development only; the API hides it in production) loads from jsDelivr.
 	handle /api/docs* {
 		header Content-Security-Policy "default-src 'none'; script-src 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://fastapi.tiangolo.com; connect-src 'self'; frame-ancestors 'none'"
-		reverse_proxy api:8000
+		reverse_proxy api:8000 {
+			# Server-sent events must not be buffered.
+			flush_interval -1
+		}
 	}
 
 	# JSON never needs to load anything.
 	handle /api/* {
+		# Uploads are capped here as well as in the API (guide 12.4).
+		request_body {
+			max_size 210MB
+		}
 		header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
-		reverse_proxy api:8000
+		reverse_proxy api:8000 {
+			# Server-sent events must not be buffered.
+			flush_interval -1
+		}
 	}
 
 	# The single-page app: guide 12.5's policy. CSP_SCRIPT_SRC stays 'self' in production;

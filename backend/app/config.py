@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     require_owner_2fa: bool = False
 
     storage_backend: Literal["local", "s3"] = "local"
+    storage_path: str = "/data/uploads"
     s3_endpoint: AnyHttpUrl | None = None
     s3_bucket: str | None = None
     s3_access_key: SecretStr | None = None

@@ -11,7 +11,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_PROJECT_ENVIRONMENT=/opt/venv \
     PATH=/opt/venv/bin:$PATH
 RUN groupadd --system --gid 1000 winnow \
-    && useradd --system --uid 1000 --gid winnow --home-dir /app --shell /usr/sbin/nologin winnow
+    && useradd --system --uid 1000 --gid winnow --home-dir /app --shell /usr/sbin/nologin winnow \
+    # Uploaded files live here; a fresh volume inherits this ownership when it is mounted.
+    && mkdir -p /data/uploads \
+    && chown -R winnow:winnow /data
 WORKDIR /app
 
 FROM base AS dev

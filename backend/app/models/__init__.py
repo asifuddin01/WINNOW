@@ -12,6 +12,15 @@ from app.models.project import (
     ReviewType,
     ScreeningStage,
 )
+from app.models.record import (
+    COPY_COLUMNS,
+    FileFormat,
+    FullTextStatus,
+    ImportBatch,
+    ImportStatus,
+    Record,
+    TitleAbstractStatus,
+)
 from app.models.setup import (
     Criterion,
     CriterionKind,
@@ -26,6 +35,7 @@ from app.models.user import NO_PASSWORD, EmailToken, EmailTokenPurpose, User, Us
 
 __all__ = [
     "ALL_STAGES",
+    "COPY_COLUMNS",
     "NO_PASSWORD",
     "AuditLog",
     "Base",
@@ -34,6 +44,10 @@ __all__ = [
     "EmailToken",
     "EmailTokenPurpose",
     "ExclusionReason",
+    "FileFormat",
+    "FullTextStatus",
+    "ImportBatch",
+    "ImportStatus",
     "Keyword",
     "KeywordGroup",
     "KeywordKind",
@@ -44,8 +58,10 @@ __all__ = [
     "ProjectRole",
     "ProjectStatus",
     "ReasonStage",
+    "Record",
     "ReviewType",
     "ScreeningStage",
+    "TitleAbstractStatus",
     "User",
     "UserIdentity",
 ]
