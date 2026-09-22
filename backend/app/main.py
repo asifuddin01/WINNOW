@@ -24,6 +24,7 @@ from app.security.google import GoogleClient, OneTimeStore
 from app.security.passwords import Passwords
 from app.security.rate_limit import RateLimiter
 from app.security.sessions import SessionStore
+from app.storage import create_storage
 
 API_PREFIX = "/api/v1"
 
@@ -64,6 +65,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.sessions = SessionStore(redis, settings)
         app.state.rate_limiter = RateLimiter(redis)
         app.state.passwords = Passwords(settings)
+        app.state.storage = create_storage(settings)
         app.state.mailer = QueueMailer(queue) if settings.email_enabled else UnconfiguredMailer()
         app.state.google = (
             GoogleClient(
