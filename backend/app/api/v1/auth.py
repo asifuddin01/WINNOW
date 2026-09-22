@@ -70,6 +70,8 @@ async def auth_options(accounts: AccountsDep, settings: SettingsDep) -> AuthOpti
         needs_setup=await accounts.needs_setup(),
         email_enabled=settings.email_enabled,
         google_enabled=settings.google_enabled,
+        llm_available=settings.llm_provider != "none",
+        owner_two_factor_required=settings.require_owner_2fa,
     )
 
 
@@ -94,7 +96,13 @@ async def register(
     body: RegisterRequest, accounts: AccountsDep, limiter: LimiterDep, actor: ActorDep
 ) -> Accepted:
     await enforce_limit(limiter, limits.REGISTER_PER_IP, actor.ip or "unknown")
-    await accounts.register(name=body.name, email=body.email, password=body.password, actor=actor)
+    await accounts.register(
+        name=body.name,
+        email=body.email,
+        password=body.password,
+        actor=actor,
+        invite_token=body.invite_token,
+    )
     return Accepted(detail=CHECK_EMAIL)
 
 

@@ -15,6 +15,8 @@ class RegisterRequest(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     email: EmailStr = Field(max_length=254)
     password: Password = PASSWORD_FIELD
+    # Needed on instances where registration is by invitation only.
+    invite_token: str | None = Field(default=None, min_length=16, max_length=128)
 
 
 class LoginRequest(BaseModel):
@@ -77,11 +79,16 @@ class Accepted(BaseModel):
 
 
 class AuthOptions(BaseModel):
+    """What this instance offers: shown on the sign-in pages, and used by project
+    settings to hide what the instance cannot do."""
+
     registration: Literal["open", "invite_only", "closed"]
     single_user: bool
     needs_setup: bool
     email_enabled: bool
     google_enabled: bool
+    llm_available: bool
+    owner_two_factor_required: bool
 
 
 class SessionOut(BaseModel):

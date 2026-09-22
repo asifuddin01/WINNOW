@@ -29,6 +29,7 @@ from app.services.errors import (
     SecondFactorRequiredError,
     WeakPasswordError,
 )
+from app.services.members import invite_allows_registration
 from app.services.two_factor import IncorrectPasswordError, TwoFactorService
 
 VERIFY_TOKEN_TTL = timedelta(hours=24)
@@ -65,13 +66,17 @@ class AccountService:
         """Single-user mode before its administrator exists."""
         return self._settings.winnow_single_user and not await self._any_user()
 
-    async def register(self, *, name: str, email: str, password: str, actor: Actor) -> None:
+    async def register(
+        self, *, name: str, email: str, password: str, actor: Actor, invite_token: str | None = None
+    ) -> None:
         """Create an unverified account and email a verification link. An address that
         already has an account gets a heads-up email instead; the caller cannot tell which
         happened."""
         if self._settings.winnow_single_user:
             raise RegistrationClosedError("This Winnow instance is set up for a single user.")
-        if self._settings.registration == "invite_only":
+        if self._settings.registration == "invite_only" and not await invite_allows_registration(
+            self._db, invite_token, email
+        ):
             raise RegistrationClosedError("Registration on this Winnow instance is by invitation.")
         if self._settings.registration == "closed":
             raise RegistrationClosedError

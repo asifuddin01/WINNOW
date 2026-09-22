@@ -25,6 +25,9 @@ VERIFY_EMAIL_PER_IP = Limit("verify-email-ip", 20, 3600)
 RESEND_VERIFICATION_PER_USER = Limit("resend-verification", 5, 3600)
 API_PER_USER = Limit("api-user", 600, 60)
 GOOGLE_PER_IP = Limit("google-ip", 30, 3600)  # sign-ins started with Google
+PROJECT_CREATE_PER_USER = Limit("project-create", 30, 3600)  # new reviews and copies
+INVITES_PER_USER = Limit("invite-user", 100, 3600)  # each one sends an email
+INVITE_LINK_PER_IP = Limit("invite-link-ip", 60, 3600)  # opening or accepting a link
 
 # Atomically: drop hits older than the window, then either record this hit or report how
 # long until the oldest one expires. Returns {allowed, retry_after_ms}.

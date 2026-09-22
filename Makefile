@@ -54,8 +54,9 @@ create-admin: .env ## Create a verified instance administrator: make create-admi
 	@test -n "$(email)" -a -n "$(name)" || (echo 'Usage: make create-admin email=you@example.org name="Your Name"' && exit 1)
 	$(API) python -m app.cli create-admin --email "$(email)" --name "$(name)"
 
-seed: ## Demo project with 500 records and 2 users (arrives with Phases 2-3)
-	@echo "Nothing to seed yet: demo data needs projects (Phase 2) and records (Phase 3)."
+seed: .env ## Demo review in an existing account: make seed email=you@example.org
+	@test -n "$(email)" || (echo 'Usage: make seed email=you@example.org' && exit 1)
+	$(API) python -m app.cli seed --email "$(email)"
 
 seed-large: ## 100,000-record project for performance budgets (arrives with Phase 3)
 	@echo "Nothing to seed yet: the large seed arrives with records (Phase 3)."

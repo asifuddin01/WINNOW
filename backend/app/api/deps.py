@@ -1,24 +1,34 @@
 """Request-scoped dependencies: who is calling, their session, services, and protections."""
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Annotated
 from urllib.parse import urlsplit
 
 import httpx
-from fastapi import Depends, Request, status
+from fastapi import Depends, Path, Request, status
 
 from app.config import Settings
 from app.db import SessionDep
 from app.email.mailer import Mailer
 from app.errors import ProblemError
-from app.models import User
+from app.models import ProjectRole, User
 from app.security import csrf
 from app.security.passwords import Passwords
+from app.security.permissions import (
+    MemberFlag,
+    ProjectAccess,
+    check_project_role,
+    parse_project_id,
+)
 from app.security.rate_limit import API_PER_USER, Limit, RateLimiter
 from app.security.sessions import SESSION_COOKIE, Session, SessionStore, session_key
 from app.services.accounts import AccountService
 from app.services.audit import Actor
 from app.services.errors import NotAuthenticatedError
+from app.services.members import MemberService
+from app.services.projects import ProjectService
+from app.services.setup import SetupService
 from app.services.two_factor import TwoFactorService
 
 
@@ -120,6 +130,47 @@ async def get_authenticated(
 
 
 AuthDep = Annotated[Authenticated, Depends(get_authenticated)]
+
+
+def require_project_role(
+    min_role: ProjectRole, *, flag: MemberFlag | None = None
+) -> Callable[..., Awaitable[ProjectAccess]]:
+    """The dependency on every /projects/{pid} route (guide 7): signed in (401), a member
+    of a live project (404 otherwise, whether or not it exists), with at least `min_role`
+    or the member flag (403). Routes and services take the project from the result,
+    never from the URL."""
+
+    async def dependency(
+        pid: Annotated[str, Path(description="Project id")], auth: AuthDep, db: SessionDep
+    ) -> ProjectAccess:
+        return await check_project_role(db, auth.user, parse_project_id(pid), min_role, flag=flag)
+
+    dependency.__name__ = f"require_project_{min_role.value}"
+    return dependency
+
+
+ViewerAccess = Annotated[ProjectAccess, Depends(require_project_role(ProjectRole.VIEWER))]
+ReviewerAccess = Annotated[ProjectAccess, Depends(require_project_role(ProjectRole.REVIEWER))]
+AdminAccess = Annotated[ProjectAccess, Depends(require_project_role(ProjectRole.ADMIN))]
+OwnerAccess = Annotated[ProjectAccess, Depends(require_project_role(ProjectRole.OWNER))]
+
+
+def get_projects(db: SessionDep, settings: SettingsDep) -> ProjectService:
+    return ProjectService(db, settings)
+
+
+def get_members(request: Request, db: SessionDep, settings: SettingsDep) -> MemberService:
+    mailer: Mailer = request.app.state.mailer
+    return MemberService(db, settings, mailer)
+
+
+def get_setup(db: SessionDep) -> SetupService:
+    return SetupService(db)
+
+
+ProjectsDep = Annotated[ProjectService, Depends(get_projects)]
+MembersDep = Annotated[MemberService, Depends(get_members)]
+SetupDep = Annotated[SetupService, Depends(get_setup)]
 
 
 def _origin(url: str) -> str | None:

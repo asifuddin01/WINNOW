@@ -72,3 +72,19 @@ def two_factor_changed(to: str, name: str, *, enabled: bool) -> Email:
         f"Hi {name},\n\nTwo-factor authentication was {state} for your Winnow account. "
         "If you did not do this, reset your password straight away." + SIGNATURE,
     )
+
+
+def project_invite(
+    to: str, *, inviter: str, project_title: str, role: str, link: str, days: int
+) -> Email:
+    """The review's title stays in the body: a subject line is a header, and titles are
+    typed by people."""
+    return Email(
+        to,
+        "You are invited to a review on Winnow",
+        f"Hi,\n\n{inviter} invited you to join the review “{project_title}” on Winnow as "
+        f"{'an' if role[0] in 'aeiou' else 'a'} {role}.\n\nOpen this link to accept:\n\n{link}"
+        f"\n\nThe link expires in {days} days and works for a Winnow account with this email "
+        f"address ({to}). If you do not have an account yet, the link lets you create one."
+        + SIGNATURE,
+    )
