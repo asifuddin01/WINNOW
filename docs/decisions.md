@@ -37,6 +37,14 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   later sign-in) use `StandalonePage`, which also renders the footer. The error and not-found
   components detect whether they are inside the shell, so the footer appears exactly once
   wherever an error happens.
+- **Colours are tuned for long screening sessions,** at the owner's request. Neither theme
+  uses pure white or pure black. Light is a warm "paper" off-white (`#F9F6F2`) with charcoal
+  text (`#2E2924`) at 13:1 instead of 20:1. Dark is "night slate", a soft blue-grey
+  (`#161F28`) with warm off-white text (`#E2DFD8`) at 12.5:1 instead of 19:1, and a muted
+  teal accent that does not glow. The neutrals are warm in light mode, not the slate the
+  guide's branding note suggests. A flat warm grey dark theme felt "robotic", and a teal-green
+  one was rejected. Every text colour still meets WCAG AA, body text meets AAA, and the
+  Playwright axe checks cover both themes.
 - **Phone navigation is a sheet in Phase 0.** The bottom tab bar in guide 11.2 is for the
   project navigation (five items + More); it arrives with projects in Phase 2.
 - **The status banner uses `/readyz` and appears only on trouble** (offline, or the server
