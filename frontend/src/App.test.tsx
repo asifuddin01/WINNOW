@@ -34,7 +34,7 @@ describe("app shell", () => {
   test("the dashboard renders inside the shell with the footer", async () => {
     renderApp("/");
     expect(await screen.findByRole("heading", { level: 1, name: "My reviews" })).toBeVisible();
-    expect(screen.getByText("No reviews yet")).toBeInTheDocument();
+    expect(await screen.findByText("No reviews yet")).toBeInTheDocument();
     expect(screen.getByRole("banner")).toBeInTheDocument();
     expect(screen.getByRole("main")).toHaveAttribute("id", "main");
     expectFooter();

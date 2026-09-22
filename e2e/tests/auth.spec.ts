@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import * as OTPAuth from "otpauth";
 
-import { PASSWORD } from "../support/api";
+import { PASSWORD, clearRegistrationLimits } from "../support/api";
 import { emailedLink, uniqueEmail } from "../support/mail";
 
 const NEW_PASSWORD = "a replacement passphrase";
@@ -23,6 +23,7 @@ async function openUserMenu(page: Page) {
  */
 test("register, verify, 2FA, sign out and in, reset the password", async ({ page, request }) => {
   test.setTimeout(120_000); // two emails through the worker, two sign-ins with 2FA, a reset
+  clearRegistrationLimits();
   const email = uniqueEmail("journey");
 
   // Register and confirm the email address from the link Mailpit caught.

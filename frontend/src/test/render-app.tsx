@@ -12,3 +12,10 @@ export function renderApp(path = "/") {
   const view = render(<App router={router} queryClient={queryClient} />);
   return { ...view, router, queryClient };
 }
+
+/** The section a heading titles, for queries scoped to one block of a page. */
+export function sectionFor(heading: HTMLElement): HTMLElement {
+  const section = heading.closest("section");
+  if (!section) throw new Error(`no section around “${heading.textContent}”`);
+  return section;
+}

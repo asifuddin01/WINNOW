@@ -1,6 +1,7 @@
 import { vi } from "vitest";
 
 import type { User } from "@/api/auth";
+import type { Member, Project } from "@/api/projects";
 
 export const READY = { status: "ok", checks: { database: "ok", redis: "ok" } } as const;
 export const CSRF = "test-csrf-token";
@@ -17,6 +18,87 @@ export const USER: User = {
   google_linked: false,
   created_at: "2026-09-01T10:00:00Z",
 };
+
+export const PROJECT: Project = {
+  id: "0192f0c1-0000-7000-8000-00000000aaa1",
+  title: "Shift work and sleep quality",
+  description: null,
+  review_type: "systematic",
+  research_question: "Do night shifts affect sleep quality in nurses?",
+  pico: { population: "Nurses", intervention: null, comparator: null, outcome: null },
+  status: "setup",
+  settings: {
+    blind_mode: true,
+    reviewers_per_record_ta: 2,
+    reviewers_per_record_ft: 2,
+    maybe_counts_as: "include",
+    require_reason_on_exclude_ta: false,
+    require_reason_on_exclude_ft: true,
+    ranking_enabled: true,
+    llm_assist_enabled: false,
+    stopping_rule: { type: "consecutive_excludes", n: 200 },
+    assignment: "all",
+    highlight_keywords: true,
+  },
+  owner: { id: USER.id, name: USER.name, email: USER.email },
+  membership: {
+    role: "owner",
+    can_resolve_conflicts: false,
+    stages: ["title_abstract", "full_text"],
+    keep_blind: true,
+  },
+  permissions: [
+    "view",
+    "screen",
+    "see_others_while_blind",
+    "resolve_conflicts",
+    "import",
+    "edit_setup",
+    "manage_members",
+    "edit_settings",
+    "export",
+    "delete_project",
+  ],
+  member_count: 1,
+  created_at: "2026-09-20T10:00:00Z",
+  updated_at: "2026-09-21T10:00:00Z",
+};
+
+export const OWNER_MEMBER: Member = {
+  user: { id: USER.id, name: USER.name, email: USER.email },
+  role: "owner",
+  can_resolve_conflicts: false,
+  stages: ["title_abstract", "full_text"],
+  joined_at: "2026-09-20T10:00:00Z",
+};
+
+/** What a review answers with before anything has been added to it. */
+export function projectRoutes(project: Project = PROJECT, members: Member[] = [OWNER_MEMBER]) {
+  const base = `/api/v1/projects/${project.id}`;
+  return {
+    "GET /api/v1/projects": { items: [summaryOf(project)], next_cursor: null },
+    [`GET ${base}`]: project,
+    [`GET ${base}/members`]: { items: members, next_cursor: null },
+    [`GET ${base}/invites`]: [],
+    [`GET ${base}/criteria`]: [],
+    [`GET ${base}/keyword-groups`]: [],
+    [`GET ${base}/exclusion-reasons`]: [],
+    [`GET ${base}/labels`]: [],
+  };
+}
+
+export function summaryOf(project: Project) {
+  return {
+    id: project.id,
+    title: project.title,
+    review_type: project.review_type,
+    status: project.status,
+    role: project.membership.role,
+    member_count: project.member_count,
+    last_activity_at: project.updated_at,
+    created_at: project.created_at,
+  };
+}
 
 export const OPTIONS = {
   registration: "open",
@@ -60,6 +142,7 @@ export function mockApi(routes: Record<string, Handler | Reply> = {}) {
     "GET /api/v1/auth/csrf": { csrf_token: CSRF },
     "GET /api/v1/auth/options": OPTIONS,
     "GET /api/v1/auth/me": signedOut,
+    "GET /api/v1/projects": { items: [], next_cursor: null },
     ...routes,
   };
   const requests: Request[] = [];

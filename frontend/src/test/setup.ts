@@ -6,13 +6,16 @@ import { afterEach, beforeEach, vi } from "vitest";
 
 import { forgetCsrfToken } from "@/api/csrf";
 import { mockApi } from "@/test/api";
+import { installDomStubs } from "@/test/dom";
 import { installMatchMedia } from "@/test/media";
 
-// Route code loads lazily; slower machines (containers, CI) need more than the 1 s default.
-configure({ asyncUtilTimeout: 3000 });
+// Route code loads lazily and the suite runs several files at once; slower machines
+// (containers, CI) need well over the 1 s default.
+configure({ asyncUtilTimeout: 6000 });
 
 beforeEach(() => {
   installMatchMedia();
+  installDomStubs();
   // jsdom does not implement scrolling; the router's scroll restoration calls it.
   window.scrollTo = () => undefined;
   window.localStorage.clear();

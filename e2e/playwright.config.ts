@@ -12,6 +12,8 @@ export default defineConfig({
   // Two browsers at a time: the stack itself runs in Docker on the same machine.
   workers: 2,
   forbidOnly: Boolean(process.env.CI),
+  // The development stack compiles route chunks on demand, so first visits are slow.
+  expect: { timeout: 10_000 },
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {

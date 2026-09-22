@@ -37,8 +37,11 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     css: false,
     restoreMocks: true,
-    // Whole sign-in flows in jsdom take a few seconds on containers and CI runners.
-    testTimeout: 15_000,
+    // Whole sign-in and project flows in jsdom take a few seconds on containers and CI
+    // runners, and coverage instrumentation makes them slower again.
+    testTimeout: 30_000,
+    // Each file gets its own jsdom; more than a handful at once starves them all.
+    maxWorkers: 4,
     coverage: {
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],

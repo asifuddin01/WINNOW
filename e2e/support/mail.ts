@@ -2,7 +2,11 @@ import { expect, type APIRequestContext } from "@playwright/test";
 
 export const MAILPIT = process.env.MAILPIT_URL ?? "http://localhost:8025";
 
-const SUBJECTS = { verify: "Confirm your email", reset: "Reset your Winnow password" };
+const SUBJECTS = {
+  verify: "Confirm your email",
+  reset: "Reset your Winnow password",
+  invite: "You are invited to a review",
+};
 
 interface MailSummary {
   ID: string;
@@ -16,7 +20,7 @@ interface MailSummary {
 export async function emailedLink(
   request: APIRequestContext,
   to: string,
-  page: "verify" | "reset",
+  page: "verify" | "reset" | "invite",
 ): Promise<string> {
   const query = encodeURIComponent(`to:"${to}"`);
   let newest: MailSummary | undefined;
