@@ -6,6 +6,7 @@ import { SkipLink } from "@/components/layout/SkipLink";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { StatusBanner } from "@/components/layout/StatusBanner";
 import { TopBar } from "@/components/layout/TopBar";
+import { VerifyEmailBanner } from "@/components/layout/VerifyEmailBanner";
 import { ShellContext } from "@/components/layout/shell-context";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { readPreference, writePreference } from "@/lib/storage";
@@ -31,6 +32,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <SidebarInset className="min-w-0">
           <TopBar />
           <StatusBanner />
+          <VerifyEmailBanner />
           <main id="main" tabIndex={-1} className="flex flex-1 flex-col outline-none">
             {children}
           </main>

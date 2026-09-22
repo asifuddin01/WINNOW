@@ -1,5 +1,6 @@
 import { Breadcrumbs } from "@/components/layout/PageTitle";
 import { ThemeMenu } from "@/components/layout/ThemeMenu";
+import { UserMenu } from "@/components/layout/UserMenu";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
@@ -14,6 +15,7 @@ export function TopBar() {
       <Breadcrumbs />
       <div className="ml-auto flex items-center gap-1">
         <ThemeMenu />
+        <UserMenu />
       </div>
     </header>
   );

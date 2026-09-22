@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import { App } from "@/App";
 import { AppShell } from "@/components/layout/AppShell";
@@ -15,6 +15,7 @@ import { ErrorPage } from "@/components/layout/ErrorPage";
 import { NotFoundPage } from "@/components/layout/NotFoundPage";
 import { createQueryClient } from "@/lib/query-client";
 import type { createAppRouter } from "@/router";
+import { USER, mockApi } from "@/test/api";
 import { renderApp } from "@/test/render-app";
 
 function expectFooter() {
@@ -26,6 +27,10 @@ function expectFooter() {
 }
 
 describe("app shell", () => {
+  beforeEach(() => {
+    mockApi({ "GET /api/v1/auth/me": USER });
+  });
+
   test("the dashboard renders inside the shell with the footer", async () => {
     renderApp("/");
     expect(await screen.findByRole("heading", { level: 1, name: "My reviews" })).toBeVisible();

@@ -1,4 +1,4 @@
-import { LibraryBigIcon, type LucideIcon } from "lucide-react";
+import { LibraryBigIcon, ShieldCheckIcon, type LucideIcon } from "lucide-react";
 
 import type { FileRouteTypes } from "@/routeTree.gen";
 
@@ -17,4 +17,5 @@ export interface NavItem {
  */
 export const workspaceNav: NavItem[] = [
   { to: "/", label: "My reviews", icon: LibraryBigIcon, exact: true },
+  { to: "/account", label: "Account", icon: ShieldCheckIcon },
 ];

@@ -2,6 +2,7 @@ import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { createAppRouter } from "@/router";
 
@@ -16,6 +17,7 @@ export function App({ router, queryClient }: AppProps) {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider delayDuration={300}>
           <RouterProvider router={router} />
+          <Toaster position="bottom-right" />
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>
