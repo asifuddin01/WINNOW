@@ -10,6 +10,7 @@
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
     "@types/node": "^22.20.4",
+    "otpauth": "^9.5.2",
     "typescript": "~6.0.3"
   }
 }
