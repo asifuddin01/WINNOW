@@ -16,3 +16,23 @@ export function signInSearch(search: Record<string, unknown>): {
     ...(search.step === "google-2fa" && { step: "google-2fa" as const }),
   };
 }
+
+export type WizardStep = "basics" | "criteria" | "team";
+
+/** The create-review wizard remembers where it is in the URL, so a reload resumes. */
+export function wizardSearch(search: Record<string, unknown>): {
+  project?: string;
+  step?: WizardStep;
+} {
+  const steps: WizardStep[] = ["basics", "criteria", "team"];
+  return {
+    ...(typeof search.project === "string" && { project: search.project }),
+    ...(typeof search.step === "string" &&
+      steps.includes(search.step as WizardStep) && { step: search.step as WizardStep }),
+  };
+}
+
+/** `?invite=` on the sign-up page: the token that lets an invited address register. */
+export function inviteSearch(search: Record<string, unknown>): { invite?: string } {
+  return typeof search.invite === "string" ? { invite: search.invite } : {};
+}

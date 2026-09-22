@@ -16,8 +16,20 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppAccountRouteImport } from './routes/_app/account'
+import { Route as AppNewRouteImport } from './routes/_app/new'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as ResetTokenRouteImport } from './routes/reset.$token'
 import { Route as VerifyTokenRouteImport } from './routes/verify.$token'
+import { Route as AppPPidRouteImport } from './routes/_app/p/$pid'
+import { Route as AppPPidIndexRouteImport } from './routes/_app/p/$pid/index'
+import { Route as AppPPidSettingsRouteImport } from './routes/_app/p/$pid/settings'
+import { Route as AppPPidSettingsIndexRouteImport } from './routes/_app/p/$pid/settings/index'
+import { Route as AppPPidSettingsCriteriaRouteImport } from './routes/_app/p/$pid/settings/criteria'
+import { Route as AppPPidSettingsKeywordsRouteImport } from './routes/_app/p/$pid/settings/keywords'
+import { Route as AppPPidSettingsLabelsRouteImport } from './routes/_app/p/$pid/settings/labels'
+import { Route as AppPPidSettingsReasonsRouteImport } from './routes/_app/p/$pid/settings/reasons'
+import { Route as AppPPidSettingsScreeningRouteImport } from './routes/_app/p/$pid/settings/screening'
+import { Route as AppPPidSettingsTeamRouteImport } from './routes/_app/p/$pid/settings/team'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -53,6 +65,16 @@ const AppAccountRoute = AppAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AppRoute,
 } as any)
+const AppNewRoute = AppNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetTokenRoute = ResetTokenRouteImport.update({
   id: '/reset/$token',
   path: '/reset/$token',
@@ -63,6 +85,57 @@ const VerifyTokenRoute = VerifyTokenRouteImport.update({
   path: '/verify/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppPPidRoute = AppPPidRouteImport.update({
+  id: '/p/$pid',
+  path: '/p/$pid',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPPidIndexRoute = AppPPidIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppPPidRoute,
+} as any)
+const AppPPidSettingsRoute = AppPPidSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppPPidRoute,
+} as any)
+const AppPPidSettingsIndexRoute = AppPPidSettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppPPidSettingsRoute,
+} as any)
+const AppPPidSettingsCriteriaRoute = AppPPidSettingsCriteriaRouteImport.update({
+  id: '/criteria',
+  path: '/criteria',
+  getParentRoute: () => AppPPidSettingsRoute,
+} as any)
+const AppPPidSettingsKeywordsRoute = AppPPidSettingsKeywordsRouteImport.update({
+  id: '/keywords',
+  path: '/keywords',
+  getParentRoute: () => AppPPidSettingsRoute,
+} as any)
+const AppPPidSettingsLabelsRoute = AppPPidSettingsLabelsRouteImport.update({
+  id: '/labels',
+  path: '/labels',
+  getParentRoute: () => AppPPidSettingsRoute,
+} as any)
+const AppPPidSettingsReasonsRoute = AppPPidSettingsReasonsRouteImport.update({
+  id: '/reasons',
+  path: '/reasons',
+  getParentRoute: () => AppPPidSettingsRoute,
+} as any)
+const AppPPidSettingsScreeningRoute =
+  AppPPidSettingsScreeningRouteImport.update({
+    id: '/screening',
+    path: '/screening',
+    getParentRoute: () => AppPPidSettingsRoute,
+  } as any)
+const AppPPidSettingsTeamRoute = AppPPidSettingsTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AppPPidSettingsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -71,8 +144,20 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/setup': typeof SetupRoute
   '/account': typeof AppAccountRoute
+  '/new': typeof AppNewRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/reset/$token': typeof ResetTokenRoute
   '/verify/$token': typeof VerifyTokenRoute
+  '/p/$pid': typeof AppPPidRouteWithChildren
+  '/p/$pid/settings': typeof AppPPidSettingsRouteWithChildren
+  '/p/$pid/': typeof AppPPidIndexRoute
+  '/p/$pid/settings/criteria': typeof AppPPidSettingsCriteriaRoute
+  '/p/$pid/settings/keywords': typeof AppPPidSettingsKeywordsRoute
+  '/p/$pid/settings/labels': typeof AppPPidSettingsLabelsRoute
+  '/p/$pid/settings/reasons': typeof AppPPidSettingsReasonsRoute
+  '/p/$pid/settings/screening': typeof AppPPidSettingsScreeningRoute
+  '/p/$pid/settings/team': typeof AppPPidSettingsTeamRoute
+  '/p/$pid/settings/': typeof AppPPidSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/forgot': typeof ForgotRoute
@@ -80,9 +165,19 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/setup': typeof SetupRoute
   '/account': typeof AppAccountRoute
+  '/new': typeof AppNewRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/reset/$token': typeof ResetTokenRoute
   '/verify/$token': typeof VerifyTokenRoute
   '/': typeof AppIndexRoute
+  '/p/$pid': typeof AppPPidIndexRoute
+  '/p/$pid/settings/criteria': typeof AppPPidSettingsCriteriaRoute
+  '/p/$pid/settings/keywords': typeof AppPPidSettingsKeywordsRoute
+  '/p/$pid/settings/labels': typeof AppPPidSettingsLabelsRoute
+  '/p/$pid/settings/reasons': typeof AppPPidSettingsReasonsRoute
+  '/p/$pid/settings/screening': typeof AppPPidSettingsScreeningRoute
+  '/p/$pid/settings/team': typeof AppPPidSettingsTeamRoute
+  '/p/$pid/settings': typeof AppPPidSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -92,9 +187,21 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/setup': typeof SetupRoute
   '/_app/account': typeof AppAccountRoute
+  '/_app/new': typeof AppNewRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/reset/$token': typeof ResetTokenRoute
   '/verify/$token': typeof VerifyTokenRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/p/$pid': typeof AppPPidRouteWithChildren
+  '/_app/p/$pid/settings': typeof AppPPidSettingsRouteWithChildren
+  '/_app/p/$pid/': typeof AppPPidIndexRoute
+  '/_app/p/$pid/settings/criteria': typeof AppPPidSettingsCriteriaRoute
+  '/_app/p/$pid/settings/keywords': typeof AppPPidSettingsKeywordsRoute
+  '/_app/p/$pid/settings/labels': typeof AppPPidSettingsLabelsRoute
+  '/_app/p/$pid/settings/reasons': typeof AppPPidSettingsReasonsRoute
+  '/_app/p/$pid/settings/screening': typeof AppPPidSettingsScreeningRoute
+  '/_app/p/$pid/settings/team': typeof AppPPidSettingsTeamRoute
+  '/_app/p/$pid/settings/': typeof AppPPidSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -105,8 +212,20 @@ export interface FileRouteTypes {
     | '/register'
     | '/setup'
     | '/account'
+    | '/new'
+    | '/invite/$token'
     | '/reset/$token'
     | '/verify/$token'
+    | '/p/$pid'
+    | '/p/$pid/settings'
+    | '/p/$pid/'
+    | '/p/$pid/settings/criteria'
+    | '/p/$pid/settings/keywords'
+    | '/p/$pid/settings/labels'
+    | '/p/$pid/settings/reasons'
+    | '/p/$pid/settings/screening'
+    | '/p/$pid/settings/team'
+    | '/p/$pid/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot'
@@ -114,9 +233,19 @@ export interface FileRouteTypes {
     | '/register'
     | '/setup'
     | '/account'
+    | '/new'
+    | '/invite/$token'
     | '/reset/$token'
     | '/verify/$token'
     | '/'
+    | '/p/$pid'
+    | '/p/$pid/settings/criteria'
+    | '/p/$pid/settings/keywords'
+    | '/p/$pid/settings/labels'
+    | '/p/$pid/settings/reasons'
+    | '/p/$pid/settings/screening'
+    | '/p/$pid/settings/team'
+    | '/p/$pid/settings'
   id:
     | '__root__'
     | '/_app'
@@ -125,9 +254,21 @@ export interface FileRouteTypes {
     | '/register'
     | '/setup'
     | '/_app/account'
+    | '/_app/new'
+    | '/invite/$token'
     | '/reset/$token'
     | '/verify/$token'
     | '/_app/'
+    | '/_app/p/$pid'
+    | '/_app/p/$pid/settings'
+    | '/_app/p/$pid/'
+    | '/_app/p/$pid/settings/criteria'
+    | '/_app/p/$pid/settings/keywords'
+    | '/_app/p/$pid/settings/labels'
+    | '/_app/p/$pid/settings/reasons'
+    | '/_app/p/$pid/settings/screening'
+    | '/_app/p/$pid/settings/team'
+    | '/_app/p/$pid/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -136,6 +277,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   SetupRoute: typeof SetupRoute
+  InviteTokenRoute: typeof InviteTokenRoute
   ResetTokenRoute: typeof ResetTokenRoute
   VerifyTokenRoute: typeof VerifyTokenRoute
 }
@@ -191,6 +333,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/new': {
+      id: '/_app/new'
+      path: '/new'
+      fullPath: '/new'
+      preLoaderRoute: typeof AppNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset/$token': {
       id: '/reset/$token'
       path: '/reset/$token'
@@ -205,17 +361,128 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VerifyTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/p/$pid': {
+      id: '/_app/p/$pid'
+      path: '/p/$pid'
+      fullPath: '/p/$pid'
+      preLoaderRoute: typeof AppPPidRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/p/$pid/': {
+      id: '/_app/p/$pid/'
+      path: '/'
+      fullPath: '/p/$pid/'
+      preLoaderRoute: typeof AppPPidIndexRouteImport
+      parentRoute: typeof AppPPidRoute
+    }
+    '/_app/p/$pid/settings': {
+      id: '/_app/p/$pid/settings'
+      path: '/settings'
+      fullPath: '/p/$pid/settings'
+      preLoaderRoute: typeof AppPPidSettingsRouteImport
+      parentRoute: typeof AppPPidRoute
+    }
+    '/_app/p/$pid/settings/': {
+      id: '/_app/p/$pid/settings/'
+      path: '/'
+      fullPath: '/p/$pid/settings/'
+      preLoaderRoute: typeof AppPPidSettingsIndexRouteImport
+      parentRoute: typeof AppPPidSettingsRoute
+    }
+    '/_app/p/$pid/settings/criteria': {
+      id: '/_app/p/$pid/settings/criteria'
+      path: '/criteria'
+      fullPath: '/p/$pid/settings/criteria'
+      preLoaderRoute: typeof AppPPidSettingsCriteriaRouteImport
+      parentRoute: typeof AppPPidSettingsRoute
+    }
+    '/_app/p/$pid/settings/keywords': {
+      id: '/_app/p/$pid/settings/keywords'
+      path: '/keywords'
+      fullPath: '/p/$pid/settings/keywords'
+      preLoaderRoute: typeof AppPPidSettingsKeywordsRouteImport
+      parentRoute: typeof AppPPidSettingsRoute
+    }
+    '/_app/p/$pid/settings/labels': {
+      id: '/_app/p/$pid/settings/labels'
+      path: '/labels'
+      fullPath: '/p/$pid/settings/labels'
+      preLoaderRoute: typeof AppPPidSettingsLabelsRouteImport
+      parentRoute: typeof AppPPidSettingsRoute
+    }
+    '/_app/p/$pid/settings/reasons': {
+      id: '/_app/p/$pid/settings/reasons'
+      path: '/reasons'
+      fullPath: '/p/$pid/settings/reasons'
+      preLoaderRoute: typeof AppPPidSettingsReasonsRouteImport
+      parentRoute: typeof AppPPidSettingsRoute
+    }
+    '/_app/p/$pid/settings/screening': {
+      id: '/_app/p/$pid/settings/screening'
+      path: '/screening'
+      fullPath: '/p/$pid/settings/screening'
+      preLoaderRoute: typeof AppPPidSettingsScreeningRouteImport
+      parentRoute: typeof AppPPidSettingsRoute
+    }
+    '/_app/p/$pid/settings/team': {
+      id: '/_app/p/$pid/settings/team'
+      path: '/team'
+      fullPath: '/p/$pid/settings/team'
+      preLoaderRoute: typeof AppPPidSettingsTeamRouteImport
+      parentRoute: typeof AppPPidSettingsRoute
+    }
   }
 }
 
+interface AppPPidSettingsRouteChildren {
+  AppPPidSettingsCriteriaRoute: typeof AppPPidSettingsCriteriaRoute
+  AppPPidSettingsKeywordsRoute: typeof AppPPidSettingsKeywordsRoute
+  AppPPidSettingsLabelsRoute: typeof AppPPidSettingsLabelsRoute
+  AppPPidSettingsReasonsRoute: typeof AppPPidSettingsReasonsRoute
+  AppPPidSettingsScreeningRoute: typeof AppPPidSettingsScreeningRoute
+  AppPPidSettingsTeamRoute: typeof AppPPidSettingsTeamRoute
+  AppPPidSettingsIndexRoute: typeof AppPPidSettingsIndexRoute
+}
+
+const AppPPidSettingsRouteChildren: AppPPidSettingsRouteChildren = {
+  AppPPidSettingsCriteriaRoute: AppPPidSettingsCriteriaRoute,
+  AppPPidSettingsKeywordsRoute: AppPPidSettingsKeywordsRoute,
+  AppPPidSettingsLabelsRoute: AppPPidSettingsLabelsRoute,
+  AppPPidSettingsReasonsRoute: AppPPidSettingsReasonsRoute,
+  AppPPidSettingsScreeningRoute: AppPPidSettingsScreeningRoute,
+  AppPPidSettingsTeamRoute: AppPPidSettingsTeamRoute,
+  AppPPidSettingsIndexRoute: AppPPidSettingsIndexRoute,
+}
+
+const AppPPidSettingsRouteWithChildren = AppPPidSettingsRoute._addFileChildren(
+  AppPPidSettingsRouteChildren,
+)
+
+interface AppPPidRouteChildren {
+  AppPPidSettingsRoute: typeof AppPPidSettingsRouteWithChildren
+  AppPPidIndexRoute: typeof AppPPidIndexRoute
+}
+
+const AppPPidRouteChildren: AppPPidRouteChildren = {
+  AppPPidSettingsRoute: AppPPidSettingsRouteWithChildren,
+  AppPPidIndexRoute: AppPPidIndexRoute,
+}
+
+const AppPPidRouteWithChildren =
+  AppPPidRoute._addFileChildren(AppPPidRouteChildren)
+
 interface AppRouteChildren {
   AppAccountRoute: typeof AppAccountRoute
+  AppNewRoute: typeof AppNewRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppPPidRoute: typeof AppPPidRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAccountRoute: AppAccountRoute,
+  AppNewRoute: AppNewRoute,
   AppIndexRoute: AppIndexRoute,
+  AppPPidRoute: AppPPidRouteWithChildren,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -226,6 +493,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   SetupRoute: SetupRoute,
+  InviteTokenRoute: InviteTokenRoute,
   ResetTokenRoute: ResetTokenRoute,
   VerifyTokenRoute: VerifyTokenRoute,
 }

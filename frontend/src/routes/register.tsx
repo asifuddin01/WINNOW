@@ -22,8 +22,10 @@ import { PasswordField } from "@/components/forms/PasswordField";
 import { TextField } from "@/components/forms/TextField";
 import { Button } from "@/components/ui/button";
 import { PASSWORD_HINT, registerSchema, type RegisterValues } from "@/features/auth/schemas";
+import { inviteSearch } from "@/lib/search";
 
 export const Route = createFileRoute("/register")({
+  validateSearch: inviteSearch,
   beforeLoad: async ({ context }) => {
     const [options, me] = await Promise.all([
       loadAuthOptions(context.queryClient),
@@ -37,6 +39,7 @@ export const Route = createFileRoute("/register")({
 });
 
 function Register() {
+  const { invite } = Route.useSearch();
   const { data: options } = useQuery(authOptionsQuery);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -46,7 +49,8 @@ function Register() {
   });
   const { errors, isSubmitting } = form.formState;
 
-  if (options && (options.registration !== "open" || options.single_user)) {
+  // An invitation is the way in when registration is by invitation only (guide 8.1).
+  if (options && ((options.registration !== "open" && !invite) || options.single_user)) {
     return (
       <AuthLayout
         title="Registration is closed"
@@ -87,7 +91,7 @@ function Register() {
   const onSubmit = form.handleSubmit(async (values) => {
     setProblem(null);
     try {
-      await register(values);
+      await register({ ...values, ...(invite && { invite_token: invite }) });
       setSentTo(values.email);
     } catch (error) {
       if (isApiError(error, "weak_password")) form.setError("password", { message: error.message });

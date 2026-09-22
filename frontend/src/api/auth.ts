@@ -71,7 +71,12 @@ export async function setUpAdmin(
   return body.user;
 }
 
-export async function register(input: { name: string; email: string; password: string }) {
+export async function register(input: {
+  name: string;
+  email: string;
+  password: string;
+  invite_token?: string;
+}) {
   return unwrap(await api.POST("/api/v1/auth/register", { body: input }));
 }
 
@@ -184,8 +189,9 @@ export const GOOGLE_ERRORS: Record<string, string> = {
     "No Winnow account uses that Google address, and this instance is not accepting new accounts.",
 };
 
-export function isApiError(error: unknown, code: string): error is ApiError {
-  return error instanceof ApiError && error.code === code;
+/** An error from the API, optionally with one particular `code`. */
+export function isApiError(error: unknown, code?: string): error is ApiError {
+  return error instanceof ApiError && (code === undefined || error.code === code);
 }
 
 /**

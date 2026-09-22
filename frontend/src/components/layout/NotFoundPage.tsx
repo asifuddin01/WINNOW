@@ -5,7 +5,14 @@ import { useInShell } from "@/components/layout/shell-context";
 import { StandalonePage } from "@/components/layout/StandalonePage";
 import { Button } from "@/components/ui/button";
 
-function NotFoundPanel() {
+interface NotFoundProps {
+  title?: string;
+  detail?: string;
+  /** The router passes its own props when this is a route's notFoundComponent. */
+  data?: unknown;
+}
+
+function NotFoundPanel({ title, detail }: NotFoundProps) {
   return (
     <section
       aria-labelledby="not-found-title"
@@ -15,10 +22,11 @@ function NotFoundPanel() {
         <SearchXIcon className="size-6" aria-hidden="true" />
       </span>
       <h1 id="not-found-title" className="text-xl font-semibold tracking-tight">
-        Page not found
+        {title ?? "Page not found"}
       </h1>
       <p className="mt-2 text-muted-foreground">
-        This address does not match any page. It may have moved, or the link may be mistyped.
+        {detail ??
+          "This address does not match any page. It may have moved, or the link may be mistyped."}
       </p>
       <Button asChild className="mt-6">
         <Link to="/">
@@ -30,12 +38,7 @@ function NotFoundPanel() {
   );
 }
 
-export function NotFoundPage() {
-  return useInShell() ? (
-    <NotFoundPanel />
-  ) : (
-    <StandalonePage>
-      <NotFoundPanel />
-    </StandalonePage>
-  );
+export function NotFoundPage(props: NotFoundProps) {
+  const panel = <NotFoundPanel {...props} />;
+  return useInShell() ? panel : <StandalonePage>{panel}</StandalonePage>;
 }
