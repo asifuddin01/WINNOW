@@ -39,8 +39,9 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   wherever an error happens.
 - **Colours are tuned for long screening sessions,** at the owner's request. Neither theme
   uses pure white or pure black. Light is a matte, low-glare soft grey-white paper (`#E7E6E3`)
-  with charcoal text (`#27231F`) at 12.5:1 instead of 20:1; cards sit barely above the page
-  so nothing glows. Brighter, creamier papers (`#F9F6F2`, then `#EEEAE5`) still felt like
+  with near-black text (`#181512`) at 14.5:1 instead of 20:1, and secondary text
+  (`#413C38`) at 8.7:1 so it never looks faded; cards sit barely above the page so nothing
+  glows. Brighter, creamier papers (`#F9F6F2`, then `#EEEAE5`) still felt like
   too much light. Dark is "night slate", a soft blue-grey
   (`#131B25`) with clear off-white text (`#EBE9E4`) at 14:1 instead of 19:1, secondary text
   at 9:1, a slightly heavier text weight (430) because light-on-dark text reads thinner,
