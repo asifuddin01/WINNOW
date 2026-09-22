@@ -182,3 +182,26 @@ describe("shell", () => {
     expect(router.state.location.search).toEqual({ redirect: "/account" });
   });
 });
+
+describe("accounts created with Google", () => {
+  test("show how they sign in and can add a password by email", async () => {
+    const server = mockApi({
+      "GET /api/v1/auth/me": { ...USER, has_password: false, google_linked: true },
+      "GET /api/v1/auth/sessions": SESSIONS,
+      "POST /api/v1/auth/password/forgot": json({ status: "accepted", detail: "ok" }, 202),
+    });
+    const user = userEvent.setup();
+    renderApp("/account");
+    await screen.findByRole("heading", { name: "Password" });
+    const profile = section("Profile");
+    expect(profile.getByText("Google")).toBeVisible();
+    expect(profile.queryByText("Password")).not.toBeInTheDocument();
+    const password = section("Password");
+    expect(password.queryByLabelText("Current password")).not.toBeInTheDocument();
+    await user.click(password.getByRole("button", { name: "Email me a link to set a password" }));
+    expect(await password.findByText(/We sent a link to ada@example.org/)).toBeVisible();
+    expect(await server.calls("POST /api/v1/auth/password/forgot")[0]?.json()).toEqual({
+      email: USER.email,
+    });
+  });
+});

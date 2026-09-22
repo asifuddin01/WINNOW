@@ -37,6 +37,8 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     css: false,
     restoreMocks: true,
+    // Whole sign-in flows in jsdom take a few seconds on containers and CI runners.
+    testTimeout: 15_000,
     coverage: {
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],

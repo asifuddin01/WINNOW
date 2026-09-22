@@ -6,7 +6,10 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import {
+  GOOGLE_ERRORS,
   authOptionsQuery,
+  finishGoogleSignIn,
+  googleStartUrl,
   isApiError,
   loadAuthOptions,
   loadMe,
@@ -15,16 +18,17 @@ import {
 } from "@/api/auth";
 import { errorMessage } from "@/api/client";
 import { AuthLayout } from "@/components/auth/AuthLayout";
+import { GoogleButton, OrDivider } from "@/components/auth/GoogleButton";
 import { TextLink } from "@/components/auth/TextLink";
 import { FormAlert } from "@/components/forms/FormAlert";
 import { PasswordField } from "@/components/forms/PasswordField";
 import { TextField } from "@/components/forms/TextField";
 import { Button } from "@/components/ui/button";
 import { signInSchema, type SignInValues } from "@/features/auth/schemas";
-import { redirectSearch } from "@/lib/search";
+import { signInSearch } from "@/lib/search";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: redirectSearch,
+  validateSearch: signInSearch,
   beforeLoad: async ({ context, search }) => {
     const [options, me] = await Promise.all([
       loadAuthOptions(context.queryClient),
@@ -38,12 +42,20 @@ export const Route = createFileRoute("/login")({
 });
 
 function SignIn() {
-  const { redirect: target } = Route.useSearch();
+  const search = Route.useSearch();
+  if (search.step === "google-2fa") return <GoogleTwoFactor />;
+  return <PasswordSignIn />;
+}
+
+function PasswordSignIn() {
+  const { redirect: target, error: googleError } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: options } = useQuery(authOptionsQuery);
   const [step, setStep] = useState<"password" | "code">("password");
-  const [problem, setProblem] = useState<string | null>(null);
+  const [problem, setProblem] = useState<string | null>(
+    googleError ? (GOOGLE_ERRORS[googleError] ?? GOOGLE_ERRORS.google_failed ?? null) : null,
+  );
   const form = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),
     defaultValues: { email: "", password: "", code: "" },
@@ -95,6 +107,12 @@ function SignIn() {
     >
       <form noValidate onSubmit={(event) => void onSubmit(event)} className="grid gap-4">
         {problem && <FormAlert>{problem}</FormAlert>}
+        {step === "password" && options?.google_enabled && (
+          <>
+            <GoogleButton href={googleStartUrl(target)} label="Continue with Google" />
+            <OrDivider />
+          </>
+        )}
         {step === "password" ? (
           <>
             <TextField
@@ -141,6 +159,72 @@ function SignIn() {
         )}
         <Button type="submit" size="lg" className="mt-1 h-10" disabled={isSubmitting}>
           {isSubmitting ? "Signing in…" : step === "password" ? "Sign in" : "Verify and sign in"}
+        </Button>
+      </form>
+    </AuthLayout>
+  );
+}
+
+/** A Google sign-in reached an account with two-factor authentication: ask for the code. */
+function GoogleTwoFactor() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [code, setCode] = useState("");
+  const [problem, setProblem] = useState<{ message: string; expired: boolean } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    setProblem(null);
+    if (!code.trim()) {
+      setProblem({ message: "Enter the code from your authenticator app.", expired: false });
+      return;
+    }
+    setBusy(true);
+    try {
+      const { redirect: next } = await finishGoogleSignIn(queryClient, code.trim());
+      await navigate({ href: next, replace: true });
+    } catch (error) {
+      setProblem({
+        message: errorMessage(error),
+        expired: isApiError(error, "google_pending_expired"),
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <AuthLayout
+      title="Two-step verification"
+      description="Google confirmed who you are. Your account also asks for a code."
+      footer={<TextLink to="/login">Start over</TextLink>}
+    >
+      <form
+        noValidate
+        className="grid gap-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void submit();
+        }}
+      >
+        {problem && (
+          <FormAlert>
+            {problem.message} {problem.expired && <TextLink to="/login">Sign in again</TextLink>}
+          </FormAlert>
+        )}
+        <TextField
+          label="Authentication code"
+          autoComplete="one-time-code"
+          placeholder="123456"
+          className="font-mono tracking-widest"
+          hint="Open your authenticator app, or enter one of your recovery codes."
+          value={code}
+          onChange={(event) => {
+            setCode(event.target.value);
+          }}
+        />
+        <Button type="submit" size="lg" className="h-10" disabled={busy}>
+          {busy ? "Checking…" : "Verify and sign in"}
         </Button>
       </form>
     </AuthLayout>

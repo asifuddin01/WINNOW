@@ -1,10 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import { changePassword, isApiError } from "@/api/auth";
+import { changePassword, forgotPassword, isApiError, meQuery } from "@/api/auth";
 import { errorMessage } from "@/api/client";
 import { FormAlert } from "@/components/forms/FormAlert";
 import { PasswordField } from "@/components/forms/PasswordField";
@@ -17,6 +17,42 @@ import {
 } from "@/features/auth/schemas";
 
 export function PasswordSection() {
+  const { data: me } = useQuery(meQuery);
+  if (me && !me.has_password) return <AddPassword email={me.email} />;
+  return <ChangePassword />;
+}
+
+/** Accounts created with Google have no password; setting one goes through email. */
+function AddPassword({ email }: { email: string }) {
+  const send = useMutation({ mutationFn: () => forgotPassword(email) });
+  return (
+    <Section
+      title="Password"
+      description="You sign in with Google. A password lets you sign in without it."
+    >
+      {send.isSuccess ? (
+        <FormAlert tone="success">
+          We sent a link to {email}. Open it to choose your password; it expires in 30 minutes.
+        </FormAlert>
+      ) : (
+        <div className="grid gap-3">
+          {send.isError && <FormAlert>{errorMessage(send.error)}</FormAlert>}
+          <Button
+            className="justify-self-start"
+            disabled={send.isPending}
+            onClick={() => {
+              send.mutate();
+            }}
+          >
+            {send.isPending ? "Sending…" : "Email me a link to set a password"}
+          </Button>
+        </div>
+      )}
+    </Section>
+  );
+}
+
+function ChangePassword() {
   const queryClient = useQueryClient();
   const [problem, setProblem] = useState<string | null>(null);
   const form = useForm<ChangePasswordValues>({

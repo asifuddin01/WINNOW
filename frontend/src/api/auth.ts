@@ -155,6 +155,35 @@ export async function regenerateRecoveryCodes(
   return body.recovery_codes;
 }
 
+/** Where the "Continue with Google" link starts; a browser navigation, not a fetch. */
+export function googleStartUrl(redirect?: string): string {
+  const target = safeRedirect(redirect);
+  return target === "/"
+    ? "/api/v1/auth/google/start"
+    : `/api/v1/auth/google/start?redirect=${encodeURIComponent(target)}`;
+}
+
+/** Finish a Google sign-in on an account with two-factor authentication. */
+export async function finishGoogleSignIn(
+  queryClient: QueryClient,
+  code: string,
+): Promise<{ user: User; redirect: string }> {
+  const body = unwrap(await api.POST("/api/v1/auth/google/two-factor", { body: { code } }));
+  signedIn(queryClient, body);
+  return { user: body.user, redirect: safeRedirect(body.redirect) };
+}
+
+/** What went wrong in a Google sign-in, from the `?error=` the callback sends back. */
+export const GOOGLE_ERRORS: Record<string, string> = {
+  google_state:
+    "That Google sign-in expired, or was started in another browser. Try again from this page.",
+  google_cancelled: "Google sign-in was cancelled.",
+  google_failed: "Google sign-in did not finish. Try again, or sign in with your password.",
+  google_unverified: "Google has not verified that email address, so it cannot be used to sign in.",
+  registration_closed:
+    "No Winnow account uses that Google address, and this instance is not accepting new accounts.",
+};
+
 export function isApiError(error: unknown, code: string): error is ApiError {
   return error instanceof ApiError && error.code === code;
 }

@@ -42,6 +42,11 @@ function Account() {
               </Badge>
             )}
           </dd>
+          <dt className="text-muted-foreground">Signs in with</dt>
+          <dd className="flex flex-wrap gap-2">
+            {me.has_password && <Badge variant="secondary">Password</Badge>}
+            {me.google_linked && <Badge variant="secondary">Google</Badge>}
+          </dd>
         </dl>
       </Section>
       <PasswordSection />

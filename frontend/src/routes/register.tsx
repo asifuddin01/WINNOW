@@ -5,9 +5,17 @@ import { MailCheckIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
-import { authOptionsQuery, isApiError, loadAuthOptions, loadMe, register } from "@/api/auth";
+import {
+  authOptionsQuery,
+  googleStartUrl,
+  isApiError,
+  loadAuthOptions,
+  loadMe,
+  register,
+} from "@/api/auth";
 import { errorMessage } from "@/api/client";
 import { AuthLayout } from "@/components/auth/AuthLayout";
+import { GoogleButton, OrDivider } from "@/components/auth/GoogleButton";
 import { TextLink } from "@/components/auth/TextLink";
 import { FormAlert } from "@/components/forms/FormAlert";
 import { PasswordField } from "@/components/forms/PasswordField";
@@ -99,6 +107,12 @@ function Register() {
     >
       <form noValidate onSubmit={(event) => void onSubmit(event)} className="grid gap-4">
         {problem && <FormAlert>{problem}</FormAlert>}
+        {options?.google_enabled && (
+          <>
+            <GoogleButton href={googleStartUrl()} label="Sign up with Google" />
+            <OrDivider />
+          </>
+        )}
         <TextField
           label="Name"
           autoComplete="name"

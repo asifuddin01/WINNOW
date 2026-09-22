@@ -937,6 +937,68 @@
           }
         }
       }
+    },
+    "/api/v1/auth/google/two-factor": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Google Two Factor",
+        "description": "Finish a Google sign-in on an account with two-factor authentication.",
+        "operationId": "google_two_factor",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleSignedIn"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -982,6 +1044,10 @@
           "email_enabled": {
             "type": "boolean",
             "title": "Email Enabled"
+          },
+          "google_enabled": {
+            "type": "boolean",
+            "title": "Google Enabled"
           }
         },
         "type": "object",
@@ -989,7 +1055,8 @@
           "registration",
           "single_user",
           "needs_setup",
-          "email_enabled"
+          "email_enabled",
+          "google_enabled"
         ],
         "title": "AuthOptions"
       },
@@ -1079,6 +1146,29 @@
           "email"
         ],
         "title": "EmailRequest"
+      },
+      "GoogleSignedIn": {
+        "properties": {
+          "csrf_token": {
+            "type": "string",
+            "title": "Csrf Token"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserOut"
+          },
+          "redirect": {
+            "type": "string",
+            "title": "Redirect"
+          }
+        },
+        "type": "object",
+        "required": [
+          "csrf_token",
+          "user",
+          "redirect"
+        ],
+        "title": "GoogleSignedIn",
+        "description": "A Google sign-in finished with a second factor; `redirect` is where it started."
       },
       "Liveness": {
         "properties": {
@@ -1455,6 +1545,14 @@
             "type": "boolean",
             "title": "Is Instance Admin"
           },
+          "has_password": {
+            "type": "boolean",
+            "title": "Has Password"
+          },
+          "google_linked": {
+            "type": "boolean",
+            "title": "Google Linked"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -1470,6 +1568,8 @@
           "totp_enabled",
           "recovery_codes_left",
           "is_instance_admin",
+          "has_password",
+          "google_linked",
           "created_at"
         ],
         "title": "UserOut"

@@ -256,3 +256,79 @@ describe("single-user mode", () => {
     expect(await screen.findByRole("heading", { name: "My reviews" })).toBeVisible();
   });
 });
+
+describe("sign in with Google", () => {
+  const GOOGLE_ON = { ...OPTIONS, google_enabled: true };
+
+  test("offers Google when the instance has it, keeping the destination", async () => {
+    mockApi({ "GET /api/v1/auth/options": GOOGLE_ON });
+    renderApp("/login?redirect=%2Faccount");
+    const google = await screen.findByRole("link", { name: "Continue with Google" });
+    expect(google).toHaveAttribute("href", "/api/v1/auth/google/start?redirect=%2Faccount");
+  });
+
+  test("hides Google when it is not configured", async () => {
+    renderApp("/login");
+    await screen.findByRole("heading", { name: "Sign in to Winnow" });
+    expect(screen.queryByRole("link", { name: "Continue with Google" })).not.toBeInTheDocument();
+  });
+
+  test("explains what went wrong at Google", async () => {
+    mockApi({ "GET /api/v1/auth/options": GOOGLE_ON });
+    renderApp("/login?error=google_unverified");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Google has not verified that email",
+    );
+  });
+
+  test("an unknown error code still gets a sentence", async () => {
+    renderApp("/login?error=something_new");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Google sign-in did not finish");
+  });
+
+  test("a two-factor account finishes with its code", async () => {
+    let me: object = signedOut;
+    const server = mockApi({
+      "GET /api/v1/auth/options": GOOGLE_ON,
+      "GET /api/v1/auth/me": () => me,
+      "POST /api/v1/auth/google/two-factor": () => {
+        me = USER;
+        return { user: USER, csrf_token: "t", redirect: "/account" };
+      },
+    });
+    const user = userEvent.setup();
+    renderApp("/login?step=google-2fa");
+    expect(await screen.findByText(/Google confirmed who you are/)).toBeVisible();
+    await user.type(screen.getByLabelText("Authentication code"), "123456");
+    await user.click(screen.getByRole("button", { name: "Verify and sign in" }));
+    expect(await screen.findByRole("heading", { name: "Account and security" })).toBeVisible();
+    expect(await server.calls("POST /api/v1/auth/google/two-factor")[0]?.json()).toEqual({
+      code: "123456",
+    });
+  });
+
+  test("an expired Google sign-in says to start again", async () => {
+    mockApi({
+      "POST /api/v1/auth/google/two-factor": problemResponse(401, {
+        title: "Unauthorized",
+        code: "google_pending_expired",
+        detail: "This Google sign-in has expired. Start again.",
+      }),
+    });
+    const user = userEvent.setup();
+    renderApp("/login?step=google-2fa");
+    await user.type(await screen.findByLabelText("Authentication code"), "123456");
+    await user.click(screen.getByRole("button", { name: "Verify and sign in" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("has expired");
+    expect(screen.getByRole("link", { name: "Sign in again" })).toHaveAttribute("href", "/login");
+  });
+
+  test("registration offers Google too", async () => {
+    mockApi({ "GET /api/v1/auth/options": GOOGLE_ON });
+    renderApp("/register");
+    expect(await screen.findByRole("link", { name: "Sign up with Google" })).toHaveAttribute(
+      "href",
+      "/api/v1/auth/google/start",
+    );
+  });
+});

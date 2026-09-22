@@ -13,6 +13,8 @@ export const USER: User = {
   totp_enabled: false,
   recovery_codes_left: 0,
   is_instance_admin: false,
+  has_password: true,
+  google_linked: false,
   created_at: "2026-09-01T10:00:00Z",
 };
 
@@ -21,6 +23,7 @@ export const OPTIONS = {
   single_user: false,
   needs_setup: false,
   email_enabled: true,
+  google_enabled: false,
 } as const;
 
 type Reply = Response | object | (() => Response | object);
