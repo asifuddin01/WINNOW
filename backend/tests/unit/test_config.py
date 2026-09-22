@@ -4,7 +4,7 @@ import pytest
 from pydantic import SecretStr, ValidationError
 
 from app.config import PLACEHOLDER_SECRET_KEY, Settings, get_settings
-from tests.conftest import make_settings
+from tests.conftest import PRODUCTION_ARGON2, make_settings
 
 
 def test_valid_settings_load() -> None:
@@ -55,11 +55,15 @@ def test_redis_url_scheme_is_checked() -> None:
 
 def test_production_requires_https_public_url() -> None:
     with pytest.raises(ValidationError, match="https in production"):
-        make_settings(winnow_env="production", public_url="http://winnow.example.org")
+        make_settings(
+            winnow_env="production", **PRODUCTION_ARGON2, public_url="http://winnow.example.org"
+        )
 
 
 def test_production_disables_docs() -> None:
-    settings = make_settings(winnow_env="production", public_url="https://winnow.example.org")
+    settings = make_settings(
+        winnow_env="production", **PRODUCTION_ARGON2, public_url="https://winnow.example.org"
+    )
     assert settings.is_production
     assert not settings.docs_enabled
 

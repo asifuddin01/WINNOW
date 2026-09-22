@@ -12,6 +12,8 @@ class Problem(BaseModel):
     title: str
     status: int
     detail: str | None = None
+    # Stable machine-readable reason, e.g. "totp_required", for the frontend to switch on.
+    code: str | None = None
     request_id: str | None = None
 
 

@@ -9,7 +9,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.errors import ProblemError
 from app.main import create_app
-from tests.conftest import make_settings
+from tests.conftest import PRODUCTION_ARGON2, make_settings
 
 PROBLEM = "application/problem+json"
 
@@ -128,7 +128,9 @@ async def test_docs_are_served_in_development(client: AsyncClient) -> None:
 
 
 async def test_docs_are_hidden_in_production() -> None:
-    settings = make_settings(winnow_env="production", public_url="https://winnow.example.org")
+    settings = make_settings(
+        winnow_env="production", **PRODUCTION_ARGON2, public_url="https://winnow.example.org"
+    )
     app = create_app(settings)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as client:
         assert (await client.get("/api/docs")).status_code == 404

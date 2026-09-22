@@ -13,17 +13,28 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.middleware import REQUEST_ID_HEADER
 from app.schemas.problem import PROBLEM_MEDIA_TYPE, Problem, ValidationIssue, ValidationProblem
+from app.services.errors import DomainError
 
 log = structlog.get_logger(__name__)
 
 
 class ProblemError(Exception):
-    """Raise from a route or service to return a specific problem response."""
+    """Raise from a route or dependency to return a specific problem response."""
 
-    def __init__(self, status: int, detail: str | None = None, **extensions: Any) -> None:
+    def __init__(
+        self,
+        status: int,
+        detail: str | None = None,
+        *,
+        code: str | None = None,
+        headers: Mapping[str, str] | None = None,
+        **extensions: Any,
+    ) -> None:
         super().__init__(detail or HTTPStatus(status).phrase)
         self.status = status
         self.detail = detail
+        self.code = code
+        self.headers = headers
         self.extensions = extensions
 
 
@@ -76,7 +87,16 @@ async def _problem_error(request: Request, error: Exception) -> JSONResponse:
         title=HTTPStatus(exc.status).phrase,
         status=exc.status,
         detail=exc.detail,
+        code=exc.code,
         **exc.extensions,
+    )
+    return problem_response(request, problem, headers=exc.headers)
+
+
+async def _domain_error(request: Request, error: Exception) -> JSONResponse:
+    exc = cast("DomainError", error)
+    problem = Problem(
+        title=HTTPStatus(exc.status).phrase, status=exc.status, detail=exc.detail, code=exc.code
     )
     return problem_response(request, problem)
 
@@ -100,6 +120,7 @@ def install_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(StarletteHTTPException, _http_exception)
     app.add_exception_handler(RequestValidationError, _validation_error)
     app.add_exception_handler(ProblemError, _problem_error)
+    app.add_exception_handler(DomainError, _domain_error)
     app.add_exception_handler(Exception, _unhandled)
 
 

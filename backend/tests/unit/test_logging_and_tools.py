@@ -8,7 +8,7 @@ import structlog
 from app import openapi
 from app.logging_config import configure_logging
 from app.workers import settings as worker
-from tests.conftest import make_settings
+from tests.conftest import PRODUCTION_ARGON2, make_settings
 
 
 @pytest.fixture
@@ -19,7 +19,11 @@ def restore_logging() -> Iterator[None]:
 
 @pytest.mark.usefixtures("restore_logging")
 def test_production_logs_are_json(capsys: pytest.CaptureFixture[str]) -> None:
-    configure_logging(make_settings(winnow_env="production", public_url="https://w.example.org"))
+    configure_logging(
+        make_settings(
+            winnow_env="production", **PRODUCTION_ARGON2, public_url="https://w.example.org"
+        )
+    )
     structlog.get_logger("winnow.test").info("something.happened", records=3)
     logging.getLogger("uvicorn.error").warning("from uvicorn")
     lines = [json.loads(line) for line in capsys.readouterr().err.splitlines()]

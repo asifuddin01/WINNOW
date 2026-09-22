@@ -22,7 +22,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 COPY --chown=winnow:winnow . .
 USER winnow
 EXPOSE 8000
-CMD ["uvicorn", "app.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--reload", "--no-access-log"]
+# Behind Caddy on the internal network: take the client address from X-Forwarded-For,
+# which Caddy sets itself (it ignores the header from untrusted clients).
+CMD ["uvicorn", "app.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--reload", "--no-access-log", "--proxy-headers", "--forwarded-allow-ips", "*"]
 
 FROM base AS prod
 RUN --mount=type=cache,target=/root/.cache/uv \

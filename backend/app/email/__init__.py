@@ -1,1 +1,1 @@
-"""Email templates and the SMTP sender."""
+"""Email messages and delivery."""

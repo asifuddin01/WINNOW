@@ -12,6 +12,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 PLACEHOLDER_SECRET_KEY = "change-me-to-64-random-chars"  # noqa: S105 - rejected below, never used
 MIN_SECRET_KEY_BYTES = 32
 ENCRYPTION_KEY_BYTES = 32
+MIN_ARGON2_MEMORY_KIB = 19_456  # OWASP's floor for Argon2id
 
 
 class Settings(BaseSettings):
@@ -45,6 +46,7 @@ class Settings(BaseSettings):
     smtp_user: str | None = None
     smtp_password: SecretStr | None = None
     smtp_from: str = "Winnow <no-reply@example.com>"
+    smtp_tls: Literal["starttls", "ssl", "none"] = "starttls"
 
     clamav_host: str = "clamav"
     unpaywall_email: str | None = None
@@ -56,6 +58,15 @@ class Settings(BaseSettings):
 
     max_upload_mb: int = Field(default=200, ge=1, le=10_000)
     session_idle_days: int = Field(default=7, ge=1, le=365)
+    session_absolute_days: int = Field(default=30, ge=1, le=365)
+
+    # Guide 12.1: Argon2id with 64 MiB, 3 passes, 1 lane. Lower values are allowed only
+    # outside production (tests use them to stay fast).
+    argon2_memory_kib: int = Field(default=65_536, ge=8)
+    argon2_time_cost: int = Field(default=3, ge=1)
+    argon2_parallelism: int = Field(default=1, ge=1)
+    # k-anonymity lookup of new passwords in Have I Been Pwned; off for offline installs.
+    password_breach_check: bool = True
 
     @field_validator("secret_key")
     @classmethod
@@ -95,9 +106,19 @@ class Settings(BaseSettings):
         return value
 
     @model_validator(mode="after")
-    def _production_uses_https(self) -> "Settings":
-        if self.is_production and self.public_url.scheme != "https":
+    def _production_is_hardened(self) -> "Settings":
+        if not self.is_production:
+            return self
+        if self.public_url.scheme != "https":
             raise ValueError("PUBLIC_URL must be https in production")
+        if self.argon2_memory_kib < MIN_ARGON2_MEMORY_KIB or self.argon2_time_cost < 2:
+            raise ValueError("Argon2 parameters are below the production minimum")
+        return self
+
+    @model_validator(mode="after")
+    def _session_lifetimes_are_ordered(self) -> "Settings":
+        if self.session_idle_days > self.session_absolute_days:
+            raise ValueError("SESSION_IDLE_DAYS cannot exceed SESSION_ABSOLUTE_DAYS")
         return self
 
     @property
@@ -108,6 +129,18 @@ class Settings(BaseSettings):
     def docs_enabled(self) -> bool:
         """Interactive API docs are served in development only (guide 10)."""
         return not self.is_production
+
+    @property
+    def public_origin(self) -> str:
+        """Scheme, host and port of PUBLIC_URL: the only origin allowed to send writes."""
+        url = self.public_url
+        default_port = {"http": 80, "https": 443}.get(url.scheme)
+        port = "" if url.port in (None, default_port) else f":{url.port}"
+        return f"{url.scheme}://{url.host}{port}"
+
+    @property
+    def email_enabled(self) -> bool:
+        return self.smtp_host is not None
 
     @property
     def encryption_key_bytes(self) -> bytes:

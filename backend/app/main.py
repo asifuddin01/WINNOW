@@ -4,6 +4,8 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
+import httpx
+from arq.connections import ArqRedis
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.routing import APIRoute
@@ -12,10 +14,14 @@ from app import __version__
 from app.api.v1 import api_router
 from app.config import Settings, get_settings
 from app.db import create_engine, create_sessionmaker
+from app.email.mailer import QueueMailer, UnconfiguredMailer
 from app.errors import document_problem_responses, install_error_handlers
 from app.logging_config import configure_logging
 from app.middleware import RequestContextMiddleware
 from app.redis_client import create_redis
+from app.security.passwords import Passwords
+from app.security.rate_limit import RateLimiter
+from app.security.sessions import SessionStore
 
 API_PREFIX = "/api/v1"
 
@@ -46,12 +52,22 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         engine = create_engine(settings)
         redis = create_redis(settings)
+        queue = ArqRedis.from_url(settings.redis_url)  # arq pickles jobs: needs a bytes client
+        http = httpx.AsyncClient(timeout=10.0, follow_redirects=False)
         app.state.engine = engine
         app.state.sessionmaker = create_sessionmaker(engine)
         app.state.redis = redis
+        app.state.queue = queue
+        app.state.http = http
+        app.state.sessions = SessionStore(redis, settings)
+        app.state.rate_limiter = RateLimiter(redis)
+        app.state.passwords = Passwords(settings)
+        app.state.mailer = QueueMailer(queue) if settings.email_enabled else UnconfiguredMailer()
         try:
             yield
         finally:
+            await http.aclose()
+            await queue.aclose()
             await redis.aclose()
             await engine.dispose()
 
