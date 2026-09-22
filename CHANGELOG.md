@@ -2,6 +2,37 @@
 
 All notable changes, one section per build phase (guide Section 17).
 
+## Phase 2: Reviews, team and settings (2026-09-23)
+
+### Added
+- Reviews (projects): create with a three-step wizard, edit, archive, hand on to another
+  member, delete with a typed confirmation, and copy a whole setup into a new review.
+- Roles from guide 7 — owner, admin, reviewer, viewer — behind one central check,
+  `require_project_role`, on every project route. Non-members get the same 404 as for a
+  review that does not exist, so nobody can learn what exists.
+- Members and invitations: invite by email, withdraw, change roles, remove, leave. An
+  invitation works once, for a week, and only for someone signed in with the invited,
+  confirmed address; instances that send no email can pass the link on by hand. On
+  invite-only instances, the invitation is also the way to register.
+- Setup for each review: inclusion and exclusion criteria (ordered), keyword groups with
+  colours and terms, exclusion reasons prefilled with the nine from guide 8.2, and labels.
+- Keyword patterns are limited to a subset that means the same in JavaScript and Python and
+  cannot backtrack for ever (no lookarounds, backreferences or repeated repeats).
+- Project settings from guide 6.2 — blind mode, reviewers per record, what a “maybe”
+  counts as, when a reason is required, ranking, AI assist, the stopping rule, assignment
+  and keyword highlighting — plus a personal “keep me blind too” for owners and admins.
+- My reviews dashboard, a review overview with a setup checklist, and a review sidebar.
+- The audit log now records every project, member, invitation and setup change, and blind
+  mode toggles on their own.
+- `make seed email=you@example.org` puts a worked example review in an account.
+- Tests: the guide's non-member check across every project route, the role matrix, IDOR
+  attempts with ids from another review, invitation security, the pattern subset, and a
+  Playwright journey where two people set up and share a review.
+
+### Changed
+- Registration accepts an invitation token, and `/auth/options` reports whether the
+  instance has an AI provider and whether owners must use two-factor authentication.
+
 ## Phase 1: Accounts and security (2026-09-22)
 
 ### Added

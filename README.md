@@ -25,7 +25,8 @@ you do not have one yet.
 
 Running Winnow for yourself only? Set `WINNOW_SINGLE_USER=true` in `.env`: the first visit
 creates your administrator account, with no email step. For servers, create administrators
-with `make create-admin email=you@example.org name="Your Name"`.
+with `make create-admin email=you@example.org name="Your Name"`. To look around with
+something already set up, `make seed email=you@example.org` adds a worked example review.
 
 | Command | What it does |
 |---|---|
@@ -33,6 +34,7 @@ with `make create-admin email=you@example.org name="Your Name"`.
 | `make up` / `make down` | Start in the background (waits until healthy) / stop |
 | `make migrate` | Apply database migrations |
 | `make create-admin email=… name="…"` | Create a verified administrator (asks for the password) |
+| `make seed email=…` | Put a worked example review in that account |
 | `make revision m="…"` | Autogenerate a migration from model changes |
 | `make test` | Backend (pytest) and frontend (Vitest) tests, with coverage |
 | `make lint` / `make typecheck` | ruff + ESLint + formatting / mypy `--strict` + tsc |

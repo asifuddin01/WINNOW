@@ -205,3 +205,67 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   hidden and the routes answer 404. The flow is tested against a fake Google that signs
   real RS256 tokens; a live run needs real credentials.
 
+
+## Phase 2 — reviews, team and settings
+
+### Permissions
+- **One check, one table.** `app/security/permissions.py` holds the role ranks and the
+  capability table from guide 7; `require_project_role(min_role, flag=)` in `app/api/deps.py`
+  turns it into the dependency every `/projects/{pid}` route declares, and the same table
+  fills the `permissions` list in the project response, which the frontend uses only to hide
+  controls. A test walks every project route in the OpenAPI document, so a route added in a
+  later phase is covered the day it appears.
+- **404 for outsiders, 403 for members.** A non-member (or a malformed id, or a deleted
+  review) gets exactly the answer a review that does not exist gives, word for word. A member
+  without the role gets 403: they already know the review is there.
+- **Services take a verified membership, never a raw id.** Every method takes `ProjectAccess`
+  and filters by `access.project_id`, so an id from another review is simply not found.
+- **The owner is a row, and a unique index.** A partial unique index allows one owner per
+  review; ownership moves only by transfer, which demotes the old owner to admin in the same
+  transaction. Admins may manage everyone else, never the owner.
+- **Reviewers and viewers may still leave, set their own preferences and copy a setup**
+  into a review of their own; everything else in the review is read-only for them.
+
+### Invitations
+- **The token is the secret, and the address is the lock.** Only a SHA-256 of the token is
+  stored. The invitation page is public, because the token is unguessable, but accepting
+  requires a signed-in account whose *confirmed* email is the invited one, so a forwarded
+  link is useless. The preview masks the address (`g•••@example.org`).
+- **Re-inviting replaces the open invitation** (a partial unique index keeps one per address
+  and review), invitations expire in seven days, and accepting is an atomic claim.
+- **The link is returned once to the inviter,** so instances without SMTP can still invite;
+  it grants nothing to anyone but the invited address.
+- **Invite-only registration** accepts a registration carrying a valid invitation token for
+  the same address; without one it stays closed.
+
+### Reviews and their setup
+- **Deleting a review is a soft delete**; it disappears for everyone immediately, and the
+  rows stay for an administrator to recover. The typed confirmation is in the UI.
+- **Colours are names, not CSS.** Keyword groups and labels store one of nine palette names;
+  the frontend maps each to classes that work in both themes, so nothing a person types ever
+  reaches a style attribute, and colour never carries meaning on its own.
+- **Keyword patterns use a safe subset** (guide 12.3): literals, classes, `\d \w \s \b`,
+  escaped punctuation, groups, alternation, anchors and quantifiers up to 100. No lookarounds,
+  backreferences, named groups, inline flags or other escapes, and no repeating a group that
+  itself repeats or alternates — the shape behind catastrophic backtracking. Patterns must
+  also mean the same in JavaScript (with `u`) and Python, because both will run them.
+- **Small collections are returned whole and capped** (criteria, keywords, reasons, labels,
+  open invitations); cursor pagination is used where the list is unbounded — reviews and
+  members. Ordering is by time-ordered UUIDv7 for reviews and by joining order for members.
+- **Ordered lists keep dense positions.** Moving or deleting renumbers the siblings inside
+  one transaction, so positions stay 0..n-1 per kind.
+- **Settings are one JSON document with a pydantic model.** Unknown keys from an older
+  version are dropped on read and defaults fill in new ones, so a settings change never needs
+  a migration. Turning AI assist on is refused unless the instance has a provider.
+- **Single-user instances** start reviews with one reviewer per record and refuse invitations.
+- **Owning a review needs a confirmed email,** and two-factor authentication when
+  `REQUIRE_OWNER_2FA` is on (guide 2.1); the instance-wide setting arrives with the admin panel.
+
+### The frontend
+- **The wizard creates the review at the end of step one** and then uses the very same
+  editors as the settings pages, so nothing typed later is lost if the tab closes and there is
+  only one implementation of each editor. The step lives in the URL.
+- **Roles are enforced by the API; the UI reads `permissions`** to decide what to show, and a
+  reviewer's settings pages are simply read-only.
+- **Radix selects do not open on a jsdom click,** so component tests open them with the
+  keyboard; buttons that pair an icon with a name carry an explicit `aria-label`.
