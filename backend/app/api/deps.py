@@ -6,6 +6,7 @@ from typing import Annotated
 from urllib.parse import urlsplit
 
 import httpx
+from arq.connections import ArqRedis
 from fastapi import Depends, Path, Request, status
 
 from app.config import Settings
@@ -13,6 +14,7 @@ from app.db import SessionDep
 from app.email.mailer import Mailer
 from app.errors import ProblemError
 from app.models import ProjectRole, User
+from app.redis_client import RedisDep
 from app.security import csrf
 from app.security.passwords import Passwords
 from app.security.permissions import (
@@ -26,10 +28,13 @@ from app.security.sessions import SESSION_COOKIE, Session, SessionStore, session
 from app.services.accounts import AccountService
 from app.services.audit import Actor
 from app.services.errors import NotAuthenticatedError
+from app.services.imports import ImportService
 from app.services.members import MemberService
 from app.services.projects import ProjectService
+from app.services.records import RecordService
 from app.services.setup import SetupService
 from app.services.two_factor import TwoFactorService
+from app.storage import Storage
 
 
 def get_settings(request: Request) -> Settings:
@@ -168,9 +173,23 @@ def get_setup(db: SessionDep) -> SetupService:
     return SetupService(db)
 
 
+def get_imports(request: Request, db: SessionDep, settings: SettingsDep) -> ImportService:
+    storage: Storage = request.app.state.storage
+    queue: ArqRedis = request.app.state.queue
+    return ImportService(db, settings, storage, queue)
+
+
 ProjectsDep = Annotated[ProjectService, Depends(get_projects)]
 MembersDep = Annotated[MemberService, Depends(get_members)]
 SetupDep = Annotated[SetupService, Depends(get_setup)]
+ImportsDep = Annotated[ImportService, Depends(get_imports)]
+
+
+def get_records(db: SessionDep, redis: RedisDep) -> RecordService:
+    return RecordService(db, redis)
+
+
+RecordsDep = Annotated[RecordService, Depends(get_records)]
 
 
 def _origin(url: str) -> str | None:

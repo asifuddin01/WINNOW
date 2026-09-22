@@ -58,8 +58,9 @@ seed: .env ## Demo review in an existing account: make seed email=you@example.or
 	@test -n "$(email)" || (echo 'Usage: make seed email=you@example.org' && exit 1)
 	$(API) python -m app.cli seed --email "$(email)"
 
-seed-large: ## 100,000-record project for performance budgets (arrives with Phase 3)
-	@echo "Nothing to seed yet: the large seed arrives with records (Phase 3)."
+seed-large: .env ## 100,000 generated records for the budgets: make seed-large email=you@example.org
+	@test -n "$(email)" || (echo 'Usage: make seed-large email=you@example.org [records=100000]' && exit 1)
+	$(API) python -m app.cli seed-large --email "$(email)" --records "$(or $(records),100000)"
 
 test: test-backend test-frontend ## Run backend and frontend tests
 

@@ -219,7 +219,7 @@ class SetupService:
             select(Keyword)
             .join(KeywordGroup, KeywordGroup.id == Keyword.group_id)
             .where(KeywordGroup.project_id == access.project_id)
-            .order_by(Keyword.id)
+            .order_by(Keyword.term)
         )
         by_group: dict[uuid.UUID, list[KeywordOut]] = {group.id: [] for group in groups}
         for keyword in keywords:
@@ -241,7 +241,7 @@ class SetupService:
     async def keyword_group(self, access: ProjectAccess, group_id: uuid.UUID) -> KeywordGroupOut:
         group = await self._group(access, group_id)
         keywords = await self._db.scalars(
-            select(Keyword).where(Keyword.group_id == group.id).order_by(Keyword.id)
+            select(Keyword).where(Keyword.group_id == group.id).order_by(Keyword.term)
         )
         return self._group_out(
             group, [KeywordOut.model_validate(k, from_attributes=True) for k in keywords]

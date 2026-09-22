@@ -425,7 +425,7 @@ class ProjectService:
             self._db.add(group_copy)
             await self._db.flush()
             keywords = await self._db.scalars(
-                select(Keyword).where(Keyword.group_id == group.id).order_by(Keyword.id)
+                select(Keyword).where(Keyword.group_id == group.id).order_by(Keyword.term)
             )
             for keyword in keywords:
                 self._db.add(
