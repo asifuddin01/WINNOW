@@ -10,7 +10,7 @@ WEB := $(COMPOSE) run --rm --no-deps web
 
 .DEFAULT_GOAL := help
 .PHONY: help env dev up down logs ps build migrate revision seed seed-large \
-	test test-backend test-frontend e2e lint typecheck format check api-types size clean
+	test test-backend test-frontend e2e lint typecheck format check api-types size clean create-admin
 
 help: ## List the targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z0-9-]+:.*## / {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -49,6 +49,10 @@ migrate: .env ## Apply database migrations (alembic upgrade head)
 revision: .env ## Create a migration from model changes: make revision m="add users"
 	@test -n "$(m)" || (echo 'Usage: make revision m="describe the change"' && exit 1)
 	$(API) alembic revision --autogenerate -m "$(m)"
+
+create-admin: .env ## Create a verified instance administrator: make create-admin email=… name="…"
+	@test -n "$(email)" -a -n "$(name)" || (echo 'Usage: make create-admin email=you@example.org name="Your Name"' && exit 1)
+	$(API) python -m app.cli create-admin --email "$(email)" --name "$(name)"
 
 seed: ## Demo project with 500 records and 2 users (arrives with Phases 2-3)
 	@echo "Nothing to seed yet: demo data needs projects (Phase 2) and records (Phase 3)."

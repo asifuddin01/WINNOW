@@ -8,6 +8,13 @@ x-backend: &backend
     context: ./backend
     target: dev
   env_file: .env
+  environment:
+    # Development mail always goes to Mailpit (http://localhost:8025), whatever .env says.
+    SMTP_HOST: mailpit
+    SMTP_PORT: "1025"
+    SMTP_TLS: none
+    SMTP_USER: ""
+    SMTP_PASSWORD: ""
   volumes:
     - ./backend:/app
   depends_on:
@@ -41,6 +48,17 @@ services:
       timeout: 3s
       retries: 20
 
+  # Catches every email in development: open http://localhost:8025 to read them.
+  mailpit:
+    image: axllent/mailpit:v1.31
+    ports:
+      - "127.0.0.1:${MAILPIT_PORT:-8025}:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   # One-shot: brings the database to the latest migration before the API starts.
   migrate:
     <<: *backend
@@ -70,6 +88,13 @@ services:
   worker:
     <<: *backend
     command: ["arq", "app.workers.settings.WorkerSettings", "--watch", "app"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "arq", "--check", "app.workers.settings.WorkerSettings"]
       interval: 15s
@@ -94,6 +119,8 @@ services:
 
   caddy:
     image: caddy:2-alpine
+    environment:
+      CSP_SCRIPT_SRC: "'self' 'unsafe-inline'"
     ports:
       - "127.0.0.1:${WINNOW_PORT:-8080}:8080"
     volumes:

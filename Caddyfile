@@ -1,4 +1,4 @@
-# Edge proxy (guide 4). Development serves plain HTTP on :8080; production (Phase 9)
+# Edge proxy (guide 4, 12.5). Development serves plain HTTP on :8080; production (Phase 9)
 # sets SITE_ADDRESS to a domain and Caddy obtains HTTPS automatically.
 {
 	admin off
@@ -8,8 +8,6 @@
 {$SITE_ADDRESS::8080} {
 	encode zstd gzip
 
-	# Headers that are safe in every environment. The Content-Security-Policy and HSTS
-	# from guide 12.5 arrive with the Phase 1 security work.
 	header {
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
@@ -19,11 +17,26 @@
 		-Server
 	}
 
-	handle /api/* {
+	# HSTS only means something over HTTPS; never pin plain-HTTP development hosts.
+	@https protocol https
+	header @https Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+
+	# Swagger UI (development only; the API hides it in production) loads from jsDelivr.
+	handle /api/docs* {
+		header Content-Security-Policy "default-src 'none'; script-src 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://fastapi.tiangolo.com; connect-src 'self'; frame-ancestors 'none'"
 		reverse_proxy api:8000
 	}
 
+	# JSON never needs to load anything.
+	handle /api/* {
+		header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		reverse_proxy api:8000
+	}
+
+	# The single-page app: guide 12.5's policy. CSP_SCRIPT_SRC stays 'self' in production;
+	# the development stack adds 'unsafe-inline' for Vite's hot-reload preamble.
 	handle {
+		header Content-Security-Policy "default-src 'self'; script-src {$CSP_SCRIPT_SRC:'self'}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self' blob:"
 		# Vite only answers hosts it knows; present ourselves as its service name so any
 		# address that reaches Caddy (localhost, a LAN IP for phone testing) works.
 		reverse_proxy web:5173 {
