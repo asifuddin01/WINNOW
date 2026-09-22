@@ -10,7 +10,7 @@
  * Design tokens (guide 11.3), tuned for hours of screening. Neither theme uses pure
  * white or pure black. Light is a matte, low-glare warm paper with charcoal text
  * (12.7:1); cards sit barely above the page so nothing glows. Dark is "night slate",
- * a soft blue-grey with warm off-white text (12.5:1). The accent is the brand's deep
+ * a soft blue-grey with warm off-white text (13:1). The accent is the brand's deep
  * teal (#0F766E), a shade deeper on the matte page and muted in dark mode so it does
  * not glow. Every text colour meets WCAG AA and body text meets AAA. Semantic colours
  * are always paired with an icon and text.
@@ -60,36 +60,36 @@
 }
 
 .dark {
-  --background: oklch(0.235 0.022 250);
+  --background: oklch(0.22 0.022 250);
   --foreground: oklch(0.905 0.01 90);
-  --card: oklch(0.268 0.024 250);
+  --card: oklch(0.252 0.024 250);
   --card-foreground: oklch(0.905 0.01 90);
-  --popover: oklch(0.285 0.024 250);
+  --popover: oklch(0.27 0.024 250);
   --popover-foreground: oklch(0.905 0.01 90);
   --primary: oklch(0.77 0.09 180);
   --primary-foreground: oklch(0.2 0.025 190);
-  --secondary: oklch(0.3 0.024 250);
+  --secondary: oklch(0.285 0.024 250);
   --secondary-foreground: oklch(0.905 0.01 90);
-  --muted: oklch(0.3 0.024 250);
+  --muted: oklch(0.285 0.024 250);
   --muted-foreground: oklch(0.74 0.02 240);
-  --accent: oklch(0.3 0.024 250);
+  --accent: oklch(0.285 0.024 250);
   --accent-foreground: oklch(0.905 0.01 90);
   --destructive: oklch(0.75 0.12 28);
-  --border: oklch(0.33 0.022 250);
-  --input: oklch(0.37 0.024 250);
+  --border: oklch(0.315 0.022 250);
+  --input: oklch(0.355 0.024 250);
   --ring: oklch(0.77 0.09 180);
   --chart-1: oklch(0.77 0.09 180);
   --chart-2: oklch(0.62 0.08 180);
   --chart-3: oklch(0.74 0.02 240);
   --chart-4: oklch(0.5 0.02 250);
   --chart-5: oklch(0.86 0.06 180);
-  --sidebar: oklch(0.205 0.021 250);
+  --sidebar: oklch(0.19 0.021 250);
   --sidebar-foreground: oklch(0.905 0.01 90);
   --sidebar-primary: oklch(0.77 0.09 180);
   --sidebar-primary-foreground: oklch(0.2 0.025 190);
-  --sidebar-accent: oklch(0.285 0.024 250);
+  --sidebar-accent: oklch(0.27 0.024 250);
   --sidebar-accent-foreground: oklch(0.905 0.01 90);
-  --sidebar-border: oklch(0.29 0.022 250);
+  --sidebar-border: oklch(0.275 0.022 250);
   --sidebar-ring: oklch(0.77 0.09 180);
 
   --include: oklch(0.78 0.12 150);
