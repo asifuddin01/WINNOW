@@ -15,5 +15,11 @@ Read WINNOW_BUILD_GUIDE.md before any work. Build only the current phase.
 - Small, focused commits with clear messages. Update CHANGELOG.md each phase.
 - When a requirement is ambiguous, choose the more secure and simpler option and note it in docs/decisions.md.
 
+## Finding code
+- The repository is indexed as a knowledge graph in `graphify-out/` (git-ignored). Prefer
+  `graphify query "<question>"`, `graphify path "A" "B"` and `graphify explain "<symbol>"`
+  over grepping; each hit gives the file and line. Rebuild with `/graphify . --update`
+  after large changes. Read the file before relying on what the graph says.
+
 ## Commands
 make dev | make test | make lint | make migrate | make seed | make seed-large | make api-types

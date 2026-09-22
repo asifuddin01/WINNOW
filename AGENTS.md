@@ -25,6 +25,25 @@ into the app later.
   Code's stack is running. Your modules are pure, so their tests need no database, no Redis
   and no containers.
 
+## The code graph (read this before grepping)
+
+The repository is indexed as a knowledge graph, so you can find code without reading files.
+It is built from the AST — symbols, their files and line numbers, and what calls what —
+and it lives in `graphify-out/` (git-ignored, ~2,200 symbols and ~6,300 edges over the
+backend, frontend and tests).
+
+```bash
+graphify query "where is the permission check for project routes"   # BFS over the graph
+graphify query "how are records normalised on import" --budget 1500
+graphify path "SetupService" "ProjectAccess"                        # shortest path between two symbols
+graphify explain "check_project_role"                               # plain-language node summary
+```
+
+Each hit prints `NODE <symbol> [src=<file> loc=L<line> community=<n>]`, so you can open
+exactly the right place. If `graphify-out/graph.json` is missing or stale after you add
+files, rebuild it with `/graphify . --update` — it needs no API key for code, and takes
+about a minute. The graph is a map, not the truth: read the file before you rely on it.
+
 ## Files you own
 
 Create and edit only these:
