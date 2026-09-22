@@ -34,6 +34,8 @@ class Settings(BaseSettings):
 
     winnow_single_user: bool = False
     registration: Literal["open", "invite_only", "closed"] = "open"
+    # Guide 2.1: people must turn on two-factor authentication before they can own a review.
+    require_owner_2fa: bool = False
 
     storage_backend: Literal["local", "s3"] = "local"
     s3_endpoint: AnyHttpUrl | None = None

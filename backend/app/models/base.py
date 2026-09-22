@@ -1,11 +1,12 @@
 """Declarative base shared by every model, with deterministic constraint names."""
 
+import enum
 import os
 import time
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, MetaData, func
+from sqlalchemy import DateTime, Enum, MetaData, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -33,6 +34,11 @@ def uuid7() -> uuid.UUID:
 
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
+
+
+def pg_enum(values: type[enum.StrEnum], name: str) -> Enum:
+    """A PostgreSQL enum that stores each member's value ("title_abstract"), not its name."""
+    return Enum(values, name=name, values_callable=lambda members: [m.value for m in members])
 
 
 class UUIDPrimaryKey:
