@@ -38,8 +38,9 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   components detect whether they are inside the shell, so the footer appears exactly once
   wherever an error happens.
 - **Colours are tuned for long screening sessions,** at the owner's request. Neither theme
-  uses pure white or pure black. Light is a warm "paper" off-white (`#F9F6F2`) with charcoal
-  text (`#2E2924`) at 13:1 instead of 20:1. Dark is "night slate", a soft blue-grey
+  uses pure white or pure black. Light is a matte, low-glare warm paper (`#EEEAE5`) with
+  charcoal text (`#2A2520`) at 12.7:1 instead of 20:1; cards sit barely above the page so
+  nothing glows (a brighter `#F9F6F2` paper still felt like too much light). Dark is "night slate", a soft blue-grey
   (`#161F28`) with warm off-white text (`#E2DFD8`) at 12.5:1 instead of 19:1, and a muted
   teal accent that does not glow. The neutrals are warm in light mode, not the slate the
   guide's branding note suggests. A flat warm grey dark theme felt "robotic", and a teal-green

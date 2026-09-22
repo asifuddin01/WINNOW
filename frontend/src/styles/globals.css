@@ -8,53 +8,55 @@
 
 /*
  * Design tokens (guide 11.3), tuned for hours of screening. Neither theme uses pure
- * white or pure black: light is a warm "paper" off-white with charcoal text (13:1),
- * dark is "night slate", a soft blue-grey with warm off-white text (12.5:1) and a
- * muted teal accent that does not glow. Every text colour still meets WCAG AA; body text meets AAA. Deep teal
- * #0F766E is the accent. Semantic colours are always paired with an icon and text.
+ * white or pure black. Light is a matte, low-glare warm paper with charcoal text
+ * (12.7:1); cards sit barely above the page so nothing glows. Dark is "night slate",
+ * a soft blue-grey with warm off-white text (12.5:1). The accent is the brand's deep
+ * teal (#0F766E), a shade deeper on the matte page and muted in dark mode so it does
+ * not glow. Every text colour meets WCAG AA and body text meets AAA. Semantic colours
+ * are always paired with an icon and text.
  */
 :root {
-  --background: oklch(0.975 0.007 80);
-  --foreground: oklch(0.285 0.012 70);
-  --card: oklch(0.988 0.005 80);
-  --card-foreground: oklch(0.285 0.012 70);
-  --popover: oklch(0.988 0.005 80);
-  --popover-foreground: oklch(0.285 0.012 70);
-  --primary: oklch(0.511 0.096 186.391);
-  --primary-foreground: oklch(0.985 0.01 180);
-  --secondary: oklch(0.935 0.009 80);
-  --secondary-foreground: oklch(0.285 0.012 70);
-  --muted: oklch(0.945 0.008 80);
-  --muted-foreground: oklch(0.475 0.013 70);
-  --accent: oklch(0.935 0.009 80);
-  --accent-foreground: oklch(0.285 0.012 70);
-  --destructive: oklch(0.505 0.19 27.5);
-  --border: oklch(0.905 0.009 80);
-  --input: oklch(0.87 0.011 80);
-  --ring: oklch(0.511 0.096 186.391);
-  --chart-1: oklch(0.511 0.096 186.391);
-  --chart-2: oklch(0.62 0.1 183);
-  --chart-3: oklch(0.475 0.013 70);
-  --chart-4: oklch(0.72 0.012 80);
-  --chart-5: oklch(0.8 0.08 181);
+  --background: oklch(0.94 0.008 80);
+  --foreground: oklch(0.27 0.012 70);
+  --card: oklch(0.952 0.007 80);
+  --card-foreground: oklch(0.27 0.012 70);
+  --popover: oklch(0.955 0.007 80);
+  --popover-foreground: oklch(0.27 0.012 70);
+  --primary: oklch(0.48 0.09 186.4);
+  --primary-foreground: oklch(0.97 0.01 180);
+  --secondary: oklch(0.905 0.009 80);
+  --secondary-foreground: oklch(0.27 0.012 70);
+  --muted: oklch(0.912 0.009 80);
+  --muted-foreground: oklch(0.44 0.013 70);
+  --accent: oklch(0.905 0.009 80);
+  --accent-foreground: oklch(0.27 0.012 70);
+  --destructive: oklch(0.48 0.18 27.5);
+  --border: oklch(0.875 0.01 80);
+  --input: oklch(0.84 0.012 80);
+  --ring: oklch(0.48 0.09 186.4);
+  --chart-1: oklch(0.48 0.09 186.4);
+  --chart-2: oklch(0.6 0.09 183);
+  --chart-3: oklch(0.44 0.013 70);
+  --chart-4: oklch(0.68 0.012 80);
+  --chart-5: oklch(0.76 0.07 181);
   --radius: 0.625rem;
-  --sidebar: oklch(0.955 0.008 80);
-  --sidebar-foreground: oklch(0.285 0.012 70);
-  --sidebar-primary: oklch(0.511 0.096 186.391);
-  --sidebar-primary-foreground: oklch(0.985 0.01 180);
-  --sidebar-accent: oklch(0.915 0.01 80);
-  --sidebar-accent-foreground: oklch(0.285 0.012 70);
-  --sidebar-border: oklch(0.905 0.009 80);
-  --sidebar-ring: oklch(0.511 0.096 186.391);
+  --sidebar: oklch(0.918 0.009 80);
+  --sidebar-foreground: oklch(0.27 0.012 70);
+  --sidebar-primary: oklch(0.48 0.09 186.4);
+  --sidebar-primary-foreground: oklch(0.97 0.01 180);
+  --sidebar-accent: oklch(0.885 0.01 80);
+  --sidebar-accent-foreground: oklch(0.27 0.012 70);
+  --sidebar-border: oklch(0.875 0.01 80);
+  --sidebar-ring: oklch(0.48 0.09 186.4);
 
-  --include: oklch(0.515 0.14 150);
-  --include-muted: oklch(0.955 0.03 150);
-  --exclude: oklch(0.505 0.19 27.5);
-  --exclude-muted: oklch(0.955 0.025 27.5);
-  --maybe: oklch(0.53 0.14 55);
-  --maybe-muted: oklch(0.96 0.035 80);
-  --conflict: oklch(0.496 0.22 302);
-  --conflict-muted: oklch(0.955 0.025 302);
+  --include: oklch(0.48 0.13 150);
+  --include-muted: oklch(0.925 0.03 150);
+  --exclude: oklch(0.48 0.18 27.5);
+  --exclude-muted: oklch(0.925 0.025 27.5);
+  --maybe: oklch(0.5 0.13 55);
+  --maybe-muted: oklch(0.93 0.035 80);
+  --conflict: oklch(0.47 0.2 302);
+  --conflict-muted: oklch(0.925 0.025 302);
 }
 
 .dark {
