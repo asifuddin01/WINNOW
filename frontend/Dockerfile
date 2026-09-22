@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Winnow web image. Targets: `dev` (Vite dev server) and `prod` (static build served by nginx).
 
-FROM node:22-alpine AS base
+FROM node:26-alpine AS base
 # COREPACK_HOME outside /root, so the non-root dev user can run the pinned pnpm offline.
 ENV PNPM_HOME=/pnpm \
     COREPACK_HOME=/opt/corepack \
