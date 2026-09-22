@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle, 1st January 2024//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_240101.dtd">
+<PubmedArticleSet>
+<PubmedArticle>
+  <MedlineCitation Status="MEDLINE" Owner="NLM">
+    <PMID Version="1">31234567</PMID>
+    <Article PubModel="Print">
+      <Journal>
+        <ISSN IssnType="Electronic">1365-2648</ISSN>
+        <JournalIssue CitedMedium="Internet">
+          <Volume>75</Volume><Issue>4</Issue>
+          <PubDate><Year>2019</Year><Month>Apr</Month></PubDate>
+        </JournalIssue>
+        <Title>Journal of advanced nursing</Title>
+        <ISOAbbreviation>J Adv Nurs</ISOAbbreviation>
+      </Journal>
+      <ArticleTitle>Rotating night shifts and sleep quality among hospital nurses: a prospective cohort study.</ArticleTitle>
+      <Pagination><MedlinePgn>812-824</MedlinePgn></Pagination>
+      <ELocationID EIdType="doi" ValidYN="Y">10.1111/jan.13894</ELocationID>
+      <Abstract>
+        <AbstractText Label="AIM">To examine whether rotating night shifts affect sleep quality.</AbstractText>
+        <AbstractText Label="METHODS">We followed 1204 nurses for twelve months. Sleep was measured with the PSQI&#x2019;s global score.</AbstractText>
+      </Abstract>
+      <AuthorList CompleteYN="Y">
+        <Author ValidYN="Y"><LastName>Smith</LastName><ForeName>Jane A</ForeName><Initials>JA</Initials></Author>
+        <Author ValidYN="Y"><LastName>Chowdhury</LastName><ForeName>Sara</ForeName><Initials>S</Initials></Author>
+      </AuthorList>
+      <Language>eng</Language>
+      <PublicationTypeList>
+        <PublicationType UI="D016428">Journal Article</PublicationType>
+        <PublicationType UI="D016448">Multicenter Study</PublicationType>
+      </PublicationTypeList>
+    </Article>
+    <MeshHeadingList>
+      <MeshHeading><DescriptorName UI="D006801" MajorTopicYN="N">Humans</DescriptorName></MeshHeading>
+      <MeshHeading><DescriptorName UI="D007319" MajorTopicYN="Y">Sleep Initiation and Maintenance Disorders</DescriptorName></MeshHeading>
+    </MeshHeadingList>
+    <KeywordList Owner="NOTNLM"><Keyword MajorTopicYN="N">shift work</Keyword></KeywordList>
+  </MedlineCitation>
+  <PubmedData>
+    <ArticleIdList>
+      <ArticleId IdType="pubmed">31234567</ArticleId>
+      <ArticleId IdType="pmc">PMC6612345</ArticleId>
+      <ArticleId IdType="doi">10.1111/jan.13894</ArticleId>
+    </ArticleIdList>
+  </PubmedData>
+</PubmedArticle>
+<PubmedArticle>
+  <MedlineCitation Status="PubMed-not-MEDLINE" Owner="NLM">
+    <PMID Version="1">31234568</PMID>
+    <Article PubModel="Electronic">
+      <Journal><Title>Sleep Health</Title><JournalIssue><PubDate><MedlineDate>2020 Jun-Jul</MedlineDate></PubDate></JournalIssue></Journal>
+      <ArticleTitle>Napping strategies for night shift workers.</ArticleTitle>
+    </Article>
+  </MedlineCitation>
+</PubmedArticle>
+</PubmedArticleSet>

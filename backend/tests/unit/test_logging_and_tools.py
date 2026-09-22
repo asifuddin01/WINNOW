@@ -1,6 +1,7 @@
 import json
 import logging
 from collections.abc import Iterator
+from typing import Any
 
 import pytest
 import structlog
@@ -47,8 +48,11 @@ async def test_worker_ping_job() -> None:
 
 
 async def test_worker_lifecycle_hooks_run() -> None:
-    await worker.startup({})
-    await worker.shutdown({})
+    """Startup opens the database, Redis and storage the jobs need; shutdown closes them."""
+    context: dict[str, Any] = {}
+    await worker.startup(context)
+    assert {"engine", "sessionmaker", "events", "storage"} <= set(context)
+    await worker.shutdown(context)
 
 
 def test_worker_settings_register_jobs() -> None:

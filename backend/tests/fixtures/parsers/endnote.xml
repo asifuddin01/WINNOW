@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xml><records>
+<record>
+  <database name="MyLibrary.enl" path="C:\Users\me\MyLibrary.enl">MyLibrary.enl</database>
+  <ref-type name="Journal Article">17</ref-type>
+  <contributors><authors>
+    <author><style face="normal" font="default" size="100%">Smith, Jane A.</style></author>
+    <author><style face="normal" font="default" size="100%">Chowdhury, Sara</style></author>
+  </authors></contributors>
+  <titles>
+    <title><style face="normal">Rotating night shifts and sleep quality among hospital nurses</style></title>
+    <secondary-title>Journal of Advanced Nursing</secondary-title>
+  </titles>
+  <periodical><full-title>Journal of Advanced Nursing</full-title></periodical>
+  <pages>812-824</pages><volume>75</volume><number>4</number>
+  <keywords><keyword>nurses</keyword><keyword>shift work</keyword></keywords>
+  <dates><year>2019</year></dates>
+  <isbn>0309-2402</isbn>
+  <accession-num>31234567</accession-num>
+  <electronic-resource-num>10.1111/jan.13894</electronic-resource-num>
+  <abstract>AIM: To examine whether rotating night shifts affect sleep quality.</abstract>
+  <urls><related-urls><url>https://onlinelibrary.wiley.com/doi/10.1111/jan.13894</url></related-urls></urls>
+</record>
+</records></xml>
