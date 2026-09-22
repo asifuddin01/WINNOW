@@ -7,7 +7,8 @@ All notable changes, one section per build phase (guide Section 17).
 ### Changed (2026-09-22)
 - Softer colours for long screening sessions: a matte, low-glare warm paper light theme and
   a blue-grey "night slate" dark theme, with no pure white or pure black. Body text contrast
-  went from 20:1 to 12.7:1 (light) and from 19:1 to 13:1 (dark), still above WCAG AAA.
+  went from 20:1 to 12.7:1 (light) and from 19:1 to 14:1 (dark), still above WCAG AAA. Dark-mode text is a touch
+  heavier (weight 430) so it stays crisp.
 
 ### Added
 - Repository structure from guide Section 5, AGPL-3.0 license, README, `docs/decisions.md`.

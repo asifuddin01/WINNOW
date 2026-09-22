@@ -41,8 +41,9 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   uses pure white or pure black. Light is a matte, low-glare warm paper (`#EEEAE5`) with
   charcoal text (`#2A2520`) at 12.7:1 instead of 20:1; cards sit barely above the page so
   nothing glows (a brighter `#F9F6F2` paper still felt like too much light). Dark is "night slate", a soft blue-grey
-  (`#131B25`) with warm off-white text (`#E2DFD8`) at 13:1 instead of 19:1, and a muted
-  teal accent that does not glow. The neutrals are warm in light mode, not the slate the
+  (`#131B25`) with clear off-white text (`#EBE9E4`) at 14:1 instead of 19:1, secondary text
+  at 9:1, a slightly heavier text weight (430) because light-on-dark text reads thinner,
+  and a muted teal accent that does not glow. The neutrals are warm in light mode, not the slate the
   guide's branding note suggests. A flat warm grey dark theme felt "robotic", and a teal-green
   one was rejected. Every text colour still meets WCAG AA, body text meets AAA, and the
   Playwright axe checks cover both themes.
