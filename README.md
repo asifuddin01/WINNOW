@@ -5,8 +5,8 @@
 Winnow is a free, open, self-hostable platform for systematic, scoping and rapid reviews:
 import → deduplicate → screen → resolve → full text → extract → appraise → report (PRISMA 2020).
 
-> **Status:** Phase 0 (foundation). The stack, app shell, health checks and CI are in place;
-> accounts arrive in Phase 1 and reviews in Phase 2. See [CHANGELOG.md](CHANGELOG.md) and the
+> **Status:** Phase 1 (accounts and security). Sign-up, sign-in, two-factor authentication
+> and the security core are in place; reviews arrive in Phase 2. See [CHANGELOG.md](CHANGELOG.md) and the
 > build plan in [WINNOW_BUILD_GUIDE.md](WINNOW_BUILD_GUIDE.md), Section 17.
 
 ## Run it
@@ -17,14 +17,22 @@ You need **Docker** (with Compose v2) and **make**. On Windows, use WSL2.
 make dev
 ```
 
-Then open <http://localhost:8080>. The first run builds the images, which takes a few minutes.
-`make dev` creates `.env` from `.env.example` with fresh random keys if you do not have one yet.
+Then open <http://localhost:8080> (use that address, not 127.0.0.1: writes are accepted
+only from the configured origin) and create an account. Emails, such as the confirmation
+link, land in Mailpit at <http://localhost:8025>. The first run builds the images, which
+takes a few minutes. `make dev` creates `.env` from `.env.example` with fresh random keys if
+you do not have one yet.
+
+Running Winnow for yourself only? Set `WINNOW_SINGLE_USER=true` in `.env`: the first visit
+creates your administrator account, with no email step. For servers, create administrators
+with `make create-admin email=you@example.org name="Your Name"`.
 
 | Command | What it does |
 |---|---|
 | `make dev` | Start everything in the foreground: Caddy, API, worker, web, Postgres, Redis |
 | `make up` / `make down` | Start in the background (waits until healthy) / stop |
 | `make migrate` | Apply database migrations |
+| `make create-admin email=… name="…"` | Create a verified administrator (asks for the password) |
 | `make revision m="…"` | Autogenerate a migration from model changes |
 | `make test` | Backend (pytest) and frontend (Vitest) tests, with coverage |
 | `make lint` / `make typecheck` | ruff + ESLint + formatting / mypy `--strict` + tsc |
@@ -47,6 +55,7 @@ For editor support you can also install the dependencies locally: `uv sync` in `
 | `worker` | ARQ background jobs (imports, dedup, ranking, exports in later phases) |
 | `web` | React 19 + Vite dev server with hot reload |
 | `db` / `redis` | PostgreSQL 16 and Redis 7, reachable only on the internal network |
+| `mailpit` | Catches every email in development: <http://localhost:8025> |
 
 Health: `GET /api/v1/healthz` (process is up) and `GET /api/v1/readyz` (database and Redis reachable).
 

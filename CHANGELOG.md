@@ -2,6 +2,33 @@
 
 All notable changes, one section per build phase (guide Section 17).
 
+## Phase 1: Accounts and security (2026-09-22)
+
+### Added
+- Accounts: register, confirm email, sign in, sign out, sign out everywhere, forgotten and
+  changed passwords, and a first-run setup page for single-user mode. `make create-admin`.
+- Argon2id password hashing (64 MiB, 3 passes), rehashed on sign-in when parameters change;
+  12-character minimum and a k-anonymity breach check.
+- Redis sessions in `__Host-` cookies (HttpOnly, Secure, SameSite=Lax), 7-day idle and
+  30-day absolute expiry, a new id on every sign-in and privilege change, a device list with
+  per-device sign-out.
+- CSRF protection on every write: a signed token bound to the session plus an Origin check.
+- TOTP two-factor authentication with QR setup, encrypted secrets, replay protection and ten
+  single-use recovery codes that can be regenerated.
+- Rate limits (sign-in, registration, password reset, verification, general API) with
+  `Retry-After`, and a 15-minute lock after 10 failed sign-ins, emailed to the owner.
+- Append-only audit log (a trigger rejects UPDATE, DELETE and TRUNCATE) recording every
+  sign-in, failure, lock, registration, verification, password and 2FA change.
+- Security headers in Caddy: the Content-Security-Policy from guide 12.5, HSTS over HTTPS,
+  and a deny-all policy for API responses.
+- Email through the worker (SMTP with STARTTLS or TLS); Mailpit catches it in development.
+- Sign-in, registration, confirmation, password reset and setup pages; an account page for
+  the password, two-factor and devices; a user menu; a "confirm your email" banner.
+- CI: gitleaks, pip-audit, pnpm audit, semgrep and Trivy; Dependabot.
+- Tests: security suite from guide 12.10 (fixation, CSRF, lockout, rate limits, sign-in
+  required on every private route, 2FA replay, append-only audit, no secrets in logs), the
+  frontend auth flows, and a Playwright journey from registration through 2FA and reset.
+
 ## Phase 0: Foundation (2026-09-21)
 
 ### Changed (2026-09-22)
@@ -50,8 +77,5 @@ All notable changes, one section per build phase (guide Section 17).
   `seed-large` placeholders until records exist.
 
 ### Not yet (planned)
-- Content-Security-Policy and HSTS, CSRF, sessions and rate limits: Phase 1.
-- Dependency and secret scanning in CI (pip-audit, pnpm audit, semgrep, gitleaks, Trivy):
-  Phase 1, with the rest of the security work.
 - ClamAV and MinIO services and `make local`: Phases 3 and 7, when uploads exist.
 - Firefox and WebKit in Playwright: with the full user journey.

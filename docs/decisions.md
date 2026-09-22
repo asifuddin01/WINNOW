@@ -99,3 +99,83 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
 ### Legal
 - **License: AGPL-3.0**, as guide 19.3 recommends, so public modified deployments share
   their changes.
+
+## Phase 1
+
+### Accounts
+- **Single-user mode is a first-run setup page,** not an account created behind the
+  scenes. The guide says the mode "auto-creates one admin", but an automatic account needs
+  a way to hand over its password, and the guide forbids passwords in logs. So while no
+  account exists, `/setup` creates the administrator (already verified, no email) and signs
+  them in; after that, setup and registration are closed. `make create-admin` creates
+  verified administrators in any mode, for deployments.
+- **Registration, sign-in and password reset never reveal whether an email has an
+  account.** Registering an existing address answers exactly like a new one and emails the
+  owner instead. Unknown emails still spend an Argon2 verification, so they take as long as
+  a wrong password.
+- **Locked accounts get the same "incorrect" answer,** and the owner is emailed when the
+  lock starts (10 failures, 15 minutes). Wrong authenticator codes count toward the lock.
+- **Unverified accounts can sign in** (guide 8.1 only bars them from joining projects); a
+  banner offers a new link.
+- **Email links need a click.** `/verify/{token}` asks the person to press a button:
+  mail security scanners open links, and a link that confirmed itself on load would be
+  spent before its owner saw it. Reset links need a new password anyway.
+- **Password rules:** 12 to 256 characters, not the email address, and not in a known
+  breach (Have I Been Pwned range API, padded, only 5 hex characters of the SHA-1 leave the
+  server; fails open when the service is unreachable; `PASSWORD_BREACH_CHECK=false` offline).
+  A show-password toggle replaces a "confirm password" box.
+
+### Sessions and CSRF
+- **Redis stores sessions under the SHA-256 of the cookie value,** so a Redis dump does not
+  hand out working cookies. A per-user index lists devices and supports "sign out everywhere".
+  Idle expiry is the key's TTL (7 days); absolute expiry (30 days) is checked on read.
+- **New session id on sign-in, password change, and turning 2FA on or off.**
+- **CSRF: signed double-submit plus Origin.** A random nonce lives in an HttpOnly
+  `__Host-winnow_csrf` cookie; the token is HMAC(SECRET_KEY, nonce + session), fetched from
+  `/auth/csrf` and kept in memory. Every write under `/api/v1` needs the token and an
+  Origin (or Referer) equal to PUBLIC_URL's origin. Development must therefore be opened at
+  PUBLIC_URL (http://localhost:8080), not at 127.0.0.1.
+- **Secure cookies over plain HTTP work only on localhost,** which browsers treat as a
+  secure context. Phone testing over a LAN address needs HTTPS.
+- **Session expiry sends you to sign in and back.** Guide 11.6 asks for a modal that keeps
+  the page; that belongs with screening (Phase 5), where unsaved work exists.
+
+### Two-factor
+- **TOTP secrets are encrypted with AES-256-GCM,** the user id as associated data, so a
+  ciphertext copied onto another account does not decrypt. The last accepted time step is
+  stored and codes are claimed with a conditional UPDATE, so a code cannot be replayed, not
+  even by two racing requests.
+- **Recovery codes are HMAC-SHA256 hashes, not Argon2.** They carry ~50 bits of entropy,
+  are single-use and rate-limited; checking ten Argon2 hashes per sign-in would be slow for
+  no gain. They are removed with an atomic `array_remove`.
+- **Owners can be required to use 2FA** once projects exist (Phase 2); the instance setting
+  arrives with the admin panel.
+
+### Rate limits and audit
+- **Sign-in limits count failed attempts only.** Guide 12.6 sets 5 per minute per IP and
+  email and 20 per hour per IP. Counting every attempt would charge a two-step sign-in
+  twice and throttle a university's worth of people behind one NAT address; the end-to-end
+  test hit exactly that. Wrong passwords and wrong codes count; successes and the "enter
+  your code" step do not. The limit is checked before any password work.
+- **Sliding windows in Redis via one Lua script;** keys hold a hash of the IP or email, not
+  the value. Limits from guide 12.6; verification and reset submissions share a 20/hour/IP
+  limit so a mistyped password does not lock someone out of their own link.
+- **The client IP is Caddy's X-Forwarded-For.** Caddy ignores the header from clients, and
+  the API is reachable only through Caddy, so uvicorn trusts it (`--proxy-headers`).
+- **The audit log is append-only by trigger,** which also binds the database owner the app
+  uses in development. The separate production role with INSERT and SELECT only (guide
+  12.8) comes with the production compose file in Phase 9.
+
+### Headers, email, scanning
+- **CSP from guide 12.5 on the app; `default-src 'none'` on the API.** Development adds
+  `'unsafe-inline'` to `script-src` for Vite's hot-reload preamble (the `CSP_SCRIPT_SRC`
+  variable); the production build has no inline scripts. HSTS is sent only over HTTPS. The
+  development-only Swagger UI gets its own policy for jsDelivr.
+- **Development email goes to Mailpit** (http://localhost:8025), whatever `.env` says, so
+  links can be followed without real SMTP and never appear in logs.
+- **CI security scans:** gitleaks over the whole history (with an allowlist of the exact
+  fixture keys tests use), pip-audit, pnpm audit, semgrep (OWASP, Python, TypeScript and
+  React rules), Trivy on the production images (fixable HIGH and CRITICAL). Dependabot
+  opens weekly grouped updates. The one semgrep suppression is SHA-1 in the breach check,
+  which the Pwned Passwords protocol requires.
+
