@@ -178,4 +178,9 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   React rules), Trivy on the production images (fixable HIGH and CRITICAL). Dependabot
   opens weekly grouped updates. The one semgrep suppression is SHA-1 in the breach check,
   which the Pwned Passwords protocol requires.
+- **The production web image serves the SPA with unprivileged nginx,** not Caddy. Trivy
+  found fixable HIGH CVEs in the Go libraries inside `caddy:2-alpine`; a static file
+  server needs no Go runtime to keep patched, and this image runs as a non-root user. The
+  edge proxy is still Caddy; the production compose file (Phase 9) must pin a Caddy build
+  that scans clean.
 

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Winnow web image. Targets: `dev` (Vite dev server) and `prod` (static build served by Caddy).
+# Winnow web image. Targets: `dev` (Vite dev server) and `prod` (static build served by nginx).
 
 FROM node:22-alpine AS base
 # COREPACK_HOME outside /root, so the non-root dev user can run the pinned pnpm offline.
@@ -26,7 +26,9 @@ FROM base AS build
 COPY . .
 RUN pnpm run build
 
-FROM caddy:2-alpine AS prod
-COPY docker/Caddyfile /etc/caddy/Caddyfile
-COPY --from=build /app/dist /srv
+# nginx, not Caddy: a static file server needs no Go runtime to keep patched, and this
+# image runs as a non-root user out of the box.
+FROM nginxinc/nginx-unprivileged:1.31-alpine AS prod
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 8080
