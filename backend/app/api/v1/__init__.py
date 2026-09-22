@@ -3,9 +3,10 @@
 from fastapi import APIRouter, Depends
 
 from app.api.deps import verify_csrf
-from app.api.v1 import auth, health
+from app.api.v1 import auth, google, health
 
 # CSRF is checked for every write under /api/v1 (guide 12.1); reads pass straight through.
 api_router = APIRouter(dependencies=[Depends(verify_csrf)])
 api_router.include_router(health.router)
 api_router.include_router(auth.router)
+api_router.include_router(google.router)

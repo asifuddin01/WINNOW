@@ -2,6 +2,14 @@
 
 from app.models.audit import AuditLog
 from app.models.base import Base
-from app.models.user import EmailToken, EmailTokenPurpose, User
+from app.models.user import NO_PASSWORD, EmailToken, EmailTokenPurpose, User, UserIdentity
 
-__all__ = ["AuditLog", "Base", "EmailToken", "EmailTokenPurpose", "User"]
+__all__ = [
+    "NO_PASSWORD",
+    "AuditLog",
+    "Base",
+    "EmailToken",
+    "EmailTokenPurpose",
+    "User",
+    "UserIdentity",
+]

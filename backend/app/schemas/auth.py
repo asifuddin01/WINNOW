@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field
 
 Password = str  # length rules live in the account service, which explains them to people
 PASSWORD_FIELD = Field(min_length=1, max_length=256)
@@ -51,8 +51,6 @@ class DisableTwoFactorRequest(BaseModel):
 
 
 class UserOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     id: uuid.UUID
     name: str
     email: str
@@ -60,6 +58,8 @@ class UserOut(BaseModel):
     totp_enabled: bool
     recovery_codes_left: int
     is_instance_admin: bool
+    has_password: bool
+    google_linked: bool
     created_at: datetime
 
 
@@ -81,6 +81,7 @@ class AuthOptions(BaseModel):
     single_user: bool
     needs_setup: bool
     email_enabled: bool
+    google_enabled: bool
 
 
 class SessionOut(BaseModel):
@@ -104,3 +105,9 @@ class RecoveryCodesOut(BaseModel):
 
 class TwoFactorEnabled(RecoveryCodesOut, CsrfOut):
     pass
+
+
+class GoogleSignedIn(SignedIn):
+    """A Google sign-in finished with a second factor; `redirect` is where it started."""
+
+    redirect: str

@@ -5,11 +5,25 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import BigInteger, Boolean, DateTime, Enum, ForeignKey, Integer, LargeBinary, Text
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    LargeBinary,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import ARRAY, CITEXT, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, CreatedAt, Timestamps, UUIDPrimaryKey
+
+# Stored instead of a hash for accounts created through Google. It is not a valid Argon2
+# hash, so password sign-in fails closed until the owner sets a password by email link.
+NO_PASSWORD = "!"  # noqa: S105 - a marker, not a password
 
 
 class User(UUIDPrimaryKey, Timestamps, Base):
@@ -44,6 +58,11 @@ class User(UUIDPrimaryKey, Timestamps, Base):
     def recovery_codes_left(self) -> int:
         return len(self.recovery_codes_hash or [])
 
+    @property
+    def has_password(self) -> bool:
+        """False for accounts created through Google until they set one by email link."""
+        return self.password_hash != NO_PASSWORD
+
 
 class EmailTokenPurpose(enum.StrEnum):
     VERIFY = "verify"
@@ -69,3 +88,18 @@ class EmailToken(UUIDPrimaryKey, CreatedAt, Base):
     token_hash: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class UserIdentity(UUIDPrimaryKey, CreatedAt, Base):
+    """An outside account (today: Google) that can sign in as a Winnow user."""
+
+    __tablename__ = "user_identities"
+    __table_args__ = (UniqueConstraint("provider", "subject"),)
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    provider: Mapped[str] = mapped_column(Text, nullable=False)
+    # The provider's stable id for the person ("sub"); emails can change, this cannot.
+    subject: Mapped[str] = mapped_column(Text, nullable=False)
+    email: Mapped[str] = mapped_column(CITEXT, nullable=False)

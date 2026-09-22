@@ -24,6 +24,7 @@ PASSWORD_RESET_PER_IP = Limit("password-reset-ip", 5, 3600)
 VERIFY_EMAIL_PER_IP = Limit("verify-email-ip", 20, 3600)
 RESEND_VERIFICATION_PER_USER = Limit("resend-verification", 5, 3600)
 API_PER_USER = Limit("api-user", 600, 60)
+GOOGLE_PER_IP = Limit("google-ip", 30, 3600)  # sign-ins started with Google
 
 # Atomically: drop hits older than the window, then either record this hit or report how
 # long until the oldest one expires. Returns {allowed, retry_after_ms}.

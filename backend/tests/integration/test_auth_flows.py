@@ -29,6 +29,7 @@ async def test_options_describe_the_instance(db_client: AsyncClient) -> None:
         "single_user": False,
         "needs_setup": False,
         "email_enabled": False,
+        "google_enabled": False,
     }
 
 

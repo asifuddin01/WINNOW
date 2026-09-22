@@ -56,6 +56,10 @@ class Settings(BaseSettings):
     llm_base_url: AnyHttpUrl | None = None
     llm_model: str | None = None
 
+    # "Sign in with Google" (OpenID Connect). Both empty: the button is not offered.
+    google_client_id: str | None = None
+    google_client_secret: SecretStr | None = None
+
     max_upload_mb: int = Field(default=200, ge=1, le=10_000)
     session_idle_days: int = Field(default=7, ge=1, le=365)
     session_absolute_days: int = Field(default=30, ge=1, le=365)
@@ -137,6 +141,10 @@ class Settings(BaseSettings):
         default_port = {"http": 80, "https": 443}.get(url.scheme)
         port = "" if url.port in (None, default_port) else f":{url.port}"
         return f"{url.scheme}://{url.host}{port}"
+
+    @property
+    def google_enabled(self) -> bool:
+        return bool(self.google_client_id and self.google_client_secret)
 
     @property
     def email_enabled(self) -> bool:

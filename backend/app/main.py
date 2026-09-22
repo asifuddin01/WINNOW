@@ -12,6 +12,7 @@ from fastapi.routing import APIRoute
 
 from app import __version__
 from app.api.v1 import api_router
+from app.api.v1.google import FLOW_SECONDS, PENDING_SECONDS
 from app.config import Settings, get_settings
 from app.db import create_engine, create_sessionmaker
 from app.email.mailer import QueueMailer, UnconfiguredMailer
@@ -19,6 +20,7 @@ from app.errors import document_problem_responses, install_error_handlers
 from app.logging_config import configure_logging
 from app.middleware import RequestContextMiddleware
 from app.redis_client import create_redis
+from app.security.google import GoogleClient, OneTimeStore
 from app.security.passwords import Passwords
 from app.security.rate_limit import RateLimiter
 from app.security.sessions import SessionStore
@@ -63,6 +65,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.rate_limiter = RateLimiter(redis)
         app.state.passwords = Passwords(settings)
         app.state.mailer = QueueMailer(queue) if settings.email_enabled else UnconfiguredMailer()
+        app.state.google = (
+            GoogleClient(
+                http,
+                settings.google_client_id or "",
+                settings.google_client_secret.get_secret_value()
+                if settings.google_client_secret
+                else "",
+            )
+            if settings.google_enabled
+            else None
+        )
+        app.state.google_flows = OneTimeStore(redis, "google-flow", FLOW_SECONDS)
+        app.state.google_pending = OneTimeStore(redis, "google-2fa", PENDING_SECONDS)
         try:
             yield
         finally:
