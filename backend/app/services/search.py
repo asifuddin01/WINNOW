@@ -29,6 +29,8 @@ class Query:
     year_to: int | None = None
     doi: str | None = None
     pmid: str | None = None
+    labels: list[str] = field(default_factory=list)
+    types: list[str] = field(default_factory=list)
 
     def is_empty(self) -> bool:
         return not any(
@@ -41,6 +43,8 @@ class Query:
                 self.year_to,
                 self.doi,
                 self.pmid,
+                self.labels,
+                self.types,
             )
         )
 
@@ -55,6 +59,8 @@ def parse_query(raw: str) -> Query:
     year_to: int | None = None
     doi: str | None = None
     pmid: str | None = None
+    labels: list[str] = []
+    types: list[str] = []
 
     for match in _TOKEN.finditer((raw or "")[:MAX_QUERY]):
         negate, field_name, value, phrase, word = match.groups()
@@ -75,6 +81,10 @@ def parse_query(raw: str) -> Query:
                 doi = clean.lower()
             elif name == "pmid" and clean.isdigit():
                 pmid = clean
+            elif name == "label" and len(labels) < MAX_TERMS:
+                labels.append(clean)
+            elif name in {"type", "pt"} and len(types) < MAX_TERMS:
+                types.append(clean)
             else:  # an unknown field is just words
                 text_parts.append(f"{negate}{field_name}:{clean}")
             continue
@@ -97,6 +107,8 @@ def parse_query(raw: str) -> Query:
         year_to=year_to,
         doi=doi,
         pmid=pmid,
+        labels=labels,
+        types=types,
     )
 
 
