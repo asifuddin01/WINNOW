@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { CheckIcon, CircleDashedIcon, SettingsIcon, UsersIcon } from "lucide-react";
+import { CheckIcon, CircleDashedIcon, FileUpIcon, SettingsIcon, UsersIcon } from "lucide-react";
 
 import { criteriaQuery, keywordGroupsQuery, membersQuery, projectQuery } from "@/api/projects";
+import { facetsQuery } from "@/api/records";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Section } from "@/features/account/Section";
@@ -22,14 +23,21 @@ function Overview() {
   const { data: criteria = [] } = useQuery(criteriaQuery(pid));
   const { data: groups = [] } = useQuery(keywordGroupsQuery(pid));
   const { data: members } = useQuery(membersQuery(pid));
+  const { data: facets } = useQuery(facetsQuery(pid));
   if (!project) return null;
 
   const team = members?.items ?? [];
   const canEdit = project.permissions.includes("edit_setup");
+  const records = facets?.total ?? 0;
   const checklist = [
     { done: criteria.length > 0, label: "Screening criteria", to: "/p/$pid/settings/criteria" },
     { done: groups.length > 0, label: "Keywords to highlight", to: "/p/$pid/settings/keywords" },
     { done: team.length > 1, label: "Reviewers invited", to: "/p/$pid/settings/team" },
+    {
+      done: records > 0,
+      label: records > 0 ? `${records.toLocaleString()} records imported` : "Records imported",
+      to: "/p/$pid/import",
+    },
   ] as const;
 
   return (
@@ -43,18 +51,31 @@ function Overview() {
             <Badge variant="secondary">You are {ROLES[project.membership.role]}</Badge>
           </p>
         </div>
-        <Button asChild variant="outline">
-          <Link to="/p/$pid/settings" params={{ pid }}>
-            <SettingsIcon aria-hidden="true" /> Settings
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {canEdit && (
+            <Button asChild>
+              <Link to="/p/$pid/import" params={{ pid }}>
+                <FileUpIcon aria-hidden="true" /> Import records
+              </Link>
+            </Button>
+          )}
+          <Button asChild variant="outline">
+            <Link to="/p/$pid/settings" params={{ pid }}>
+              <SettingsIcon aria-hidden="true" /> Settings
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {project.description && <p className="max-w-[75ch]">{project.description}</p>}
 
       <Section
         title="Getting ready"
-        description="Records and screening arrive once your search results are imported."
+        description={
+          records > 0
+            ? "Screening opens once the records have been checked for duplicates."
+            : "Import your search results to fill the review."
+        }
       >
         <ul className="grid gap-2">
           {checklist.map((item) => (

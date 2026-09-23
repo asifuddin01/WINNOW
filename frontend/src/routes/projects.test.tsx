@@ -91,7 +91,8 @@ describe("the review overview", () => {
     expect(await screen.findByRole("heading", { level: 1, name: PROJECT.title })).toBeVisible();
     expect(screen.getByText("Systematic review")).toBeVisible();
     const checklist = sectionFor(screen.getByRole("heading", { name: "Getting ready" }));
-    expect(within(checklist).getAllByText("still to do")).toHaveLength(3);
+    expect(within(checklist).getAllByText("still to do")).toHaveLength(4);
+    expect(within(checklist).getByText("Records imported")).toBeVisible();
     const main = within(screen.getByRole("main"));
     expect(main.getByRole("link", { name: "Settings" })).toHaveAttribute(
       "href",

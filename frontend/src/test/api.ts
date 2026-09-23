@@ -84,6 +84,16 @@ export function projectRoutes(project: Project = PROJECT, members: Member[] = [O
     [`GET ${base}/keyword-groups`]: [],
     [`GET ${base}/exclusion-reasons`]: [],
     [`GET ${base}/labels`]: [],
+    [`GET ${base}/records`]: { items: [], next_cursor: null, total: 0, total_is_exact: true },
+    [`GET ${base}/records/facets`]: {
+      title_abstract: [],
+      full_text: [],
+      years: [],
+      imports: [],
+      duplicates: 0,
+      total: 0,
+    },
+    [`GET ${base}/imports`]: [],
   };
 }
 
@@ -109,7 +119,13 @@ export const OPTIONS = {
 } as const;
 
 type Reply = Response | object | (() => Response | object);
-type Handler = (request: Request) => Reply | Promise<Reply>;
+type Handler = (request: RecordedRequest) => Reply | Promise<Reply>;
+
+/** What a test can ask about a call the app made. */
+export interface RecordedRequest extends Request {
+  /** The form data, when the call was a file upload rather than JSON. */
+  form?: FormData;
+}
 
 export function json(body: unknown, status = 200): Response {
   return new Response(status === 204 ? null : JSON.stringify(body), {
@@ -145,10 +161,10 @@ export function mockApi(routes: Record<string, Handler | Reply> = {}) {
     "GET /api/v1/projects": { items: [], next_cursor: null },
     ...routes,
   };
-  const requests: Request[] = [];
+  const requests: RecordedRequest[] = [];
   const fetch = vi.fn<typeof globalThis.fetch>(async (input, init) => {
-    const request = input instanceof Request ? input : new Request(input, init);
-    requests.push(request.clone());
+    const request = record(input, init);
+    requests.push(request);
     const route = table[`${request.method} ${new URL(request.url).pathname}`];
     if (route === undefined) return problemResponse(404, { title: "Not Found" });
     let reply = typeof route === "function" ? await (route as Handler)(request) : route;
@@ -163,6 +179,24 @@ export function mockApi(routes: Record<string, Handler | Reply> = {}) {
     calls: (key: string) =>
       requests.filter((r) => `${r.method} ${new URL(r.url).pathname}` === key),
   };
+}
+
+/**
+ * The call as something a test can read twice. A Request cannot be built around jsdom's
+ * FormData, so an upload is recorded without its body and the form is kept beside it.
+ */
+function record(input: RequestInfo | URL, init?: RequestInit): RecordedRequest {
+  if (init?.body instanceof FormData) {
+    const url = input instanceof Request ? input.url : input.toString();
+    const request: RecordedRequest = new Request(url, {
+      method: init.method ?? "POST",
+      headers: init.headers,
+    });
+    request.form = init.body;
+    return request;
+  }
+  const request = input instanceof Request ? input : new Request(input, init);
+  return request.clone();
 }
 
 /** Replace fetch for the rest of the test with one that always gives `response()`. */

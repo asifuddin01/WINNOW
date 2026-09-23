@@ -36,3 +36,25 @@ export function wizardSearch(search: Record<string, unknown>): {
 export function inviteSearch(search: Record<string, unknown>): { invite?: string } {
   return typeof search.invite === "string" ? { invite: search.invite } : {};
 }
+
+const RECORD_SORTS = ["added", "oldest", "year", "year_asc", "title", "relevance"] as const;
+const TA_STATUSES = ["pending", "included", "excluded", "maybe", "conflict"] as const;
+
+/** The records table keeps its search, filters and order in the URL, so a link shares them. */
+export function recordsSearch(search: Record<string, unknown>): {
+  q?: string;
+  status?: (typeof TA_STATUSES)[number];
+  batch?: string;
+  duplicates?: boolean;
+  sort?: (typeof RECORD_SORTS)[number];
+} {
+  const status = TA_STATUSES.find((value) => value === search.status);
+  const sort = RECORD_SORTS.find((value) => value === search.sort);
+  return {
+    ...(typeof search.q === "string" && search.q ? { q: search.q.slice(0, 500) } : {}),
+    ...(status ? { status } : {}),
+    ...(typeof search.batch === "string" ? { batch: search.batch } : {}),
+    ...(search.duplicates === true || search.duplicates === "true" ? { duplicates: true } : {}),
+    ...(sort ? { sort } : {}),
+  };
+}

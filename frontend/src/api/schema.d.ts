@@ -824,6 +824,169 @@ export interface paths {
         patch: operations["update_label"];
         trace?: never;
     };
+    "/api/v1/projects/{pid}/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Imports
+         * @description Every import in this review, newest first (guide 8.3).
+         */
+        get: operations["list_imports"];
+        put?: never;
+        /**
+         * Upload Import
+         * @description Store an export and work out what it is. Nothing is imported until you confirm.
+         */
+        post: operations["upload_import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/imports/{bid}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview Import
+         * @description The first records as Winnow reads them, and for CSV the column mapping to confirm.
+         */
+        get: operations["preview_import"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/imports/{bid}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Import
+         * @description Start the import. It runs in the worker; watch /events for progress.
+         */
+        post: operations["confirm_import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/imports/{bid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Undo Import
+         * @description Undo an import: the batch and the records it brought in go.
+         */
+        delete: operations["undo_import"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Project Events
+         * @description Server-sent events for this review: import progress today, more later (guide 10).
+         *
+         *     Only members reach this, and events carry counts, never record contents.
+         */
+        get: operations["project_events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Records
+         * @description The records table: filtered, sorted and paged.
+         */
+        get: operations["list_records"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/records/facets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Record Facets
+         * @description How many records sit behind each filter.
+         */
+        get: operations["record_facets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/records/{rid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Record */
+        get: operations["get_record"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/invites/{token}": {
         parameters: {
             query?: never;
@@ -903,6 +1066,25 @@ export interface components {
             /** Owner Two Factor Required */
             owner_two_factor_required: boolean;
         };
+        /** Body_upload_import */
+        Body_upload_import: {
+            /**
+             * File
+             * @description A search export
+             */
+            file: string;
+            /** Source Name */
+            source_name?: string | null;
+            /**
+             * Database Name
+             * @default Other
+             */
+            database_name: string;
+            /** Search Date */
+            search_date?: string | null;
+            /** Search String */
+            search_string?: string | null;
+        };
         /**
          * Capability
          * @enum {string}
@@ -919,6 +1101,30 @@ export interface components {
         CodeRequest: {
             /** Code */
             code: string;
+        };
+        /** ConfirmImport */
+        ConfirmImport: {
+            /** Source Name */
+            source_name?: string | null;
+            /** Database Name */
+            database_name?: string | null;
+            /** Search Date */
+            search_date?: string | null;
+            /** Search String */
+            search_string?: string | null;
+            /** Column Mapping */
+            column_mapping?: {
+                [key: string]: string;
+            } | null;
+        };
+        /** Count */
+        Count: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+            /** Count */
+            count: number;
         };
         /** CriterionCreate */
         CriterionCreate: {
@@ -978,6 +1184,16 @@ export interface components {
             email: string;
         };
         /**
+         * FileFormat
+         * @enum {string}
+         */
+        FileFormat: "ris" | "bib" | "nbib" | "pubmed_xml" | "endnote_xml" | "csv";
+        /**
+         * FullTextStatus
+         * @enum {string}
+         */
+        FullTextStatus: "not_eligible" | "pending" | "included" | "excluded" | "conflict";
+        /**
          * GoogleSignedIn
          * @description A Google sign-in finished with a second factor; `redirect` is where it started.
          */
@@ -988,6 +1204,85 @@ export interface components {
             /** Redirect */
             redirect: string;
         };
+        /** ImportAccepted */
+        ImportAccepted: {
+            batch: components["schemas"]["ImportOut"];
+            /** Job Id */
+            job_id: string | null;
+        };
+        /** ImportOut */
+        ImportOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Filename */
+            filename: string;
+            file_format: components["schemas"]["FileFormat"];
+            status: components["schemas"]["ImportStatus"];
+            /** Source Name */
+            source_name: string;
+            /** Database Name */
+            database_name: string;
+            /** Search Date */
+            search_date: string | null;
+            /** Search String */
+            search_string: string | null;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Total */
+            total: number;
+            /** Imported */
+            imported: number;
+            /** Problems */
+            problems: components["schemas"]["ImportProblem"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * ImportPreview
+         * @description What the upload found, before anything is written to the review.
+         */
+        ImportPreview: {
+            batch: components["schemas"]["ImportOut"];
+            /** Records */
+            records: components["schemas"]["RecordPreview"][];
+            /** Problems */
+            problems: components["schemas"]["ImportProblem"][];
+            /** Columns */
+            columns?: string[];
+            /** Suggested Mapping */
+            suggested_mapping?: {
+                [key: string]: string;
+            };
+            /** Sample Rows */
+            sample_rows?: {
+                [key: string]: string;
+            }[];
+        };
+        /** ImportProblem */
+        ImportProblem: {
+            /** At */
+            at: number;
+            /** Unit */
+            unit: string;
+            /** Reason */
+            reason: string;
+        };
+        /**
+         * ImportStatus
+         * @enum {string}
+         */
+        ImportStatus: "queued" | "parsing" | "done" | "failed";
         /** InviteAccepted */
         InviteAccepted: {
             /**
@@ -1573,6 +1868,149 @@ export interface components {
             /** Position */
             position?: number | null;
         };
+        /** RecordDetail */
+        RecordDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string | null;
+            /** Authors */
+            authors: string[];
+            /** Year */
+            year: number | null;
+            /** Journal */
+            journal: string | null;
+            /** Doi */
+            doi: string | null;
+            /** Pmid */
+            pmid: string | null;
+            ta_final: components["schemas"]["TitleAbstractStatus"];
+            ft_final: components["schemas"]["FullTextStatus"];
+            /** Is Duplicate */
+            is_duplicate: boolean;
+            /** Relevance Score */
+            relevance_score: number | null;
+            /** Import Batch Id */
+            import_batch_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Abstract */
+            abstract: string | null;
+            /** Volume */
+            volume: string | null;
+            /** Issue */
+            issue: string | null;
+            /** Pages */
+            pages: string | null;
+            /** Pmcid */
+            pmcid: string | null;
+            /** Isbn */
+            isbn: string | null;
+            /** Url */
+            url: string | null;
+            /** Keywords */
+            keywords: string[];
+            /** Language */
+            language: string | null;
+            /** Publication Type */
+            publication_type: string[];
+            /** Duplicate Of */
+            duplicate_of: string | null;
+            /** Raw */
+            raw: {
+                [key: string]: unknown;
+            };
+            /** Source */
+            source: string | null;
+        };
+        /**
+         * RecordFacets
+         * @description Counts for the filter panel (guide 10).
+         */
+        RecordFacets: {
+            /** Title Abstract */
+            title_abstract: components["schemas"]["Count"][];
+            /** Full Text */
+            full_text: components["schemas"]["Count"][];
+            /** Years */
+            years: components["schemas"]["Count"][];
+            /** Imports */
+            imports: components["schemas"]["Count"][];
+            /** Duplicates */
+            duplicates: number;
+            /** Total */
+            total: number;
+        };
+        /**
+         * RecordOut
+         * @description A row in the records table; the detail view adds the rest.
+         */
+        RecordOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string | null;
+            /** Authors */
+            authors: string[];
+            /** Year */
+            year: number | null;
+            /** Journal */
+            journal: string | null;
+            /** Doi */
+            doi: string | null;
+            /** Pmid */
+            pmid: string | null;
+            ta_final: components["schemas"]["TitleAbstractStatus"];
+            ft_final: components["schemas"]["FullTextStatus"];
+            /** Is Duplicate */
+            is_duplicate: boolean;
+            /** Relevance Score */
+            relevance_score: number | null;
+            /** Import Batch Id */
+            import_batch_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** RecordPage */
+        RecordPage: {
+            /** Items */
+            items: components["schemas"]["RecordOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+            /** Total */
+            total: number;
+            /** Total Is Exact */
+            total_is_exact: boolean;
+        };
+        /** RecordPreview */
+        RecordPreview: {
+            /** Title */
+            title: string | null;
+            /** Authors */
+            authors: string[];
+            /** Year */
+            year: number | null;
+            /** Journal */
+            journal: string | null;
+            /** Doi */
+            doi: string | null;
+            /** Pmid */
+            pmid: string | null;
+            /** Abstract */
+            abstract: string | null;
+        };
         /** RecoveryCodesOut */
         RecoveryCodesOut: {
             /** Recovery Codes */
@@ -1650,6 +2088,11 @@ export interface components {
              */
             n: number;
         };
+        /**
+         * TitleAbstractStatus
+         * @enum {string}
+         */
+        TitleAbstractStatus: "pending" | "included" | "excluded" | "conflict" | "maybe";
         /** TokenRequest */
         TokenRequest: {
             /** Token */
@@ -4828,6 +5271,611 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    list_imports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportOut"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    upload_import: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_import"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unsupported Media Type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    preview_import: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bid: string;
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportPreview"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    confirm_import: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bid: string;
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmImport"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportAccepted"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    undo_import: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bid: string;
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    project_events: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    list_records: {
+        parameters: {
+            query?: {
+                /** @description Words, "exact phrases", -exclusions, author:, journal:, keyword:, year:2018..2024, a DOI or a PubMed id (guide 8.9) */
+                q?: string;
+                status?: components["schemas"]["TitleAbstractStatus"] | null;
+                full_text?: components["schemas"]["FullTextStatus"] | null;
+                batch?: string | null;
+                duplicates?: boolean;
+                sort?: "added" | "oldest" | "year" | "year_asc" | "title" | "relevance";
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordPage"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    record_facets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordFacets"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    get_record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rid: string;
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

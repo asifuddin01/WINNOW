@@ -12,4 +12,27 @@ export function installDomStubs(): void {
   element.setPointerCapture ??= () => undefined;
   element.releasePointerCapture ??= () => undefined;
   element.scrollIntoView ??= () => undefined;
+  installLayout();
+}
+
+const VIEWPORT = { width: 1024, height: 768 };
+let layoutStubbed = false;
+
+/**
+ * jsdom never lays anything out, so every element is 0×0 — and a virtualised list whose
+ * viewport is zero pixels tall renders no rows at all. Give elements a window-sized box,
+ * which is what the virtualiser measures to decide how much to fill.
+ */
+function installLayout(): void {
+  if (layoutStubbed) return;
+  layoutStubbed = true;
+  for (const [name, size] of [
+    ["offsetWidth", VIEWPORT.width],
+    ["offsetHeight", VIEWPORT.height],
+  ] as const) {
+    Object.defineProperty(globalThis.HTMLElement.prototype, name, {
+      configurable: true,
+      get: () => size,
+    });
+  }
 }

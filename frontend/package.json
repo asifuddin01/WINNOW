@@ -25,6 +25,7 @@
     "@hookform/resolvers": "^5.9.1",
     "@tanstack/react-query": "^5.103.1",
     "@tanstack/react-router": "^1.170.38",
+    "@tanstack/react-virtual": "^3.14.13",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.3.0",
     "lucide-react": "^1.47.0",

@@ -22,6 +22,8 @@ import { Route as ResetTokenRouteImport } from './routes/reset.$token'
 import { Route as VerifyTokenRouteImport } from './routes/verify.$token'
 import { Route as AppPPidRouteImport } from './routes/_app/p/$pid'
 import { Route as AppPPidIndexRouteImport } from './routes/_app/p/$pid/index'
+import { Route as AppPPidImportRouteImport } from './routes/_app/p/$pid/import'
+import { Route as AppPPidRecordsRouteImport } from './routes/_app/p/$pid/records'
 import { Route as AppPPidSettingsRouteImport } from './routes/_app/p/$pid/settings'
 import { Route as AppPPidSettingsIndexRouteImport } from './routes/_app/p/$pid/settings/index'
 import { Route as AppPPidSettingsCriteriaRouteImport } from './routes/_app/p/$pid/settings/criteria'
@@ -95,6 +97,16 @@ const AppPPidIndexRoute = AppPPidIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppPPidRoute,
 } as any)
+const AppPPidImportRoute = AppPPidImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => AppPPidRoute,
+} as any)
+const AppPPidRecordsRoute = AppPPidRecordsRouteImport.update({
+  id: '/records',
+  path: '/records',
+  getParentRoute: () => AppPPidRoute,
+} as any)
 const AppPPidSettingsRoute = AppPPidSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -149,6 +161,8 @@ export interface FileRoutesByFullPath {
   '/reset/$token': typeof ResetTokenRoute
   '/verify/$token': typeof VerifyTokenRoute
   '/p/$pid': typeof AppPPidRouteWithChildren
+  '/p/$pid/import': typeof AppPPidImportRoute
+  '/p/$pid/records': typeof AppPPidRecordsRoute
   '/p/$pid/settings': typeof AppPPidSettingsRouteWithChildren
   '/p/$pid/': typeof AppPPidIndexRoute
   '/p/$pid/settings/criteria': typeof AppPPidSettingsCriteriaRoute
@@ -170,6 +184,8 @@ export interface FileRoutesByTo {
   '/reset/$token': typeof ResetTokenRoute
   '/verify/$token': typeof VerifyTokenRoute
   '/': typeof AppIndexRoute
+  '/p/$pid/import': typeof AppPPidImportRoute
+  '/p/$pid/records': typeof AppPPidRecordsRoute
   '/p/$pid': typeof AppPPidIndexRoute
   '/p/$pid/settings/criteria': typeof AppPPidSettingsCriteriaRoute
   '/p/$pid/settings/keywords': typeof AppPPidSettingsKeywordsRoute
@@ -193,6 +209,8 @@ export interface FileRoutesById {
   '/verify/$token': typeof VerifyTokenRoute
   '/_app/': typeof AppIndexRoute
   '/_app/p/$pid': typeof AppPPidRouteWithChildren
+  '/_app/p/$pid/import': typeof AppPPidImportRoute
+  '/_app/p/$pid/records': typeof AppPPidRecordsRoute
   '/_app/p/$pid/settings': typeof AppPPidSettingsRouteWithChildren
   '/_app/p/$pid/': typeof AppPPidIndexRoute
   '/_app/p/$pid/settings/criteria': typeof AppPPidSettingsCriteriaRoute
@@ -217,6 +235,8 @@ export interface FileRouteTypes {
     | '/reset/$token'
     | '/verify/$token'
     | '/p/$pid'
+    | '/p/$pid/import'
+    | '/p/$pid/records'
     | '/p/$pid/settings'
     | '/p/$pid/'
     | '/p/$pid/settings/criteria'
@@ -238,6 +258,8 @@ export interface FileRouteTypes {
     | '/reset/$token'
     | '/verify/$token'
     | '/'
+    | '/p/$pid/import'
+    | '/p/$pid/records'
     | '/p/$pid'
     | '/p/$pid/settings/criteria'
     | '/p/$pid/settings/keywords'
@@ -260,6 +282,8 @@ export interface FileRouteTypes {
     | '/verify/$token'
     | '/_app/'
     | '/_app/p/$pid'
+    | '/_app/p/$pid/import'
+    | '/_app/p/$pid/records'
     | '/_app/p/$pid/settings'
     | '/_app/p/$pid/'
     | '/_app/p/$pid/settings/criteria'
@@ -375,6 +399,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPPidIndexRouteImport
       parentRoute: typeof AppPPidRoute
     }
+    '/_app/p/$pid/import': {
+      id: '/_app/p/$pid/import'
+      path: '/import'
+      fullPath: '/p/$pid/import'
+      preLoaderRoute: typeof AppPPidImportRouteImport
+      parentRoute: typeof AppPPidRoute
+    }
+    '/_app/p/$pid/records': {
+      id: '/_app/p/$pid/records'
+      path: '/records'
+      fullPath: '/p/$pid/records'
+      preLoaderRoute: typeof AppPPidRecordsRouteImport
+      parentRoute: typeof AppPPidRoute
+    }
     '/_app/p/$pid/settings': {
       id: '/_app/p/$pid/settings'
       path: '/settings'
@@ -459,11 +497,15 @@ const AppPPidSettingsRouteWithChildren = AppPPidSettingsRoute._addFileChildren(
 )
 
 interface AppPPidRouteChildren {
+  AppPPidImportRoute: typeof AppPPidImportRoute
+  AppPPidRecordsRoute: typeof AppPPidRecordsRoute
   AppPPidSettingsRoute: typeof AppPPidSettingsRouteWithChildren
   AppPPidIndexRoute: typeof AppPPidIndexRoute
 }
 
 const AppPPidRouteChildren: AppPPidRouteChildren = {
+  AppPPidImportRoute: AppPPidImportRoute,
+  AppPPidRecordsRoute: AppPPidRecordsRoute,
   AppPPidSettingsRoute: AppPPidSettingsRouteWithChildren,
   AppPPidIndexRoute: AppPPidIndexRoute,
 }
