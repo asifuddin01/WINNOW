@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends
 from app.api.deps import verify_csrf
 from app.api.v1 import (
     auth,
+    conflicts,
     dedup,
     google,
     health,
@@ -12,6 +13,7 @@ from app.api.v1 import (
     invites,
     projects,
     records,
+    screening,
     setup,
 )
 
@@ -25,4 +27,6 @@ api_router.include_router(setup.router)
 api_router.include_router(imports.router)
 api_router.include_router(records.router)
 api_router.include_router(dedup.router)
+api_router.include_router(screening.router)
+api_router.include_router(conflicts.router)
 api_router.include_router(invites.router)

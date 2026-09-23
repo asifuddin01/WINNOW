@@ -27,12 +27,14 @@ from app.security.rate_limit import API_PER_USER, Limit, RateLimiter
 from app.security.sessions import SESSION_COOKIE, Session, SessionStore, session_key
 from app.services.accounts import AccountService
 from app.services.audit import Actor
+from app.services.conflicts import ConflictService
 from app.services.dedup import DedupService
 from app.services.errors import NotAuthenticatedError
 from app.services.imports import ImportService
 from app.services.members import MemberService
 from app.services.projects import ProjectService
 from app.services.records import RecordService
+from app.services.screening import ScreeningService
 from app.services.setup import SetupService
 from app.services.two_factor import TwoFactorService
 from app.storage import Storage
@@ -159,6 +161,11 @@ ViewerAccess = Annotated[ProjectAccess, Depends(require_project_role(ProjectRole
 ReviewerAccess = Annotated[ProjectAccess, Depends(require_project_role(ProjectRole.REVIEWER))]
 AdminAccess = Annotated[ProjectAccess, Depends(require_project_role(ProjectRole.ADMIN))]
 OwnerAccess = Annotated[ProjectAccess, Depends(require_project_role(ProjectRole.OWNER))]
+# Guide 7: owners and admins resolve conflicts, and so do reviewers trusted with it.
+ResolverAccess = Annotated[
+    ProjectAccess,
+    Depends(require_project_role(ProjectRole.ADMIN, flag="can_resolve_conflicts")),
+]
 
 
 def get_projects(db: SessionDep, settings: SettingsDep) -> ProjectService:
@@ -199,6 +206,24 @@ def get_dedup(request: Request, db: SessionDep) -> DedupService:
 
 
 DedupDep = Annotated[DedupService, Depends(get_dedup)]
+
+
+def get_screening(db: SessionDep) -> ScreeningService:
+    return ScreeningService(db)
+
+
+def get_conflicts(db: SessionDep) -> ConflictService:
+    return ConflictService(db)
+
+
+def get_mailer(request: Request) -> Mailer:
+    mailer: Mailer = request.app.state.mailer
+    return mailer
+
+
+ScreeningDep = Annotated[ScreeningService, Depends(get_screening)]
+ConflictsDep = Annotated[ConflictService, Depends(get_conflicts)]
+MailerDep = Annotated[Mailer, Depends(get_mailer)]
 
 
 def _origin(url: str) -> str | None:

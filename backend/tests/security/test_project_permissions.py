@@ -39,6 +39,14 @@ VIEWER_WRITES = {
     ("DELETE", "/api/v1/projects/{pid}/membership"),
     ("POST", "/api/v1/projects/{pid}/duplicate-setup"),
 }
+# And the ones a reviewer adds: their own screening work (guide 7, "Screen / decide").
+REVIEWER_WRITES = VIEWER_WRITES | {
+    ("PUT", "/api/v1/projects/{pid}/records/{rid}/decision"),
+    ("DELETE", "/api/v1/projects/{pid}/records/{rid}/decision"),
+    ("PUT", "/api/v1/projects/{pid}/records/{rid}/labels"),
+    ("POST", "/api/v1/projects/{pid}/records/{rid}/notes"),
+    ("DELETE", "/api/v1/projects/{pid}/notes/{nid}"),
+}
 
 
 def project_operations(app: FastAPI) -> list[tuple[str, str]]:
@@ -120,8 +128,9 @@ async def test_members_below_admin_cannot_write(
     ):
         project = await create_project(owner)
         await add_member(owner, member, project["id"], REVIEWER, role=role)
+        allowed = REVIEWER_WRITES if role == "reviewer" else VIEWER_WRITES
         for method, path in project_operations(db_app):
-            if method == "GET" or (method, path) in VIEWER_WRITES:
+            if method == "GET" or (method, path) in allowed:
                 continue
             response = await api(
                 member, method, concrete(path, project["id"])[len("/api/v1") :], body_for(method)

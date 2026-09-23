@@ -88,3 +88,17 @@ def project_invite(
         f"address ({to}). If you do not have an account yet, the link lets you create one."
         + SIGNATURE,
     )
+
+
+def discussion_requested(to: str, *, asker: str, project_title: str, link: str) -> Email:
+    """Guide 8.7's "Discuss": the reviewers of a record in conflict are asked to talk.
+
+    The record's title stays out of the email: the link opens it for a signed-in member.
+    """
+    return Email(
+        to,
+        "A record in your review needs a discussion",
+        f"Hi,\n\n{asker} would like to discuss a record you screened in the review "
+        f"“{project_title}” on Winnow, where the reviewers' decisions differ. They left a note "
+        f"on it.\n\nOpen it here:\n\n{link}" + SIGNATURE,
+    )
