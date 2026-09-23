@@ -115,6 +115,13 @@ class Record(UUIDPrimaryKey, Timestamps, Base):
             postgresql_ops={"title_norm": "gin_trgm_ops"},
         ),
         Index("ix_records_project_id_sort_key", "project_id", "sort_key"),
+        # Deleting a record checks what was merged into it; without this, deleting a review
+        # or undoing an import of N records scanned the table N times.
+        Index(
+            "ix_records_duplicate_of",
+            "duplicate_of",
+            postgresql_where="duplicate_of IS NOT NULL",
+        ),
         Index(
             "ix_records_authors_text_trgm",
             "authors_text",
