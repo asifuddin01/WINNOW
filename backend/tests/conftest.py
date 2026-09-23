@@ -10,6 +10,7 @@ import asyncio
 import base64
 import os
 import re
+import tempfile
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -46,6 +47,9 @@ TEST_SECRETS: dict[str, Any] = {
     "encryption_key": base64.b64encode(bytes(32)).decode(),
 }
 TEST_ORIGIN = "https://testserver"
+# Uploads belong in a temporary directory: the suite must never write into a real
+# instance's storage, and a CI runner cannot create the default /data at all.
+TEST_STORAGE = tempfile.mkdtemp(prefix="winnow-test-uploads-")
 # Fast Argon2 (production parameters have their own test), no network, HTTPS origin.
 FAST_AUTH: dict[str, Any] = {
     "argon2_memory_kib": 1024,
@@ -53,6 +57,7 @@ FAST_AUTH: dict[str, Any] = {
     "password_breach_check": False,
     "public_url": TEST_ORIGIN,
     "smtp_host": None,  # the dev containers point SMTP at Mailpit
+    "storage_path": TEST_STORAGE,
 }
 
 
