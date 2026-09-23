@@ -50,6 +50,7 @@ from app.services.errors import (
     OwnerTwoFactorRequiredError,
 )
 from app.services.pagination import decode_cursor, encode_cursor
+from app.services.status import recompute
 
 # Guide 8.2: every new review starts with these, in this order.
 DEFAULT_EXCLUSION_REASONS: tuple[tuple[str, ReasonStage], ...] = (
@@ -275,14 +276,29 @@ class ProjectService:
                 after=after,
             )
         if body.settings is not None:
-            self._change_settings(access, body.settings.model_dump(exclude_unset=True), actor)
+            changed = self._change_settings(
+                access, body.settings.model_dump(exclude_unset=True), actor
+            )
+            await self._recompute_if_needed(access, changed)
         await self._db.commit()
         # updated_at is set by the database, so read the row back before reporting it.
         await self._db.refresh(access.project)
 
+    async def _recompute_if_needed(self, access: ProjectAccess, changed: list[str]) -> None:
+        """How many reviewers a record needs, and what a maybe counts as, decide every
+        record's status (guide 6.4): when they change, every status is worked out again."""
+        stages = []
+        if {"reviewers_per_record_ta", "maybe_counts_as"} & set(changed):
+            stages.append(ScreeningStage.TITLE_ABSTRACT)
+        if {"reviewers_per_record_ft", "maybe_counts_as"} & set(changed):
+            stages.append(ScreeningStage.FULL_TEXT)
+        settings = settings_from_json(access.project.settings)
+        for stage in stages:
+            await recompute(self._db, access.project_id, stage, settings)
+
     def _change_settings(
         self, access: ProjectAccess, changes: dict[str, Any], actor: Actor
-    ) -> None:
+    ) -> list[str]:
         project = access.project
         current = settings_from_json(project.settings)
         updated = ProjectSettings.model_validate({**current.model_dump(), **changes})
@@ -297,7 +313,7 @@ class ProjectService:
         old, new = current.model_dump(mode="json"), updated.model_dump(mode="json")
         changed = [key for key in new if old[key] != new[key]]
         if not changed:
-            return
+            return []
         project.settings = new
         audit.record(
             self._db,
@@ -322,6 +338,7 @@ class ProjectService:
                 before={"blind_mode": old["blind_mode"]},
                 after={"blind_mode": new["blind_mode"]},
             )
+        return changed
 
     async def delete(self, access: ProjectAccess, actor: Actor) -> None:
         """Soft delete: the review disappears for everyone; its rows stay for recovery."""

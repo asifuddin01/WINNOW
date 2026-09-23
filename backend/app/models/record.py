@@ -18,6 +18,7 @@ from sqlalchemy import (
     Index,
     Integer,
     Text,
+    func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TSVECTOR, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -113,6 +114,7 @@ class Record(UUIDPrimaryKey, Timestamps, Base):
             postgresql_using="gin",
             postgresql_ops={"title_norm": "gin_trgm_ops"},
         ),
+        Index("ix_records_project_id_sort_key", "project_id", "sort_key"),
         Index(
             "ix_records_authors_text_trgm",
             "authors_text",
@@ -176,6 +178,9 @@ class Record(UUIDPrimaryKey, Timestamps, Base):
         server_default="not_eligible",
     )
     relevance_score: Mapped[float | None] = mapped_column(Float)
+    # A random place in the screening order, fixed when the record arrives, so the queue's
+    # "random" order is read from an index instead of sorting the whole review each time.
+    sort_key: Mapped[float] = mapped_column(Float, server_default=func.random())
 
 
 # The screening queue reads the best-scoring records first; nulls (not yet scored) last.
