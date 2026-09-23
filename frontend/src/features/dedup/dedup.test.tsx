@@ -186,3 +186,30 @@ describe("the duplicates screen", () => {
     expect(screen.getAllByRole("radio")[0]).toBeDisabled();
   });
 });
+
+describe("what counts as a difference", () => {
+  test("capitals and punctuation do not; a different year does", async () => {
+    mockApi({
+      ...routes,
+      [`GET ${base}/dedup/clusters`]: [
+        {
+          ...CLUSTER,
+          members: [
+            member(1, { title: "Deep learning for kidney CT: a review", year: 2026 }),
+            member(2, {
+              is_primary: false,
+              title: "DEEP LEARNING FOR KIDNEY CT — A REVIEW.",
+              year: 2025,
+            }),
+          ],
+        },
+      ],
+    });
+    renderApp(`/p/${PROJECT.id}/duplicates`);
+
+    const card = within(await screen.findByRole("article"));
+    expect(card.getByText(/they differ on year$/)).toBeVisible();
+    expect(card.getByRole("cell", { name: "2025(differs)" })).toBeVisible();
+    expect(card.queryByRole("cell", { name: /DEEP LEARNING.*\(differs\)/ })).toBeNull();
+  });
+});

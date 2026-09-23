@@ -6,15 +6,29 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-/** Which fields the two copies disagree about; those are the ones worth reading. */
+const ROWS = ["title", "authors", "year", "journal", "volume", "issue", "pages", "doi", "pmid"];
+
+/**
+ * Which fields the copies disagree about; those are the ones worth reading. Case,
+ * punctuation and spacing do not count — every database writes titles its own way, and
+ * marking "Deep learning" against "Deep Learning" would hide the year that really differs.
+ */
 function differences(members: ClusterMember[]): Set<string> {
-  const fields = ["title", "authors", "year", "journal", "volume", "issue", "pages", "doi", "pmid"];
   const differing = new Set<string>();
-  for (const field of fields) {
-    const values = members.map((member) => value(member, field));
+  for (const field of ROWS) {
+    const values = members.map((member) => comparable(value(member, field)));
     if (new Set(values).size > 1) differing.add(field);
   }
   return differing;
+}
+
+function comparable(text: string): string {
+  return text
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
 }
 
 function value(member: ClusterMember, field: string): string {
@@ -34,8 +48,6 @@ const LABELS: Record<string, string> = {
   doi: "DOI",
   pmid: "PubMed id",
 };
-
-const ROWS = ["title", "authors", "year", "journal", "volume", "issue", "pages", "doi", "pmid"];
 
 /**
  * One group of records that look like the same work, side by side (guide 8.4). The
