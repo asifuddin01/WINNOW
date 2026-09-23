@@ -9,6 +9,7 @@ import { SelectField } from "@/components/forms/SelectField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BulkDecisionButton } from "@/features/records/BulkDecision";
 import { RecordDetailPanel } from "@/features/records/RecordDetailPanel";
 import { RecordFilters } from "@/features/records/RecordFilters";
 import { RecordTable } from "@/features/records/RecordTable";
@@ -73,15 +74,18 @@ function RecordsPage() {
             Everything imported into this review, searchable and filterable.
           </p>
         </div>
-        <SelectField
-          label="Order"
-          className="w-44"
-          value={query.sort ?? "added"}
-          options={SORTS}
-          onChange={(sort) => {
-            update({ ...query, sort });
-          }}
-        />
+        <div className="flex flex-wrap items-end gap-2">
+          {project.permissions.includes("import") && <BulkDecisionButton pid={pid} query={query} />}
+          <SelectField
+            label="Order"
+            className="w-44"
+            value={query.sort ?? "added"}
+            options={SORTS}
+            onChange={(sort) => {
+              update({ ...query, sort });
+            }}
+          />
+        </div>
       </div>
 
       <form
