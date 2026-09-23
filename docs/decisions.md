@@ -327,3 +327,59 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   invalidate queries — the numbers themselves still come from the API, so a missed event
   cannot leave the page telling a story the database does not support.
 
+## Phase 4 — Deduplication
+
+### The algorithm and who owns it
+- **The pure engine is Codex's** (`app/dedup`, see `docs/codex-notes.md`); this phase adds
+  the adapter around it — loading records, the blocking the database or the corpus has to
+  do, the cluster tables, merging, the API and the screen. The one change to the engine is
+  an `extra_pairs` keyword on `cluster()`, which Codex asked for.
+- **RapidFuzz is not used.** The guide names `rapidfuzz.fuzz.token_sort_ratio`; the
+  project takes no new dependencies for this, and `difflib.SequenceMatcher` over sorted
+  tokens gives the same ordering of candidates for titles.
+
+### Block C
+- **The guide's pg_trgm block does not scale as an all-pairs join.** At 50,000 records the
+  self-join ran for over two minutes, against a 30-second budget. So block C is two things:
+  an in-memory index over each title's distinctive words (shared by at least two records,
+  used by no more than 300, and not in more than 5 % of the corpus), which finds reordered
+  and subtitled titles in under two seconds at 50,000; and the trigram join itself, kept for
+  projects of up to 10,000 records, where it costs seconds and adds recall.
+- **Both only nominate pairs.** Every candidate is scored by the same function and guarded
+  by the same DOI rules, so a looser block cannot merge anything on its own.
+
+### Merging
+- **Nothing is deleted.** The secondary keeps its row with `is_duplicate` and
+  `duplicate_of`; PRISMA counts them, and the records list shows them with a filter.
+- **Certain clusters merge themselves by default** (`dedup_auto_resolve`): an exact DOI or
+  PubMed id, or a score of at least 0.98, with no conflicting DOI anywhere in the cluster.
+  Everything else waits for a person. Deduplication after each import is also a setting
+  (`dedup_on_import`), on by default, as guide 8.4 says "configurable".
+- **"Not duplicates" is remembered** by storing the ignored cluster; a rerun skips any
+  cluster with exactly the same members. A new record joining the group makes it a
+  different group, which is asked about again.
+- **A rerun replaces only pending clusters.** Decided ones are history.
+- **Decisions, labels and notes move to the primary on merge** (guide 8.4) through one
+  function, `migrate_work`. Those tables arrive with screening in Phase 5, so today it has
+  nothing to move; it is the one place that will.
+- **Merges are batched**: one `UPDATE … FROM (VALUES …)` for all secondaries, and bulk
+  inserts for clusters. Merging 5,000 clusters one statement at a time was most of the run.
+
+### Uploading several files
+- **Up to 20 files per upload** (`MAX_UPLOAD_FILES`), in one request, so a drop counts
+  once against the 30-uploads-an-hour limit in guide 12.6 and one CSRF token covers it.
+  Each file is still its own import: PRISMA counts searches separately, and undo must be
+  able to take one file back out.
+- **The database is per file**, guessed from the file name and correctable, because one
+  drop often mixes PubMed, Scopus and IEEE exports. The search date and string apply to
+  the whole drop; they can be edited per import afterwards.
+- **Caddy's body limit stays the backstop** for the whole request; the API still enforces
+  `MAX_UPLOAD_MB` per file while it streams.
+
+### What was measured, and on what
+- **Precision and recall** are asserted in CI on the labelled fixture (errata, conference
+  abstracts, accents, HTML, missing years), through the database. They were also measured
+  on a real search: 18 overlapping arXiv queries from a scoping review, 637 records of 459
+  papers, with the search's own provenance as ground truth — 98.97 % precision, 100 %
+  recall. That corpus is the owner's unpublished work and is not in the repository.
+

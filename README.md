@@ -5,9 +5,9 @@
 Winnow is a free, open, self-hostable platform for systematic, scoping and rapid reviews:
 import → deduplicate → screen → resolve → full text → extract → appraise → report (PRISMA 2020).
 
-> **Status:** Phase 3 (import and records). Accounts and the security core, reviews with
-> their team and setup, and now importing search exports and reading the records back are in
-> place; deduplication arrives in Phase 4. See [CHANGELOG.md](CHANGELOG.md) and the
+> **Status:** Phase 4 (deduplication). Accounts and the security core, reviews with their
+> team and setup, importing up to 20 search exports at once, the records table, and finding
+> and merging duplicates across databases are in place; screening arrives in Phase 5. See [CHANGELOG.md](CHANGELOG.md) and the
 > build plan in [WINNOW_BUILD_GUIDE.md](WINNOW_BUILD_GUIDE.md), Section 17.
 
 ## Run it

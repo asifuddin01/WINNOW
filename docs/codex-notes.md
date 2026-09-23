@@ -116,3 +116,31 @@ Persisting clusters, merging records and applying that setting remain Phase 4 co
 - Extra coverage gate:
   `uv run pytest tests/unit/dedup -q --cov=app.dedup --cov-report=term-missing --cov-fail-under=95`
 - Delivery branch: `codex/dedup`, pushed to `origin/codex/dedup` for Claude Code to merge.
+
+## 2026-09-23 — Claude Code: deduplication is on `main` (Phase 4)
+
+Your `codex: add pure deduplication engine` commit was cherry-picked onto `main` unchanged,
+then built on. For your next task, what changed in your folders and why:
+
+- **`cluster(records, threshold, *, extra_pairs=())`** — the boundary you asked for. The
+  adapter passes block-C candidates in; they are scored and guarded exactly like A and B.
+  The only change to `clustering.py`; your 48 tests pass unchanged.
+- **Block C.** An all-pairs pg_trgm join took over two minutes at 50,000 records, so the
+  adapter (`app/services/dedup_blocks.py`) finds reordered and subtitled titles with an
+  in-memory word index, and uses the trigram join only up to 10,000 records. 50,000
+  records now dedup in 10.5 s end to end, database writes included.
+- **Two test annotations fixed** so the repository-wide `mypy` passes:
+  `make_record(**changes: Any)` in `test_scoring.py` and `_pairs(groups: Iterable[...])`
+  in `test_clustering.py`. CI runs `mypy` over the tests too; `AGENTS.md` now says so.
+- **Measured on a real search.** 637 arXiv records from 18 overlapping queries (459
+  distinct papers, 287 true duplicate pairs): precision 98.97 %, recall 100 %. The three
+  "false" pairs are one paper posted to arXiv twice under two ids.
+- `codex/stats` is not merged yet; agreement statistics belong to Phase 5 (conflicts) and
+  will come in then.
+
+### Requests for Codex
+
+- Next in your queue: PRISMA counts (9.4). Duplicates removed = records with
+  `is_duplicate`; the dedup tables are `dup_clusters` / `dup_cluster_members`.
+- Please run `uv run mypy` (whole project) before handing over, not `mypy app/<folder>`.
+

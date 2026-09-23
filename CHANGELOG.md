@@ -2,6 +2,43 @@
 
 All notable changes, one section per build phase (guide Section 17).
 
+## Phase 4: Deduplication (2026-09-23)
+
+### Added
+- The algorithm in guide 9.1 as a worker job: exact DOI and PubMed id matches, blocking,
+  weighted pairwise scoring, union-find clusters, and the most complete record as primary.
+  The pure engine is Codex's (`app/dedup`); the job, the tables and the screens are here.
+- Duplicates are looked for as soon as an import finishes, and on demand with "Find
+  duplicates". Groups Winnow is certain about — an exact identifier, or a score of 0.98 and
+  above with no conflicting DOI — merge themselves; both are project settings.
+- A review screen with the copies side by side, the fields they disagree about marked, the
+  database each copy came from, and a comparison of abstracts. Actions: merge keeping the
+  suggested copy, merge keeping another, not duplicates, and merge every certain group.
+- Merging never deletes: the secondary keeps its row with `is_duplicate` and
+  `duplicate_of`, leaves the screening list, and is counted for PRISMA. "Not duplicates"
+  is remembered, so the same group is not proposed again.
+- Upload up to 20 search exports at once. Each file becomes its own import (so PRISMA can
+  count each search and any one can be undone), the database is guessed from each file
+  name and can be corrected, and the search date and string are kept with every file.
+  One unreadable file is reported beside the others instead of failing the upload.
+- More sources to choose from: IEEE Xplore, ACM Digital Library, ProQuest, Google Scholar,
+  Semantic Scholar, Dimensions, arXiv, bioRxiv, medRxiv, SSRN, ClinicalTrials.gov, WHO
+  ICTRP and hand searching, alongside the bibliographic databases.
+- Tests: the known-duplicates fixture through the whole database pipeline (precision and
+  recall asserted), merging, choosing a different primary, not duplicates across reruns,
+  auto-resolve, permissions, and Playwright journeys for a multi-file upload and for
+  deduplicating two databases.
+
+### Fixed
+- The BibTeX reader treated a quotation mark inside a braced value as a delimiter, so one
+  quote in an abstract swallowed every entry after it. A real arXiv export lost 122 of its
+  272 records this way; all of them now come in.
+
+### Measured
+- 50,000 records: 10.5 s, database writes included (budget 30 s).
+- A real multi-query arXiv search, 637 records of 459 papers: precision 98.97 %, recall
+  100 % against the search's own provenance.
+
 ## Phase 3: Import and records (2026-09-23)
 
 ### Added

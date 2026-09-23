@@ -97,7 +97,7 @@ uv sync                                   # first time only, in your worktree
 uv run pytest tests/unit/<your_folder> -q
 uv run ruff check app/<your_folder> tests/unit/<your_folder>
 uv run ruff format --check app/<your_folder> tests/unit/<your_folder>
-uv run mypy app/<your_folder>             # the project is already --strict
+uv run mypy                               # the whole project, tests included: CI does
 ```
 
 All four must pass before you commit. Do not run the whole suite (`uv run pytest` alone
