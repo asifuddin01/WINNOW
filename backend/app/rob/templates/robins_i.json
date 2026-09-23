@@ -1,0 +1,278 @@
+{
+  "key": "robins_i",
+  "name": "ROBINS-I",
+  "version": "2016",
+  "source_url": "https://www.riskofbias.info/welcome/home/original-2016-version-of-robins-i",
+  "content_note": "Established 2016 ROBINS-I structure. The 2025 ROBINS-I V2 remains a draft. Winnow uses independently worded concise prompts; reviewers must consult the official tool and guidance.",
+  "variants": [
+    {
+      "key": "original_2016",
+      "name": "Non-randomised studies of interventions",
+      "domains": [
+        {
+          "key": "confounding",
+          "name": "Bias due to confounding",
+          "signalling_questions": [
+            {
+              "key": "important_confounding",
+              "prompt": "Is there potential for important confounding of the intervention effect?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "confounders_measured",
+              "prompt": "Were the important confounding domains measured validly and reliably?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "confounding_controlled",
+              "prompt": "Did the analysis appropriately control for the important confounding domains?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "post_intervention_adjustment",
+              "prompt": "Did the analysis avoid inappropriate adjustment for variables affected by intervention?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "risk_of_bias",
+              "name": "Risk of bias",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low risk"},
+                {"key": "moderate", "label": "Moderate risk"},
+                {"key": "serious", "label": "Serious risk"},
+                {"key": "critical", "label": "Critical risk"},
+                {"key": "no_information", "label": "No information"}
+              ]
+            }
+          ]
+        },
+        {
+          "key": "selection_of_participants",
+          "name": "Bias in selection of participants into the study",
+          "signalling_questions": [
+            {
+              "key": "post_intervention_selection",
+              "prompt": "Was selection into the analysis related to characteristics observed after intervention began?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "selection_related_to_outcome",
+              "prompt": "Could selection factors be associated with both intervention and outcome?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "aligned_start",
+              "prompt": "Did follow-up start at, or sufficiently close to, the start of intervention?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "selection_adjustment",
+              "prompt": "If selection problems occurred, were methods used that were likely to correct them?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "risk_of_bias",
+              "name": "Risk of bias",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low risk"},
+                {"key": "moderate", "label": "Moderate risk"},
+                {"key": "serious", "label": "Serious risk"},
+                {"key": "critical", "label": "Critical risk"},
+                {"key": "no_information", "label": "No information"}
+              ]
+            }
+          ]
+        },
+        {
+          "key": "classification_of_interventions",
+          "name": "Bias in classification of interventions",
+          "signalling_questions": [
+            {
+              "key": "clear_groups",
+              "prompt": "Were intervention groups defined clearly?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "classification_at_start",
+              "prompt": "Was information used to classify intervention status recorded at intervention start?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "classification_blinded_to_outcome",
+              "prompt": "Was intervention classification unaffected by knowledge of outcomes or outcome risk?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "risk_of_bias",
+              "name": "Risk of bias",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low risk"},
+                {"key": "moderate", "label": "Moderate risk"},
+                {"key": "serious", "label": "Serious risk"},
+                {"key": "critical", "label": "Critical risk"},
+                {"key": "no_information", "label": "No information"}
+              ]
+            }
+          ]
+        },
+        {
+          "key": "deviations_from_intended_interventions",
+          "name": "Bias due to deviations from intended interventions",
+          "signalling_questions": [
+            {
+              "key": "important_deviations",
+              "prompt": "Were there important deviations from the intended intervention beyond usual practice?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "unbalanced_cointerventions",
+              "prompt": "Were important co-interventions unbalanced between groups?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "implementation_and_adherence",
+              "prompt": "Were intervention implementation and adherence adequate for the target effect?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "appropriate_effect_analysis",
+              "prompt": "Was an appropriate analysis used to estimate the target intervention effect?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "risk_of_bias",
+              "name": "Risk of bias",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low risk"},
+                {"key": "moderate", "label": "Moderate risk"},
+                {"key": "serious", "label": "Serious risk"},
+                {"key": "critical", "label": "Critical risk"},
+                {"key": "no_information", "label": "No information"}
+              ]
+            }
+          ]
+        },
+        {
+          "key": "missing_data",
+          "name": "Bias due to missing data",
+          "signalling_questions": [
+            {
+              "key": "complete_outcome_data",
+              "prompt": "Were outcome data available for all or nearly all participants?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "complete_intervention_status",
+              "prompt": "Were participants retained regardless of missing intervention-status information?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "missingness_balanced",
+              "prompt": "Were the amount and reasons for missing data similar across intervention groups?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "robust_missing_data_analysis",
+              "prompt": "Were methods and sensitivity analyses adequate to address missing data?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "risk_of_bias",
+              "name": "Risk of bias",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low risk"},
+                {"key": "moderate", "label": "Moderate risk"},
+                {"key": "serious", "label": "Serious risk"},
+                {"key": "critical", "label": "Critical risk"},
+                {"key": "no_information", "label": "No information"}
+              ]
+            }
+          ]
+        },
+        {
+          "key": "measurement_of_outcomes",
+          "name": "Bias in measurement of outcomes",
+          "signalling_questions": [
+            {
+              "key": "valid_outcome_measure",
+              "prompt": "Could the outcome measure itself be invalid or inappropriate?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "comparable_measurement",
+              "prompt": "Were outcome measurement methods comparable across intervention groups?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "assessor_awareness",
+              "prompt": "Were outcome assessors aware of the intervention received?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "differential_measurement_error",
+              "prompt": "Could measurement error be systematically related to intervention status?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "risk_of_bias",
+              "name": "Risk of bias",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low risk"},
+                {"key": "moderate", "label": "Moderate risk"},
+                {"key": "serious", "label": "Serious risk"},
+                {"key": "critical", "label": "Critical risk"},
+                {"key": "no_information", "label": "No information"}
+              ]
+            }
+          ]
+        },
+        {
+          "key": "selection_of_reported_result",
+          "name": "Bias in selection of the reported result",
+          "signalling_questions": [
+            {
+              "key": "multiple_measurements",
+              "prompt": "Could the reported result have been selected from multiple outcome measurements?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "multiple_analyses",
+              "prompt": "Could the reported result have been selected from multiple analyses of the intervention-outcome relation?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "multiple_subgroups",
+              "prompt": "Could the reported result have been selected from multiple analysed subgroups?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "risk_of_bias",
+              "name": "Risk of bias",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low risk"},
+                {"key": "moderate", "label": "Moderate risk"},
+                {"key": "serious", "label": "Serious risk"},
+                {"key": "critical", "label": "Critical risk"},
+                {"key": "no_information", "label": "No information"}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

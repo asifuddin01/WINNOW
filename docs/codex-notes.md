@@ -382,3 +382,131 @@ passing every selected reason would double-count reports.
   `uv run pytest tests/unit/prisma -q --cov=app.prisma --cov-report=term-missing --cov-fail-under=95`
 - Delivery branch: `codex/prisma`, based on `codex/stats` commit `d1e5c45`, pushed to
   `origin/codex/prisma`; merge it after `origin/codex/stats`.
+
+## 2026-09-23 — Risk-of-bias templates and summaries (guide 8.13)
+
+### Built
+
+- Added the pure `app.rob` package with immutable schema objects, strict JSON parsing,
+  import-time validation of all built-in resources, built-in lookup and deterministic
+  per-domain summary aggregation.
+- Added versioned JSON resources for RoB 2, ROBINS-I, the Newcastle–Ottawa Scale (NOS) and
+  QUADAS-2. Every resource contains ordered domains, independently worded concise signalling
+  prompts, answer keys, judgement axes, allowed judgements, version metadata and its official
+  source URL.
+- Preserved instrument-specific structure: NOS has separate cohort and case-control variants
+  and raw domain star totals; QUADAS-2 has risk-of-bias plus applicability axes for its first
+  three domains; RoB 2 and ROBINS-I retain their distinct judgement vocabularies.
+- Added strict tests for the four scientific structures, JSON duplicate/extra/missing fields,
+  malformed values, Unicode/control characters, immutable runtime types, unknown coordinates,
+  duplicate and incomplete record assessments, mixed variants, zero-count categories, custom
+  templates and input-order invariance.
+
+### Public API and adapter call
+
+- `load_template_json(document: str, *, source: str = "<memory>") -> ToolTemplate`
+- `get_template(tool_key: str) -> ToolTemplate`
+- `summary(assessments: Sequence[DomainAssessment], *,`
+  `templates: Sequence[ToolTemplate] = BUILTIN_TEMPLATES) -> tuple[DomainSummary, ...]`
+- Frozen inputs/outputs: `Choice`, `SignallingQuestion`, `JudgementAxis`, `DomainTemplate`,
+  `TemplateVariant`, `ToolTemplate`, `DomainAssessment`, `JudgementCount`, `DomainSummary`
+- Read-only built-ins: `BUILTIN_TEMPLATES` and `TEMPLATES_BY_KEY`
+
+After project authorisation, the adapter must choose one final complete assessment per record
+(for example, consensus or one explicitly selected submitted assessment), flatten its domain
+payload, and call:
+
+```python
+from app.rob import DomainAssessment, get_template, summary
+
+template = get_template(tool_key)
+rows = tuple(
+    DomainAssessment(
+        record_id=record.id,
+        tool_key=tool_key,
+        variant_key=variant_key,
+        domain_key=domain_key,
+        axis_key=axis_key,
+        judgement=judgement,
+    )
+    for record, domain_key, axis_key, judgement in final_domain_judgements
+)
+plot_rows = summary(rows)
+```
+
+Each `DomainSummary` retains tool, variant, domain, axis and allowed-judgement order, includes
+zero-count judgements and has a validated `total`. The UI can calculate percentages as
+`count / total`. Unknown values, duplicate cells, mixed variants and missing domain/axis cells
+raise instead of producing a biased plot.
+
+For a project-specific tool, validate its versioned JSON first, then pass it explicitly:
+
+```python
+custom = load_template_json(custom_json, source="project custom template")
+plot_rows = summary(rows, templates=(*BUILTIN_TEMPLATES, custom))
+```
+
+### Versions and deliberate choices
+
+- RoB 2 uses the official 22 August 2019 individually randomised parallel-group variant for
+  the effect of assignment. Cluster-randomised, crossover and adherence-effect variants are
+  not silently approximated; add separate reviewed variants when required.
+- ROBINS-I uses the established 2016 instrument. The official site currently labels ROBINS-I
+  V2 (30 November 2025) as a draft, so the draft is not substituted into stored assessments.
+- QUADAS-2 is implemented because the guide explicitly names it, although Bristol now marks
+  QUADAS-3 as current. QUADAS-2 review-specific signalling guidance still has to be tailored
+  before use.
+- NOS is a star instrument, not a universal low/some/high risk scale. `summary()` therefore
+  preserves `stars_0` through each domain maximum rather than inventing traffic-light cut-offs.
+  Its item answers include an `unclear` workflow state, but only the final star count is
+  aggregated.
+- Official instrument wording can carry separate licence/permission terms. The bundled
+  prompts are independently worded concise implementation guidance, not a claim to reproduce
+  the official forms. The UI should show the source/version and direct reviewers to the
+  official instrument. Legal/licence review remains necessary before public distribution.
+- Reading the four local package JSON resources during import is the narrow I/O exception
+  explicitly required by the queue. Parsing, lookup and aggregation perform no database,
+  network, clock, random or logging operations.
+
+Official references used for the resource structure:
+
+- RoB 2: `https://www.riskofbias.info/welcome/rob-2-0-tool/current-version-of-rob-2`
+- ROBINS-I 2016: `https://www.riskofbias.info/welcome/home/original-2016-version-of-robins-i`
+- NOS: `https://ohri.ca/en/who-we-are/core-facilities-and-platforms/ottawa-methods-centre/newcastle-ottawa-scale`
+- QUADAS-2: `https://www.bristol.ac.uk/population-health-sciences/projects/quadas/history/quadas-2/`
+
+### Coverage and timings
+
+- `71` focused tests pass with **98.42%** scoped branch coverage.
+- A complete RoB 2 cohort of 1,000 records (5,000 domain judgements) summarised in
+  **15.450 ms/call** at the best of seven 20-call batches.
+- Validating the RoB 2 JSON resource took **0.318 ms/call** at the best of seven 100-call
+  batches.
+
+### Requests for Claude Code
+
+- The future `rob_assessments.domains` adapter must retain `variant_key` and `axis_key`.
+  A single `{domain_key: {judgement, support}}` value cannot safely represent both QUADAS-2
+  risk and applicability, or distinguish NOS cohort from case-control assessments.
+- Filter every query by the already-authorised project, include only the intended final
+  submitted/consensus cohort, and pass one complete judgement grid per record. Do not mix two
+  reviewers' rows and label the resulting count as a study count.
+- Persist the exact tool version and custom-template JSON used for an assessment. Published
+  templates should be immutable so later prompt/version changes cannot reinterpret old data.
+- The Phase 8 UI/plot adapter owns colour palettes, tool citations, support text, overall
+  judgements and accessible traffic-light/bar rendering. It must not impose an undeclared NOS
+  star-to-risk conversion.
+- Decide whether to add RoB 2 trial-design/effect variants, ROBINS-I V2 after final release,
+  and QUADAS-3 as new versioned templates; never mutate historical built-ins in place.
+
+### Verification and delivery
+
+- `uv run pytest tests/unit/rob -q`
+- `uv run ruff check app/rob tests/unit/rob`
+- `uv run ruff format --check app/rob tests/unit/rob`
+- `uv run mypy app/rob`
+- Extra strict test typing gate: `uv run mypy tests/unit/rob`
+- Extra coverage gate:
+  `uv run pytest tests/unit/rob -q --cov=app.rob --cov-report=term-missing --cov-fail-under=95`
+- Delivery branch: `codex/rob`, based on `codex/prisma` commit `b7a81f9`, pushed to
+  `origin/codex/rob`; merge it after `origin/codex/prisma`.
