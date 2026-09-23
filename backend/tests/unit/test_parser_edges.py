@@ -156,3 +156,37 @@ def test_a_quoted_field_value_keeps_its_spaces() -> None:
     query = parse_query('journal:"Sleep Health" author:"van der Berg"')
     assert query.journals == ["Sleep Health"]
     assert query.authors == ["van der Berg"]
+
+
+# --- BibTeX ------------------------------------------------------------------------------
+
+
+def test_a_quote_inside_an_abstract_does_not_swallow_the_rest_of_the_file() -> None:
+    """A real arXiv export lost 122 of its 272 entries to one pair of quotation marks.
+
+    In BibTeX a quote delimits a value only where the value starts; inside `{…}` it is
+    ordinary text, and abstracts are full of it.
+    """
+    text = (
+        "@article{arxiv.1,\n"
+        "  title = {{Federated learning for pancreas segmentation}},\n"
+        "  abstract = {One client has \"healthy'' pancreases only; another has tumours.},\n"
+        "  year = {2021}\n"
+        "}\n\n"
+        "@article{arxiv.2,\n"
+        "  title = {{Spatial aggregation of holistically-nested networks}},\n"
+        "  year = {2016}\n"
+        "}\n"
+    )
+    records = only_records(parse("bib", text))
+    assert [record.title for record in records] == [
+        "Federated learning for pancreas segmentation",
+        "Spatial aggregation of holistically-nested networks",
+    ]
+
+
+def test_a_quoted_value_is_still_read_as_one_value() -> None:
+    text = '@article{a,\n  title = "A title, with a comma",\n  year = {2020}\n}\n'
+    (record,) = only_records(parse("bib", text))
+    assert record.title == "A title, with a comma"
+    assert record.year == 2020

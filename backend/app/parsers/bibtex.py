@@ -73,14 +73,24 @@ def _entries(text: str) -> Iterator[tuple[int, str, str]]:
             return
         kind = text[at + 1 : open_brace].strip().lower()
         depth, cursor, in_quotes = 1, open_brace + 1, False
+        previous = ""
         while cursor < length and depth:
             char = text[cursor]
-            if char == '"' and text[cursor - 1] != "\\":
-                in_quotes = not in_quotes
-            elif not in_quotes and char == "{":
+            if in_quotes:
+                if char == '"' and text[cursor - 1] != "\\":
+                    in_quotes = False
+            # A quote only delimits a value at the top level of the entry, right after
+            # the `=`. Inside a braced value it is ordinary text — abstracts are full of
+            # them ("healthy" pancreases), and treating those as delimiters used to
+            # swallow every entry after the first one that had a quote in it.
+            elif char == '"' and depth == 1 and previous == "=":
+                in_quotes = True
+            elif char == "{":
                 depth += 1
-            elif not in_quotes and char == "}":
+            elif char == "}":
                 depth -= 1
+            if not char.isspace():
+                previous = char
             cursor += 1
         body = text[open_brace + 1 : cursor - 1]
         if kind not in {"comment", "string", "preamble"}:
