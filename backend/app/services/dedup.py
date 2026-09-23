@@ -10,9 +10,23 @@ from datetime import UTC, datetime
 
 from arq.connections import ArqRedis
 from sqlalchemy import Select, Uuid, column, delete, func, select, tuple_, update, values
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
-from app.models import ClusterStatus, DupCluster, DupClusterMember, ImportBatch, Record
+from app.models import (
+    ClusterStatus,
+    ConflictResolution,
+    Decision,
+    DupCluster,
+    DupClusterMember,
+    ImportBatch,
+    Note,
+    Project,
+    Record,
+    RecordLabel,
+    ScreeningStage,
+)
 from app.schemas.dedup import (
     ClusterMember,
     ClusterOut,
@@ -20,10 +34,12 @@ from app.schemas.dedup import (
     DedupSummary,
     MergeResult,
 )
+from app.schemas.projects import ProjectSettings
 from app.security.permissions import ProjectAccess
 from app.services import audit
 from app.services.audit import Actor
 from app.services.errors import ConflictError, NotFoundError, NotInClusterError
+from app.services.status import recompute
 
 # The review screen shows the least certain clusters first: those are the ones that need
 # a person. Certain ones are either already merged or one click away.
@@ -88,7 +104,7 @@ async def merge_cluster(
             .where(Record.duplicate_of.in_(secondaries))
             .values(duplicate_of=primary_id)
         )
-        await migrate_work(session, secondaries, primary_id)
+        await migrate_work(session, [(copy, primary_id) for copy in secondaries])
     # The primary the person chose may not be the one the algorithm picked.
     await session.execute(
         update(DupClusterMember)
@@ -152,7 +168,7 @@ async def merge_clusters(
             .values(duplicate_of=pairs.c.kept, updated_at=when)
             .execution_options(synchronize_session=None)
         )
-        await migrate_work(session, [row["rid"] for row in secondaries], None)
+        await migrate_work(session, [(row["rid"], row["primary"]) for row in secondaries])
     primaries = list(primary_by_cluster.values())
     await session.execute(
         update(Record).where(Record.id.in_(primaries)).values(is_duplicate=False, duplicate_of=None)
@@ -175,15 +191,110 @@ async def merge_clusters(
     return len(secondaries)
 
 
-async def migrate_work(
-    session: AsyncSession, secondaries: list[uuid.UUID], primary_id: uuid.UUID | None
-) -> None:
-    """Move decisions, labels and notes from the merged records onto the primary.
+async def migrate_work(session: AsyncSession, merged: list[tuple[uuid.UUID, uuid.UUID]]) -> None:
+    """Move what people did to the merged copies onto the record that was kept (guide 8.4).
 
-    Guide 8.4: what someone already did to a duplicate must not be lost when it is merged.
-    Those tables arrive with screening in Phase 5, so today there is nothing to move; this
-    is the one place that will have to know about them.
+    `merged` is (the copy, the record kept). Decisions, labels, notes and resolutions all
+    follow; where the kept record already has a person's decision (or a resolution) for a
+    stage, it stands and the copy's is left behind on the copy. Then the kept records'
+    statuses are recomputed. Right after an import there is nothing to move, and one query
+    says so.
     """
+    if not merged:
+        return
+    copies = [copy for copy, _ in merged]
+    touched = await session.scalar(
+        select(
+            select(Decision.id).where(Decision.record_id.in_(copies)).exists()
+            | select(Note.id).where(Note.record_id.in_(copies)).exists()
+            | select(RecordLabel.record_id).where(RecordLabel.record_id.in_(copies)).exists()
+            | select(ConflictResolution.id).where(ConflictResolution.record_id.in_(copies)).exists()
+        )
+    )
+    if not touched:
+        return
+
+    by_kept: dict[uuid.UUID, list[uuid.UUID]] = {}
+    for copy, kept in merged:
+        by_kept.setdefault(kept, []).append(copy)
+    for kept, sources in by_kept.items():
+        await _move_decisions(session, sources, kept)
+        await _move_resolutions(session, sources, kept)
+        await session.execute(
+            update(Note)
+            .where(Note.record_id.in_(sources))
+            .values(record_id=kept)
+            .execution_options(synchronize_session=None)
+        )
+        labels = (
+            select(RecordLabel.label_id, RecordLabel.user_id)
+            .where(RecordLabel.record_id.in_(sources))
+            .distinct()
+        )
+        rows = [
+            {"record_id": kept, "label_id": label_id, "user_id": user_id}
+            for label_id, user_id in await session.execute(labels)
+        ]
+        if rows:
+            await session.execute(pg_insert(RecordLabel).values(rows).on_conflict_do_nothing())
+
+    project_id = await session.scalar(select(Record.project_id).where(Record.id == copies[0]))
+    raw = await session.scalar(select(Project.settings).where(Project.id == project_id))
+    if project_id is None:  # pragma: no cover - the records were just read
+        return
+    settings = ProjectSettings.model_validate(raw or {})
+    for stage in ScreeningStage:
+        await recompute(session, project_id, stage, settings, list(by_kept))
+
+
+async def _move_decisions(session: AsyncSession, sources: list[uuid.UUID], kept: uuid.UUID) -> None:
+    """Each person's latest decision per stage on the copies, where the kept record has
+    none from them."""
+    candidates = (
+        select(Decision.id)
+        .where(Decision.record_id.in_(sources))
+        .distinct(Decision.user_id, Decision.stage)
+        .order_by(Decision.user_id, Decision.stage, Decision.updated_at.desc())
+    )
+    taken = aliased(Decision)
+    clash = (
+        select(taken.id)
+        .where(
+            taken.record_id == kept,
+            taken.user_id == Decision.user_id,
+            taken.stage == Decision.stage,
+        )
+        .exists()
+    )
+    await session.execute(
+        update(Decision)
+        .where(Decision.id.in_(candidates), ~clash)
+        .values(record_id=kept)
+        .execution_options(synchronize_session=None)
+    )
+
+
+async def _move_resolutions(
+    session: AsyncSession, sources: list[uuid.UUID], kept: uuid.UUID
+) -> None:
+    candidates = (
+        select(ConflictResolution.id)
+        .where(ConflictResolution.record_id.in_(sources))
+        .distinct(ConflictResolution.stage)
+        .order_by(ConflictResolution.stage, ConflictResolution.updated_at.desc())
+    )
+    taken = aliased(ConflictResolution)
+    clash = (
+        select(taken.id)
+        .where(taken.record_id == kept, taken.stage == ConflictResolution.stage)
+        .exists()
+    )
+    await session.execute(
+        update(ConflictResolution)
+        .where(ConflictResolution.id.in_(candidates), ~clash)
+        .values(record_id=kept)
+        .execution_options(synchronize_session=None)
+    )
 
 
 class DedupService:
