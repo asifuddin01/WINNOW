@@ -229,3 +229,129 @@ between records.
   `uv run pytest tests/unit/stats -q --cov=app.stats --cov-report=term-missing --cov-fail-under=95`
 - Delivery branch: `codex/stats`, based on `codex/dedup` commit `505b5f6`, pushed to
   `origin/codex/stats`. Merge it after `origin/codex/dedup`.
+
+## 2026-09-23 — PRISMA 2020 counts and SVG (guides 8.14 and 9.4)
+
+### Built
+
+- Added the pure `app.prisma` package with frozen, slotted `SourceCount`, `ExclusionCount`,
+  `PrismaInputs` and `PrismaCounts` dataclasses, validated PRISMA arithmetic and a
+  deterministic standalone SVG renderer.
+- The renderer uses semantic SVG text, a complete `<title>` and `<desc>`, generic system
+  fonts, labelled phase bands, dynamic wrapping/height, visible CC BY 4.0 attribution and
+  only inert local SVG elements. It contains no scripts, links, external resources, event
+  handlers or text converted to paths.
+- Added a broad advisory catalogue of 72 commonly used bibliographic databases, specialist
+  indexes, preprint/search systems, trial registries and the WHO ICTRP search portal. This
+  is never an allow-list: `SourceCount` accepts any nonblank XML-safe source name, including
+  sources not yet catalogued.
+- Added a hand-calculated flow fixture plus tests for arithmetic bounds, in-progress flows,
+  immutable/validated inputs, arbitrary database names, Unicode-equivalent duplicates,
+  source/reason display order, accessibility, XML escaping, inert output, deterministic
+  rendering and long dynamic layouts.
+
+### Public API and adapter call
+
+- `SourceCount(*, name: str, count: int)`
+- `ExclusionCount(*, reason: str, count: int)`
+- `PrismaInputs(...)` and `PrismaCounts(...)`
+- `counts(inputs: PrismaInputs) -> PrismaCounts`
+- `render_svg(counts: PrismaCounts) -> str`
+- Advisory constants: `COMMON_DATABASES`, `COMMON_TRIAL_REGISTRIES`,
+  `COMMON_SEARCH_PORTALS` and `COMMON_EVIDENCE_SOURCES`
+
+Load aggregates only after authorising and filtering one project, preserve the desired
+database/reason display order in the input tuples, and call the package like this:
+
+```python
+from app.prisma import ExclusionCount, PrismaInputs, SourceCount, counts, render_svg
+
+inputs = PrismaInputs(
+    database_sources=tuple(
+        SourceCount(name=database_name, count=imported)
+        for database_name, imported in ordered_import_totals
+    ),
+    other_sources=tuple(
+        SourceCount(name=name, count=value)
+        for name, value in ordered_manual_source_totals
+    ),
+    duplicates_removed=duplicate_count,
+    records_removed_other_reasons=manual_other_removal_count,
+    non_duplicate_records=non_duplicate_count,
+    title_abstract_excluded=ta_excluded_count,
+    title_abstract_included=ta_included_count,
+    reports_not_retrieved=not_retrieved_count,
+    full_text_exclusions=tuple(
+        ExclusionCount(reason=reason, count=value)
+        for reason, value in ordered_primary_reason_totals
+    ),
+    full_text_included=ft_included_count,
+)
+prisma_counts = counts(inputs)
+svg = render_svg(prisma_counts)
+```
+
+The database adapter should canonicalise equivalent `database_name` values
+(NFKC/trim/casefold), aggregate `ImportBatch.imported` under one chosen display spelling,
+count duplicates by `is_duplicate`, and restrict all title/abstract, full-text,
+not-retrieved and reason aggregates to `Record.is_duplicate = false`. It must also supply
+manual other-source/removal values. The future full-text reason join must assign each
+excluded report exactly one **primary** reason before grouping. Use the lowest-position
+selected reason and a visible
+`Reason not recorded` fallback unless product requirements establish a different policy;
+passing every selected reason would double-count reports.
+
+### Conventions and deliberate guide-scoped choices
+
+- `records_screened` is the guide's raw non-duplicate-record count. The independent manual
+  “removed for other reasons” field is validated against identified records but is not
+  silently subtracted from that database aggregate. The adapter must define and store which
+  records a manual removal represents if exact visual reconciliation is required.
+- The guide provides one manual “other sources” aggregate, so the renderer shows those
+  entries in the identification box. The official PRISMA template has separate variants
+  and source arms; automation-removal and updated-review branches are omitted because the
+  guide defines no inputs for them.
+- The package returns SVG only. Phase 8 owns SVG download plus trusted PNG-at-300-dpi and PDF
+  conversion; no renderer dependency was added.
+- IDs in the standalone SVG are intentionally stable. If the UI injects multiple diagrams
+  inline on one HTML page, it must prefix IDs or show only one. Prefer serving/embedding the
+  export as an image and provide an HTML `alt`; an external `<img>` does not reliably expose
+  the SVG's internal `<title>` and `<desc>` in every assistive technology.
+- Catalogue suggestions were reviewed on 2026-09-23 against the Cochrane Handbook's search
+  guidance, Gusenbauer and Haddaway (2020), and the WHO ICTRP primary-registry network.
+  Custom databases, registries, websites, citation searches and local citation files remain
+  valid without a catalogue change.
+
+### Fixture result, coverage and timings
+
+- Hand-calculated fixture: `240 + 10 = 250` identified; `210` screened; `150` excluded at
+  title/abstract; `60 - 5 = 55` reports assessed; `12 + 13 + 10 = 35` reports excluded at
+  full text; `20` studies included.
+- `58` focused tests pass with **100%** scoped branch coverage.
+- Best of seven 1,000-call batches on the fixture was **16.516 µs/call** for `counts()` and
+  **866.027 µs/call** for `render_svg()`; the generated SVG was 8,584 characters.
+
+### Requests for Claude Code
+
+- Add project-scoped storage/API fields for manual other-source counts and records removed
+  for other reasons. The current model also needs a full-text-not-retrievable state before
+  every guide count can be derived without an override.
+- Implement the one-primary-reason policy when full-text exclusion reasons are wired, and
+  keep tuple order stable using source display order and `ExclusionReason.position`.
+- Decide whether “studies included” can remain the guide's included-record count or needs a
+  report-to-study grouping model for strict PRISMA terminology.
+- Own PNG/PDF conversion and the UI/export response headers. The pure module performs no
+  file, database or HTTP I/O. The user's citation corpus at
+  `/Users/mdasifuddin/Academic/KIdney_Research/scoping review` can exercise the later
+  import/adapter integration; this arithmetic package intentionally does not read it.
+
+### Verification and delivery
+
+- `uv run pytest tests/unit/prisma -q`
+- `uv run ruff check app/prisma tests/unit/prisma`
+- `uv run ruff format --check app/prisma tests/unit/prisma`
+- `uv run mypy app/prisma`
+- Extra coverage gate:
+  `uv run pytest tests/unit/prisma -q --cov=app.prisma --cov-report=term-missing --cov-fail-under=95`
+- Delivery branch: `codex/prisma`, based on `codex/stats` commit `d1e5c45`, pushed to
+  `origin/codex/prisma`; merge it after `origin/codex/stats`.
