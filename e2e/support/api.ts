@@ -12,16 +12,30 @@ export async function apiPost(
   baseURL: string,
   path: string,
   data: unknown,
-): Promise<void> {
+): Promise<unknown> {
   const { csrf_token } = (await (await request.get("/api/v1/auth/csrf")).json()) as {
     csrf_token: string;
   };
-  const response = await request.post(`/api/v1/auth${path}`, {
+  const url = path.startsWith("/api/") ? path : `/api/v1/auth${path}`;
+  const response = await request.post(url, {
     data,
     headers: { "X-CSRF-Token": csrf_token, Origin: baseURL },
   });
   if (!response.ok())
     throw new Error(`${path} answered ${response.status()}: ${await response.text()}`);
+  return response.status() === 204 ? null : await response.json();
+}
+
+/** A review owned by whoever `request` is signed in as; returns its id. */
+export async function createProject(
+  request: APIRequestContext,
+  baseURL: string,
+  title: string,
+): Promise<string> {
+  const project = (await apiPost(request, baseURL, "/api/v1/projects", { title })) as {
+    id: string;
+  };
+  return project.id;
 }
 
 /**
