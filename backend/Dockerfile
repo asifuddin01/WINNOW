@@ -27,7 +27,7 @@ USER winnow
 EXPOSE 8000
 # Behind Caddy on the internal network: take the client address from X-Forwarded-For,
 # which Caddy sets itself (it ignores the header from untrusted clients).
-CMD ["uvicorn", "app.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--reload", "--no-access-log", "--proxy-headers", "--forwarded-allow-ips", "*"]
+CMD ["uvicorn", "app.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--reload", "--timeout-graceful-shutdown", "5", "--no-access-log", "--proxy-headers", "--forwarded-allow-ips", "*"]
 
 FROM base AS prod
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -42,4 +42,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \
     CMD ["python", "-c", "import urllib.request,sys; sys.exit(urllib.request.urlopen('http://127.0.0.1:8000/api/v1/healthz', timeout=2).status != 200)"]
 # The API is reachable only through Caddy on the internal network, so trust its X-Forwarded-For.
-CMD ["uvicorn", "app.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--no-access-log", "--proxy-headers", "--forwarded-allow-ips", "*"]
+CMD ["uvicorn", "app.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--timeout-graceful-shutdown", "10", "--no-access-log", "--proxy-headers", "--forwarded-allow-ips", "*"]

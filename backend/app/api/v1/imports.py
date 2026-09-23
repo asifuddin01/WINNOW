@@ -7,6 +7,7 @@ starts the worker, and the browser follows progress on the project's event strea
 import uuid
 from collections.abc import AsyncIterator
 from datetime import date
+from time import monotonic
 from typing import Annotated
 
 from fastapi import APIRouter, File, Form, Request, UploadFile, status
@@ -33,6 +34,11 @@ router = APIRouter(prefix="/projects/{pid}", tags=["imports"])
 CHUNK = 1024 * 1024
 # How long a quiet event stream waits before sending a comment to keep the pipe open.
 HEARTBEAT_SECONDS = 15.0
+# How long one stream lives. An endless response keeps a server from ever finishing a
+# graceful shutdown or reload; the browser reconnects on its own (after RETRY_MS) and is
+# sent the recent events again, so ending a stream loses nothing.
+STREAM_SECONDS = 300.0
+RETRY_MS = 2000
 
 
 async def _chunks(upload: UploadFile) -> AsyncIterator[bytes]:
@@ -141,10 +147,12 @@ async def project_events(
     async def stream() -> AsyncIterator[str]:
         pubsub = redis.pubsub()
         await pubsub.subscribe(events.channel_for(project_id))
+        ends = monotonic() + STREAM_SECONDS
         try:
+            yield f"retry: {RETRY_MS}\n\n"
             for payload in await events.recent(redis, project_id):
                 yield f"data: {payload}\n\n"
-            while not await request.is_disconnected():
+            while monotonic() < ends and not await request.is_disconnected():
                 message = await pubsub.get_message(
                     ignore_subscribe_messages=True, timeout=HEARTBEAT_SECONDS
                 )

@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+import pytest
 from fastapi import FastAPI
 from httpx import AsyncClient
 from sqlalchemy import func, select
@@ -300,3 +301,27 @@ async def test_more_files_than_the_instance_allows_are_refused(
         assert response.status_code == 400
         assert response.json()["code"] == "too_many_files"
         assert (await get(owner, f"/projects/{project['id']}/imports")).json() == []
+
+
+async def test_the_event_stream_replays_recent_events_and_then_ends(
+    db_app: FastAPI, mailer: MemoryMailer, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A stream that never ends keeps a server from reloading or shutting down. Each one
+    lives a few minutes; the browser reconnects and is sent what it may have missed."""
+    from app.api.v1 import imports as routes
+    from app.services import events
+
+    monkeypatch.setattr(routes, "STREAM_SECONDS", 0.5)
+    monkeypatch.setattr(routes, "HEARTBEAT_SECONDS", 0.1)
+    async with person(db_app, mailer, OWNER) as owner:
+        project = await create_project(owner)
+        pid = project["id"]
+        await events.publish(db_app.state.redis, uuid.UUID(pid), "import.finished", {"imported": 7})
+
+        response = await owner.get(f"/api/v1/projects/{pid}/events")  # returns: the stream ended
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/event-stream")
+        body = response.text
+        assert body.startswith("retry: 2000")
+        assert '"event": "import.finished"' in body or '"event":"import.finished"' in body
+        assert ": keep-alive" in body
