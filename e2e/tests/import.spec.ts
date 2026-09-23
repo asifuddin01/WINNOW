@@ -5,9 +5,9 @@ import { PASSWORD, createProject, createSignedInUser } from "../support/api";
 import { uniqueEmail } from "../support/mail";
 
 /** A small RIS export, the shape PubMed and Ovid send. */
-function ris(count: number): string {
+function ris(count: number, from = 0): string {
   const entries = [];
-  for (let index = 1; index <= count; index++) {
+  for (let index = from + 1; index <= from + count; index++) {
     entries.push(
       [
         "TY  - JOUR",
@@ -54,28 +54,43 @@ test("a search export is previewed, imported and then searchable", async ({
   await signIn(page, owner);
 
   await page.goto(`/p/${pid}/import`);
-  await page.getByLabel("Database searched").click();
-  await page.getByRole("option", { name: "PubMed", exact: true }).click();
   await page.getByLabel("Search string").fill("nurses AND shift work");
-  await page.getByLabel("Search export file").setInputFiles({
-    name: "pubmed.ris",
-    mimeType: "application/x-research-info-systems",
-    buffer: Buffer.from(ris(25), "utf8"),
-  });
-  await page.getByRole("button", { name: "Upload and preview" }).click();
+  // A search leaves a database in several files; they go up together (guide 8.3).
+  await page.getByLabel("Search export files").setInputFiles([
+    {
+      name: "pubmed_part1.ris",
+      mimeType: "application/x-research-info-systems",
+      buffer: Buffer.from(ris(15), "utf8"),
+    },
+    {
+      name: "pubmed_part2.ris",
+      mimeType: "application/x-research-info-systems",
+      buffer: Buffer.from(ris(10, 100), "utf8"),
+    },
+  ]);
+  await expect(page.getByText("2 files ready")).toBeVisible();
+  // Winnow names the database from the file name, so twenty files do not need twenty edits.
+  await expect(page.getByLabel("Database for pubmed_part1.ris")).toContainText("PubMed");
+  await page.getByRole("button", { name: /Upload and preview 2 files/ }).click();
 
-  // Nothing is in the review yet: this is what Winnow read from the file.
+  // Nothing is in the review yet: this is what Winnow read from each file.
+  await expect(page.getByText("pubmed_part1.ris", { exact: true })).toBeVisible();
+  await expect(page.getByText("pubmed_part2.ris", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Check" }).first().click();
   await expect(page.getByRole("heading", { name: "The first records Winnow read" })).toBeVisible();
   await expect(page.getByText("part 1", { exact: false }).first()).toBeVisible();
-  await expect(page.getByText(/1 entry near the start could not be read/)).toBeVisible();
 
-  await page.getByRole("button", { name: "Import these records" }).click();
+  await page.getByRole("button", { name: "Import all 2 files" }).click();
 
-  // The worker imports in the background; the stream says when it is done.
-  await expect(page.getByText("Imported", { exact: true })).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByText("25 records", { exact: false })).toBeVisible();
-  await expect(page.getByText("· 1 could not be read")).toBeVisible();
-  await expect(page.getByText(/Search: nurses AND shift work/)).toBeVisible();
+  // The worker imports in the background; the stream says when it is done. Each file is
+  // its own import, so PRISMA can count them and either can be undone on its own.
+  await expect(page.getByText("Imported", { exact: true }).first()).toBeVisible({
+    timeout: 60_000,
+  });
+  await expect(page.getByText("Imported", { exact: true })).toHaveCount(2);
+  await expect(page.getByText("15 records", { exact: false })).toBeVisible();
+  await expect(page.getByText("10 records", { exact: false })).toBeVisible();
+  await expect(page.getByText(/Search: nurses AND shift work/).first()).toBeVisible();
 
   // And they are there to read. On a phone the review's navigation is behind the sheet.
   if (isMobile) {
@@ -123,13 +138,13 @@ test("a file Winnow cannot read is refused, and nothing is imported", async ({
   await signIn(page, owner);
 
   await page.goto(`/p/${pid}/import`);
-  await page.getByLabel("Search export file").setInputFiles({
+  await page.getByLabel("Search export files").setInputFiles({
     name: "holiday.txt",
     mimeType: "text/plain",
     buffer: Buffer.from("We went to the seaside and it rained.\n", "utf8"),
   });
-  await page.getByRole("button", { name: "Upload and preview" }).click();
+  await page.getByRole("button", { name: /Upload and preview/ }).click();
 
-  await expect(page.getByText(/could not read/i)).toBeVisible();
+  await expect(page.getByText(/could not read/i).first()).toBeVisible();
   await expect(page.getByText("Nothing imported yet", { exact: false })).toBeVisible();
 });

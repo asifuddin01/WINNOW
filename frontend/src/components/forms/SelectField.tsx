@@ -18,6 +18,9 @@ interface SelectFieldProps<T extends string> {
   error?: string;
   disabled?: boolean;
   className?: string;
+  /** Keep the label for screen readers but take it off the screen, where a row of
+   * controls already says what they are. */
+  hideLabel?: boolean;
 }
 
 /** A labelled select, wired to its hint and error for screen readers (guide 14). */
@@ -30,13 +33,16 @@ export function SelectField<T extends string>({
   error,
   disabled,
   className,
+  hideLabel,
 }: SelectFieldProps<T>) {
   const id = useId();
   const hintId = hint ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
   return (
     <div className="grid gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id} className={hideLabel ? "sr-only" : undefined}>
+        {label}
+      </Label>
       <Select
         value={value}
         onValueChange={(next) => {

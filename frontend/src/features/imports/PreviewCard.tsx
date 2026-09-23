@@ -1,23 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { CheckIcon, TriangleAlertIcon, XIcon } from "lucide-react";
+import { TriangleAlertIcon } from "lucide-react";
 import { useState } from "react";
 
 import { errorMessage } from "@/api/client";
-import {
-  confirmImport,
-  importKeys,
-  importPreviewQuery,
-  undoImport,
-  type ImportBatch,
-} from "@/api/imports";
-import { projectKeys } from "@/api/projects";
-import { recordKeys } from "@/api/records";
+import { importPreviewQuery, type ImportBatch } from "@/api/imports";
 import { FormAlert } from "@/components/forms/FormAlert";
 import { SelectField } from "@/components/forms/SelectField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useProjectMutation } from "@/features/projects/use-project-mutation";
 
 /** The fields a CSV column can be mapped onto; "—" leaves the column out. */
 const FIELDS = [
@@ -44,44 +35,82 @@ const FIELDS = [
 interface PreviewCardProps {
   pid: string;
   batch: ImportBatch;
-  onStarted: (batch: ImportBatch) => void;
-  onCancelled: () => void;
+  mapping?: Record<string, string>;
+  onMappingChange: (mapping: Record<string, string>) => void;
+  /** With several files at once, each one opens on request rather than all at once. */
+  collapsed?: boolean;
 }
 
-/** Guide 8.3: see the first records, map CSV columns, then confirm. */
-export function PreviewCard({ pid, batch, onStarted, onCancelled }: PreviewCardProps) {
-  const { data: preview, isPending, error } = useQuery(importPreviewQuery(pid, batch.id));
-  const [mapping, setMapping] = useState<Record<string, string> | null>(null);
-  const invalidate = [importKeys.list(pid), projectKeys.detail(pid)];
-  const start = useProjectMutation(
-    () => confirmImport(pid, batch.id, mapping ? { column_mapping: mapping } : {}),
-    { invalidate: [...invalidate, recordKeys.facets(pid)] },
-  );
-  const cancel = useProjectMutation(() => undoImport(pid, batch.id), {
-    invalidate,
-    success: "Upload discarded.",
+/** Guide 8.3: one file as Winnow read it — the first records, and CSV's column mapping. */
+export function PreviewCard({
+  pid,
+  batch,
+  mapping,
+  onMappingChange,
+  collapsed = false,
+}: PreviewCardProps) {
+  const [open, setOpen] = useState(!collapsed);
+  const {
+    data: preview,
+    isPending,
+    error,
+  } = useQuery({
+    ...importPreviewQuery(pid, batch.id),
+    enabled: open,
   });
 
-  if (isPending) return <Skeleton className="h-64 w-full rounded-xl" />;
-  if (error) return <FormAlert>{errorMessage(error)}</FormAlert>;
+  const header = (
+    <div className="flex flex-wrap items-center gap-2 text-sm">
+      <Badge variant="secondary">{batch.file_format.replace("_", " ")}</Badge>
+      <span className="min-w-0 flex-1 truncate font-medium">{batch.filename}</span>
+      <span className="text-muted-foreground">
+        {(batch.size_bytes / 1024).toFixed(0)} KB · {batch.database_name}
+      </span>
+      {collapsed && (
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          aria-expanded={open}
+          onClick={() => {
+            setOpen((current) => !current);
+          }}
+        >
+          {open ? "Hide" : "Check"}
+        </Button>
+      )}
+    </div>
+  );
+
+  if (!open) return header;
+  if (isPending) {
+    return (
+      <div className="grid gap-3">
+        {header}
+        <Skeleton className="h-40 w-full rounded-lg" />
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="grid gap-3">
+        {header}
+        <FormAlert>{errorMessage(error)}</FormAlert>
+      </div>
+    );
+  }
 
   const columns = preview.columns ?? [];
   const chosen = mapping ?? preview.suggested_mapping ?? {};
 
   return (
-    <div className="grid gap-5">
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <Badge variant="secondary">{batch.file_format.replace("_", " ")}</Badge>
-        <span className="font-medium">{batch.filename}</span>
-        <span className="text-muted-foreground">
-          {(batch.size_bytes / 1024).toFixed(0)} KB · {batch.database_name}
-        </span>
-      </div>
+    <div className="grid gap-4">
+      {header}
 
       {columns.length > 0 && (
-        <section aria-labelledby="mapping" className="grid gap-3">
+        <section aria-labelledby={`mapping-${batch.id}`} className="grid gap-3">
           <div>
-            <h3 id="mapping" className="text-sm font-semibold">
+            <h3 id={`mapping-${batch.id}`} className="text-sm font-semibold">
               Which column holds what?
             </h3>
             <p className="text-xs text-muted-foreground">
@@ -97,10 +126,11 @@ export function PreviewCard({ pid, batch, onStarted, onCancelled }: PreviewCardP
                 options={FIELDS}
                 onChange={(field) => {
                   // A column with no field chosen is simply left out of the mapping.
-                  const next = Object.fromEntries(
-                    Object.entries({ ...chosen, [column]: field }).filter(([, value]) => value),
+                  onMappingChange(
+                    Object.fromEntries(
+                      Object.entries({ ...chosen, [column]: field }).filter(([, value]) => value),
+                    ),
                   );
-                  setMapping(next);
                 }}
               />
             ))}
@@ -108,8 +138,8 @@ export function PreviewCard({ pid, batch, onStarted, onCancelled }: PreviewCardP
         </section>
       )}
 
-      <section aria-labelledby="first-records" className="grid gap-2">
-        <h3 id="first-records" className="text-sm font-semibold">
+      <section aria-labelledby={`first-records-${batch.id}`} className="grid gap-2">
+        <h3 id={`first-records-${batch.id}`} className="text-sm font-semibold">
           The first records Winnow read
         </h3>
         {preview.records.length === 0 ? (
@@ -119,7 +149,7 @@ export function PreviewCard({ pid, batch, onStarted, onCancelled }: PreviewCardP
         ) : (
           <ul className="grid gap-2">
             {preview.records.map((record, index) => (
-              <li key={index} className="rounded-lg border border-border bg-card p-3">
+              <li key={index} className="rounded-lg border border-border bg-background p-3">
                 <p className="text-sm font-medium">{record.title ?? "(no title)"}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {[record.authors.slice(0, 3).join("; "), record.year, record.journal]
@@ -143,27 +173,6 @@ export function PreviewCard({ pid, batch, onStarted, onCancelled }: PreviewCardP
           </span>
         </p>
       )}
-
-      <div className="flex flex-wrap gap-3">
-        <Button
-          disabled={start.isPending || preview.records.length === 0}
-          onClick={() => {
-            start.mutate(undefined, { onSuccess: onStarted });
-          }}
-        >
-          <CheckIcon aria-hidden="true" />
-          {start.isPending ? "Starting…" : "Import these records"}
-        </Button>
-        <Button
-          variant="ghost"
-          disabled={cancel.isPending}
-          onClick={() => {
-            cancel.mutate(undefined, { onSuccess: onCancelled });
-          }}
-        >
-          <XIcon aria-hidden="true" /> Discard this file
-        </Button>
-      </div>
     </div>
   );
 }

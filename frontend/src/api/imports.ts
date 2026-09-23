@@ -8,6 +8,8 @@ export type ImportBatch = components["schemas"]["ImportOut"];
 export type ImportPreview = components["schemas"]["ImportPreview"];
 export type ImportProblem = components["schemas"]["ImportProblem"];
 export type ConfirmImport = components["schemas"]["ConfirmImport"];
+export type ImportUpload = components["schemas"]["ImportUpload"];
+export type RejectedFile = components["schemas"]["RejectedFile"];
 
 export const importKeys = {
   list: (pid: string) => ["projects", pid, "imports"] as const,
@@ -36,22 +38,32 @@ export const importPreviewQuery = (pid: string, bid: string) =>
     retry: false,
   });
 
-export interface UploadFields {
+export interface UploadFile {
   file: File;
+  /** Which database this one file came from; they can differ within a drop. */
   database_name: string;
+}
+
+export interface UploadFields {
+  files: UploadFile[];
   source_name?: string;
   search_date?: string;
   search_string?: string;
 }
 
 /**
- * Uploading is the one call that is not JSON: the file goes as form data, and openapi-fetch
- * would serialise it wrongly, so this uses fetch with the same CSRF header the client adds.
+ * Uploading is the one call that is not JSON: the files go as form data, and openapi-fetch
+ * would serialise them wrongly, so this uses fetch with the same CSRF header the client adds.
+ * A whole drop of exports goes in one request, so it counts once against the upload limit.
  */
-export async function uploadImport(pid: string, fields: UploadFields): Promise<ImportBatch> {
+export async function uploadImports(pid: string, fields: UploadFields): Promise<ImportUpload> {
   const body = new FormData();
-  body.append("file", fields.file, fields.file.name);
-  body.append("database_name", fields.database_name);
+  for (const { file, database_name } of fields.files) {
+    body.append("files", file, file.name);
+    // One database per file, in the same order the files are appended.
+    body.append("databases", database_name);
+  }
+  body.append("database_name", fields.files[0]?.database_name ?? "Other");
   if (fields.source_name) body.append("source_name", fields.source_name);
   if (fields.search_date) body.append("search_date", fields.search_date);
   if (fields.search_string) body.append("search_string", fields.search_string);
@@ -68,7 +80,7 @@ export async function uploadImport(pid: string, fields: UploadFields): Promise<I
     const { ApiError } = await import("@/api/client");
     throw new ApiError(response.status, payload as never);
   }
-  return payload as ImportBatch;
+  return payload as ImportUpload;
 }
 
 export async function confirmImport(

@@ -75,19 +75,29 @@ function fakeEvents() {
   };
 }
 
+/** The preview and confirm routes for a whole drop of files. */
+function previewRoutes(batches: { id: string }[]): Record<string, unknown> {
+  const routes: Record<string, unknown> = {};
+  for (const batch of batches) {
+    routes[`GET ${base}/imports/${batch.id}/preview`] = { ...PREVIEW, batch, problems: [] };
+    routes[`POST ${base}/imports/${batch.id}/confirm`] = { batch, job_id: `j${batch.id}` };
+  }
+  return routes;
+}
+
 describe("the import page", () => {
   test("uploading a file shows what Winnow read before anything is imported", async () => {
     const server = mockApi({
       ...signedIn,
       ...projectRoutes(),
-      [`POST ${base}/imports`]: BATCH,
+      [`POST ${base}/imports`]: { batches: [BATCH], rejected: [] },
       [`GET ${base}/imports/b1/preview`]: PREVIEW,
       [`POST ${base}/imports/b1/confirm`]: { batch: { ...BATCH, status: "parsing" }, job_id: "j1" },
     });
     const user = userEvent.setup();
     renderApp(`/p/${PROJECT.id}/import`);
 
-    await user.upload(await screen.findByLabelText("Search export file"), file());
+    await user.upload(await screen.findByLabelText("Search export files"), file());
     await user.click(screen.getByRole("button", { name: "Upload and preview" }));
 
     expect(await screen.findByText("Rotating night shifts and sleep quality")).toBeVisible();
@@ -104,7 +114,7 @@ describe("the import page", () => {
     const server = mockApi({
       ...signedIn,
       ...projectRoutes(),
-      [`POST ${base}/imports`]: csvBatch,
+      [`POST ${base}/imports`]: { batches: [csvBatch], rejected: [] },
       [`GET ${base}/imports/b2/preview`]: {
         ...PREVIEW,
         batch: csvBatch,
@@ -119,7 +129,7 @@ describe("the import page", () => {
     renderApp(`/p/${PROJECT.id}/import`);
 
     await user.upload(
-      await screen.findByLabelText("Search export file"),
+      await screen.findByLabelText("Search export files"),
       file("scopus.csv", "Title,Source title\nA record,BMJ\n"),
     );
     await user.click(screen.getByRole("button", { name: "Upload and preview" }));
@@ -135,6 +145,63 @@ describe("the import page", () => {
     expect(await server.calls(`POST ${base}/imports/b2/confirm`)[0]?.json()).toEqual({
       column_mapping: { Title: "title", "Source title": "journal", Nickname: "keywords" },
     });
+  });
+
+  test("a whole search goes up at once, one import per file", async () => {
+    const batches = ["pubmed.ris", "scopus.ris", "ieee_xplore.ris"].map((filename, index) => ({
+      ...BATCH,
+      id: `b${index + 10}`,
+      filename,
+      database_name: filename.split(/[._]/)[0],
+    }));
+    const server = mockApi({
+      ...signedIn,
+      ...projectRoutes(),
+      [`POST ${base}/imports`]: {
+        batches,
+        rejected: [{ filename: "notes.txt", reason: "Winnow could not read that file." }],
+      },
+      ...previewRoutes(batches),
+    });
+    const user = userEvent.setup();
+    renderApp(`/p/${PROJECT.id}/import`);
+
+    const picker = await screen.findByLabelText("Search export files");
+    await user.upload(picker, [file("pubmed.ris"), file("scopus.ris"), file("ieee_xplore.ris")]);
+
+    // Winnow names the database from each file, and they can be corrected before upload.
+    expect(await screen.findByText("3 files ready")).toBeVisible();
+    expect(screen.getByLabelText("Database for pubmed.ris")).toHaveTextContent("PubMed");
+    expect(screen.getByLabelText("Database for scopus.ris")).toHaveTextContent("Scopus");
+    expect(screen.getByLabelText("Database for ieee_xplore.ris")).toHaveTextContent("IEEE Xplore");
+
+    await user.click(screen.getByRole("button", { name: /Upload and preview 3 files/ }));
+
+    expect(await screen.findByText(/1 file could not be read/)).toBeVisible();
+    expect(screen.getByText("notes.txt")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Import all 3 files" }));
+
+    for (const batch of batches) {
+      expect(server.calls(`POST ${base}/imports/${batch.id}/confirm`)).toHaveLength(1);
+    }
+    const upload = server.calls(`POST ${base}/imports`)[0];
+    expect(upload?.form?.getAll("files")).toHaveLength(3);
+    expect(upload?.form?.getAll("databases")).toEqual(["PubMed", "Scopus", "IEEE Xplore"]);
+  });
+
+  test("a file can be taken back out of the drop before it is uploaded", async () => {
+    mockApi({ ...signedIn, ...projectRoutes() });
+    const user = userEvent.setup();
+    renderApp(`/p/${PROJECT.id}/import`);
+
+    await user.upload(await screen.findByLabelText("Search export files"), [
+      file("pubmed.ris"),
+      file("scopus.ris"),
+    ]);
+    expect(await screen.findByText("2 files ready")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Remove scopus.ris" }));
+    expect(await screen.findByText("1 file ready")).toBeVisible();
+    expect(screen.queryByText("scopus.ris")).toBeNull();
   });
 
   test("the history shows what came in and what could not be read", async () => {
@@ -187,7 +254,7 @@ describe("the import page", () => {
     // The file picker only offers export extensions, so the refusal comes from the
     // server reading the content, which is where it belongs.
     await user.upload(
-      await screen.findByLabelText("Search export file"),
+      await screen.findByLabelText("Search export files"),
       file("holiday.txt", "just some prose"),
     );
     await user.click(screen.getByRole("button", { name: "Upload and preview" }));
@@ -226,7 +293,7 @@ describe("the import page", () => {
     renderApp(`/p/${PROJECT.id}/import`);
 
     expect(await screen.findByText("pubmed.ris")).toBeVisible();
-    expect(screen.queryByLabelText("Search export file")).toBeNull();
+    expect(screen.queryByLabelText("Search export files")).toBeNull();
     expect(screen.queryByRole("button", { name: /Undo the import/ })).toBeNull();
   });
 });

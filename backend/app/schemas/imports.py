@@ -73,6 +73,23 @@ class ImportPreview(BaseModel):
     sample_rows: list[dict[str, str]] = Field(default_factory=list)
 
 
+class RejectedFile(BaseModel):
+    """A file in a multi-file upload that Winnow could not take, and why."""
+
+    filename: str
+    reason: str
+
+
+class ImportUpload(BaseModel):
+    """The result of one upload: the batches it made, and anything it had to refuse.
+
+    One unreadable file among twenty does not lose the other nineteen.
+    """
+
+    batches: list[ImportOut]
+    rejected: list[RejectedFile] = Field(default_factory=list)
+
+
 class ImportAccepted(BaseModel):
     batch: ImportOut
     job_id: str | None
@@ -89,7 +106,9 @@ __all__ = [
     "ImportOut",
     "ImportPreview",
     "ImportProblem",
+    "ImportUpload",
     "LongText",
     "RecordPreview",
+    "RejectedFile",
     "problems_of",
 ]

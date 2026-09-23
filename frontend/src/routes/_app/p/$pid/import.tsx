@@ -2,14 +2,17 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
 
-import { importKeys, type ImportBatch } from "@/api/imports";
+import { importKeys, type ImportUpload } from "@/api/imports";
 import { projectQuery } from "@/api/projects";
 import { recordKeys } from "@/api/records";
 import { Section } from "@/features/account/Section";
 import { ImportHistory } from "@/features/imports/ImportHistory";
-import { PreviewCard } from "@/features/imports/PreviewCard";
+import { PreviewList } from "@/features/imports/PreviewList";
 import { UploadCard } from "@/features/imports/UploadCard";
 import { useProjectEvents, type ProjectEvent } from "@/hooks/use-project-events";
+
+// Guide 8.3 and the instance's max_upload_files: a whole search at once, not file by file.
+const MAX_FILES = 20;
 
 export const Route = createFileRoute("/_app/p/$pid/import")({
   component: ImportPage,
@@ -20,7 +23,7 @@ function ImportPage() {
   const { pid } = Route.useParams();
   const queryClient = useQueryClient();
   const { data: project } = useQuery(projectQuery(pid));
-  const [uploaded, setUploaded] = useState<ImportBatch | null>(null);
+  const [uploaded, setUploaded] = useState<ImportUpload | null>(null);
 
   // Progress arrives on the project's event stream; refresh what it changes.
   const onEvent = useCallback(
@@ -43,31 +46,35 @@ function ImportPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Import</h1>
         <p className="mt-1 text-muted-foreground">
-          Bring in search results, one export at a time. Nothing is added until you have seen what
-          Winnow read.
+          Bring in your search results — up to {MAX_FILES} exports at once. Nothing is added until
+          you have seen what Winnow read.
         </p>
       </div>
 
       {canImport &&
         (uploaded ? (
-          <Section title="Check before importing" description={uploaded.filename}>
-            <PreviewCard
+          <Section
+            title="Check before importing"
+            description={
+              uploaded.batches.length === 1
+                ? uploaded.batches[0]?.filename
+                : `${uploaded.batches.length} files`
+            }
+          >
+            <PreviewList
               pid={pid}
-              batch={uploaded}
-              onStarted={() => {
-                setUploaded(null);
-              }}
-              onCancelled={() => {
+              upload={uploaded}
+              onDone={() => {
                 setUploaded(null);
               }}
             />
           </Section>
         ) : (
           <Section
-            title="Upload a search export"
-            description="Record which database it came from; PRISMA asks for that later."
+            title="Upload your search exports"
+            description="As many files as one search produced. Record which database each came from; PRISMA asks for that later."
           >
-            <UploadCard pid={pid} onUploaded={setUploaded} />
+            <UploadCard pid={pid} limit={MAX_FILES} onUploaded={setUploaded} />
           </Section>
         ))}
 

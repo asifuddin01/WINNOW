@@ -5,7 +5,8 @@ show a preview; the real work happens in the worker after the person confirms.
 """
 
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
+from dataclasses import dataclass
 from itertools import islice
 from typing import Any
 
@@ -21,7 +22,9 @@ from app.schemas.imports import (
     ImportMeta,
     ImportOut,
     ImportPreview,
+    ImportUpload,
     RecordPreview,
+    RejectedFile,
     problems_of,
 )
 from app.security.permissions import ProjectAccess
@@ -37,6 +40,15 @@ PREVIEW_PROBLEMS = 20
 MEGABYTE = 1024 * 1024
 
 
+@dataclass(frozen=True, slots=True)
+class UploadedFile:
+    """One file out of an upload, still streaming."""
+
+    filename: str
+    chunks: AsyncIterator[bytes]
+    database_name: str | None = None
+
+
 class UnknownFormatError(DomainError):
     status = 415
     code = "unknown_format"
@@ -49,6 +61,11 @@ class UnknownFormatError(DomainError):
 class FileTooLargeError(DomainError):
     status = 413
     code = "file_too_large"
+
+
+class TooManyFilesError(DomainError):
+    status = 400
+    code = "too_many_files"
 
 
 class ImportService:
@@ -125,6 +142,48 @@ class ImportService:
         await self._db.commit()
         await self._db.refresh(batch)
         return batch
+
+    async def upload_all(
+        self,
+        access: ProjectAccess,
+        files: Sequence[UploadedFile],
+        *,
+        meta: ImportMeta,
+        actor: Actor,
+    ) -> ImportUpload:
+        """Take a whole drop of search exports (guide 8.3).
+
+        Each file becomes its own batch, because PRISMA counts each search separately and
+        an undo has to be able to take one file back out. A file Winnow cannot read is
+        reported beside the others rather than failing the upload.
+        """
+        limit = self._settings.max_upload_files
+        if len(files) > limit:
+            raise TooManyFilesError(f"That is more than {limit} files. Upload them in batches.")
+        batches: list[ImportOut] = []
+        rejected: list[RejectedFile] = []
+        for item in files:
+            database = item.database_name or meta.database_name
+            # One name per file, so the history and PRISMA can tell eleven exports from
+            # one database apart; a single file may keep the name the person gave it.
+            named = meta.source_name if meta.source_name and len(files) == 1 else None
+            file_meta = meta.model_copy(
+                update={
+                    "database_name": database,
+                    "source_name": named or _source_name(database, item.filename),
+                }
+            )
+            try:
+                batch = await self.upload(
+                    access, filename=item.filename, chunks=item.chunks, meta=file_meta, actor=actor
+                )
+            except DomainError as error:
+                rejected.append(RejectedFile(filename=item.filename, reason=error.detail))
+                continue
+            batches.append(out(batch))
+        if not batches and rejected:
+            raise UnknownFormatError(rejected[0].reason)
+        return ImportUpload(batches=batches, rejected=rejected)
 
     # --- Reading -----------------------------------------------------------------------
 
@@ -234,6 +293,12 @@ class ImportService:
         )
         await self._db.commit()
         return count or 0
+
+
+def _source_name(database: str, filename: str) -> str:
+    """What this search is called in the history and in PRISMA."""
+    stem = filename.rsplit(".", 1)[0][:80]
+    return f"{database} · {stem}"[:200]
 
 
 def _decode(raw: bytes) -> str:

@@ -64,6 +64,9 @@ class Settings(BaseSettings):
     google_client_secret: SecretStr | None = None
 
     max_upload_mb: int = Field(default=200, ge=1, le=10_000)
+    # How many search exports one upload may carry. A search usually comes out of a
+    # database in several files, and dropping them one at a time is the slow part.
+    max_upload_files: int = Field(default=20, ge=1, le=100)
     session_idle_days: int = Field(default=7, ge=1, le=365)
     session_absolute_days: int = Field(default=30, ge=1, le=365)
 
