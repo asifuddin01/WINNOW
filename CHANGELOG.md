@@ -34,10 +34,26 @@ All notable changes, one section per build phase (guide Section 17).
   quote in an abstract swallowed every entry after it. A real arXiv export lost 122 of its
   272 records this way; all of them now come in.
 
+- Running a whole review folder through it (38 files, 8,298 records) found four problems,
+  all fixed: every finished import queued its own dedup run, so a drop of files started
+  dozens at once on one review; the trigram join ran past a minute at that size; groups
+  that needed a person were padded with identical copies from overlapping queries; and a
+  live event stream kept the API from ever finishing a reload or shutdown. Now one dedup
+  run per review is queued (debounced, and it goes round again if records arrive while it
+  works); the trigram join runs only for small reviews and under a statement timeout;
+  identical copies inside an uncertain group are merged first; and event streams end
+  after five minutes and reconnect, with uvicorn given a graceful-shutdown timeout.
+- The side-by-side comparison ignores case and punctuation when marking differences, so
+  the year and journal that really differ are not lost among titles written in capitals.
+
 ### Measured
 - 50,000 records: 10.5 s, database writes included (budget 30 s).
 - A real multi-query arXiv search, 637 records of 459 papers: precision 98.97 %, recall
   100 % against the search's own provenance.
+- A real scoping-review folder — IEEE Xplore, Scopus, PubMed and arXiv, 8,298 records in
+  38 files: one run of about 10 s, 2,476 duplicates merged without asking, 72 groups left
+  for a person, each of two or three records (mostly a preprint against its published
+  version).
 
 ## Phase 3: Import and records (2026-09-23)
 

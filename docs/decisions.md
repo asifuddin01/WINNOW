@@ -340,11 +340,15 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
 
 ### Block C
 - **The guide's pg_trgm block does not scale as an all-pairs join.** At 50,000 records the
-  self-join ran for over two minutes, against a 30-second budget. So block C is two things:
-  an in-memory index over each title's distinctive words (shared by at least two records,
-  used by no more than 300, and not in more than 5 % of the corpus), which finds reordered
-  and subtitled titles in under two seconds at 50,000; and the trigram join itself, kept for
-  projects of up to 10,000 records, where it costs seconds and adds recall.
+  self-join ran for over two minutes, against a 30-second budget — and on a real
+  8,278-record scoping review it ran past a minute on its own. A review is about one topic,
+  so its titles share most of their trigrams and every index probe returns much of the
+  table. Block C is therefore two things: an in-memory index over each title's distinctive
+  words (shared by at least two records, used by no more than 300, and not in more than
+  5 % of the corpus), which finds reordered and subtitled titles in about a second at that
+  size; and the trigram join itself, only for reviews of up to 1,000 records, in its own
+  transaction with a 5-second statement timeout, falling back to the word block if it runs
+  out of time. On a real search the word block alone missed no duplicate.
 - **Both only nominate pairs.** Every candidate is scored by the same function and guarded
   by the same DOI rules, so a looser block cannot merge anything on its own.
 
@@ -382,4 +386,28 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   on a real search: 18 overlapping arXiv queries from a scoping review, 637 records of 459
   papers, with the search's own provenance as ground truth — 98.97 % precision, 100 %
   recall. That corpus is the owner's unpublished work and is not in the repository.
+
+### Running it on a real review
+- **One dedup job per review, ever.** The job id is `dedup:<review>`, so arq refuses a
+  second while one is queued or running; imports queue it 5 seconds after they finish, so
+  a drop of twenty files makes one run. Because an import that finishes mid-run cannot
+  queue its own, the run checks when it ends whether records arrived and goes round again
+  (at most three passes). Before this, 38 imports started a dozen concurrent runs on one
+  review, and the last to finish had started before the last import landed.
+- **Identical copies are not a question.** Overlapping searches of one database return
+  the same entry repeatedly; when such copies sit inside a group that needs a person
+  (say five copies of an arXiv preprint and the published chapter), the copies — same
+  normalised title, year, first author and source — are merged first as a certain group,
+  and the person is asked only about what is left. Only when auto-resolve is on.
+- **`duplicate_of` always names the record that was kept.** Merging a record that others
+  were already merged into re-points them, so there are no chains to follow.
+- **A preprint against its published version waits for a person,** even with the same
+  title, because it differs in year, source and DOI — and whether those count as one
+  record is the review's decision, not the software's.
+
+### Event streams
+- **A stream lives five minutes, then ends,** with a `retry:` hint; the browser reconnects
+  and is sent the recent events again. An endless response kept uvicorn waiting for ever
+  on reload and would do the same on a production shutdown or deploy, so uvicorn also has
+  a graceful-shutdown timeout (5 s in development, 10 s in production).
 
