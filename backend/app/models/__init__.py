@@ -3,6 +3,7 @@
 from app.models.audit import AuditLog
 from app.models.base import Base
 from app.models.dedup import ClusterStatus, DupCluster, DupClusterMember
+from app.models.llm import LlmSuggestion
 from app.models.project import (
     ALL_STAGES,
     Project,
@@ -71,6 +72,7 @@ __all__ = [
     "KeywordGroup",
     "KeywordKind",
     "Label",
+    "LlmSuggestion",
     "Note",
     "NoteVisibility",
     "Project",

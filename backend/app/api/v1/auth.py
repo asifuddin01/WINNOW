@@ -24,6 +24,7 @@ from app.api.session_http import (
 )
 from app.db import SessionDep
 from app.errors import ProblemError
+from app.llm.providers import is_configured as llm_configured
 from app.schemas.auth import (
     Accepted,
     AuthOptions,
@@ -70,7 +71,12 @@ async def auth_options(accounts: AccountsDep, settings: SettingsDep) -> AuthOpti
         needs_setup=await accounts.needs_setup(),
         email_enabled=settings.email_enabled,
         google_enabled=settings.google_enabled,
-        llm_available=settings.llm_provider != "none",
+        llm_available=llm_configured(settings),
+        llm_provider=(
+            None
+            if settings.llm_provider == "none" or not llm_configured(settings)
+            else settings.llm_provider
+        ),
         owner_two_factor_required=settings.require_owner_2fa,
     )
 

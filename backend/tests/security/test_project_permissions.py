@@ -48,6 +48,8 @@ REVIEWER_WRITES = VIEWER_WRITES | {
     ("DELETE", "/api/v1/projects/{pid}/notes/{nid}"),
     # Anyone who screens may ask for the order to catch up with their decisions.
     ("POST", "/api/v1/projects/{pid}/ranking/train"),
+    # Asking the AI provider about a record (guide 8.11) is advice, not a decision.
+    ("POST", "/api/v1/projects/{pid}/records/{rid}/llm-suggest"),
 }
 
 

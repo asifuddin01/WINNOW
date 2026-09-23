@@ -12,6 +12,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings
+from app.llm.providers import is_configured as llm_configured
 from app.models import (
     AuditLog,
     Criterion,
@@ -45,6 +46,7 @@ from app.services.errors import (
     ConflictError,
     EmailUnverifiedError,
     FeatureUnavailableError,
+    ForbiddenError,
     InvalidCursorError,
     NotFoundError,
     OwnerTwoFactorRequiredError,
@@ -305,11 +307,19 @@ class ProjectService:
         if (
             updated.llm_assist_enabled
             and not current.llm_assist_enabled
-            and self._settings.llm_provider == "none"
+            and not llm_configured(self._settings)
         ):
             raise FeatureUnavailableError(
                 "AI suggestions need an AI provider set up on this Winnow instance first."
             )
+        if (
+            updated.llm_assist_enabled
+            and not current.llm_assist_enabled
+            and access.role is not ProjectRole.OWNER
+        ):
+            # Guide 8.11: sending records to a provider is the owner's decision. Anyone who
+            # may change the settings may turn it off again.
+            raise ForbiddenError("Only the review's owner can turn AI suggestions on.")
         old, new = current.model_dump(mode="json"), updated.model_dump(mode="json")
         changed = [key for key in new if old[key] != new[key]]
         if not changed:

@@ -31,6 +31,7 @@ async def test_options_describe_the_instance(db_client: AsyncClient) -> None:
         "email_enabled": False,
         "google_enabled": False,
         "llm_available": False,
+        "llm_provider": None,
         "owner_two_factor_required": False,
     }
 

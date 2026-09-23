@@ -17,6 +17,7 @@ from app.config import Settings, get_settings
 from app.db import create_engine, create_sessionmaker
 from app.email.mailer import QueueMailer, UnconfiguredMailer
 from app.errors import document_problem_responses, install_error_handlers
+from app.llm.providers import create_provider
 from app.logging_config import configure_logging
 from app.middleware import RequestContextMiddleware
 from app.redis_client import create_redis
@@ -78,6 +79,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             if settings.google_enabled
             else None
         )
+        # Guide 8.11: None unless the environment sets a provider up.
+        app.state.llm = create_provider(settings, http)
         app.state.google_flows = OneTimeStore(redis, "google-flow", FLOW_SECONDS)
         app.state.google_pending = OneTimeStore(redis, "google-2fa", PENDING_SECONDS)
         try:

@@ -14,6 +14,7 @@ from app.config import Settings
 from app.db import SessionDep
 from app.email.mailer import Mailer
 from app.errors import ProblemError
+from app.llm.providers import Provider
 from app.models import ProjectRole, User
 from app.redis_client import RedisDep
 from app.security import csrf
@@ -32,6 +33,7 @@ from app.services.conflicts import ConflictService
 from app.services.dedup import DedupService
 from app.services.errors import NotAuthenticatedError
 from app.services.imports import ImportService
+from app.services.llm import LlmService
 from app.services.members import MemberService
 from app.services.projects import ProjectService
 from app.services.ranking import RankingService
@@ -220,6 +222,11 @@ def get_conflicts(request: Request, db: SessionDep) -> ConflictService:
     return ConflictService(db, queue)
 
 
+def get_llm(request: Request, db: SessionDep) -> LlmService:
+    provider: Provider | None = request.app.state.llm
+    return LlmService(db, provider)
+
+
 def get_ranking(request: Request, db: SessionDep) -> RankingService:
     queue: ArqRedis = request.app.state.queue
     redis: Redis = request.app.state.redis
@@ -233,6 +240,7 @@ def get_mailer(request: Request) -> Mailer:
 
 ScreeningDep = Annotated[ScreeningService, Depends(get_screening)]
 RankingDep = Annotated[RankingService, Depends(get_ranking)]
+LlmDep = Annotated[LlmService, Depends(get_llm)]
 ConflictsDep = Annotated[ConflictService, Depends(get_conflicts)]
 MailerDep = Annotated[Mailer, Depends(get_mailer)]
 

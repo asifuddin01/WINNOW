@@ -88,6 +88,8 @@ class AuthOptions(BaseModel):
     email_enabled: bool
     google_enabled: bool
     llm_available: bool
+    # Which kind of provider suggestions are sent to, so the page can say so (guide 8.11).
+    llm_provider: Literal["anthropic", "openai_compatible"] | None = None
     owner_two_factor_required: bool
 
 

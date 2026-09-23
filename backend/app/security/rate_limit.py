@@ -29,6 +29,7 @@ PROJECT_CREATE_PER_USER = Limit("project-create", 30, 3600)  # new reviews and c
 INVITES_PER_USER = Limit("invite-user", 100, 3600)  # each one sends an email
 INVITE_LINK_PER_IP = Limit("invite-link-ip", 60, 3600)  # opening or accepting a link
 UPLOADS_PER_USER = Limit("upload-user", 30, 3600)  # guide 12.6
+LLM_SUGGEST_PER_USER = Limit("llm-suggest-user", 60, 3600)  # guide 12.6
 
 # Atomically: drop hits older than the window, then either record this hit or report how
 # long until the oldest one expires. Returns {allowed, retry_after_ms}.
