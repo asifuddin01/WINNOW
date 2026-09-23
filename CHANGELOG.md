@@ -2,6 +2,55 @@
 
 All notable changes, one section per build phase (guide Section 17).
 
+## Phase 5: Title and abstract screening, blind mode, conflicts (2026-09-23)
+
+### Added
+- A screening page that is ready before you are: the next ten records are loaded ahead,
+  a decision moves on at once and is saved behind the screen, and a failed save puts the
+  record back with the reason. Decisions made while offline wait and are sent when the
+  connection returns.
+- Three layouts: three panes on a desktop (history, record, decision), two on a tablet,
+  a focus mode (F) with only the record, and on a phone a card that swipes right to
+  include, left to exclude and up (from its handle) for maybe, with the three buttons
+  fixed below it and reasons, labels and notes in a sheet. Works at 360 pixels.
+- The keyboard shortcuts in guide 11.4: I, M, E (or 1, 2, 3) to decide; R, then a
+  number, for a reason; L for labels; N for a note; J and K (or the arrows) to move;
+  Ctrl/⌘+Z to undo; H for highlighting; F for focus; / to search; ? for the list. None
+  of them fire while typing.
+- Keyword highlighting from the review's keyword groups, in their colours, with a legend;
+  plain terms are matched literally, patterns as patterns, accented letters count as
+  letters, and a pattern that will not compile is skipped instead of breaking the page.
+- Exclusion reasons (required when the review says so), labels, and notes (private or for
+  the team) on each record; undo; and a history of your own decisions that reopens any of
+  them to change.
+- Time on each record is measured while the page is visible and added up across visits.
+- Assignment: every reviewer screens every record, or records are shared out so each gets
+  the review's number of reviewers, spread evenly and stable as the team changes.
+- Record status follows guide 6.4 after every decision, undo, resolution, merge and change
+  to the review's rules; an included title and abstract moves the record to full text.
+- Blind mode enforced on the server: a blinded reviewer is sent no one else's decision,
+  reason, note or label, not even whether they disagree. The records list, its counts and
+  its filters show their own decisions. Owners and admins can see through it unless they
+  choose to stay blind.
+- A conflicts page for owners, admins and anyone given the right: both decisions side by
+  side with reasons and notes, the abstract on demand, a filter for where two chosen
+  reviewers disagree, resolve with a reason and a note, or ask the reviewers to discuss
+  (a team note, and an email to them).
+- Bulk decisions for admins: include or exclude every record matching a records-list
+  search, after seeing how many it will be; if the records change before confirming,
+  nothing is decided and the new count is shown.
+- Merging duplicates now moves decisions, labels, notes and resolutions to the kept
+  record, and recomputes both stages.
+- Search terms `label:` and `type:` in the records list.
+- Tests: status rules, split assignment, bulk decisions, conflicts, merge migration, a
+  blind-mode security suite, and a Playwright journey with two reviewers — one on a
+  desktop with the keyboard, one on a 360-pixel phone with the buttons — that ends in a
+  resolved conflict.
+
+### Measured
+- 100,000 records, one project: next page of the queue p50 9 ms / p95 15 ms by relevance
+  and 7 / 10 ms at random; saving a decision 9 / 13 ms; progress 63 / 131 ms.
+
 ## Phase 4: Deduplication (2026-09-23)
 
 ### Added

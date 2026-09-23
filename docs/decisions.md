@@ -411,3 +411,75 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   on reload and would do the same on a production shutdown or deploy, so uvicorn also has
   a graceful-shutdown timeout (5 s in development, 10 s in production).
 
+
+## Phase 5 — Screening, blind mode and conflicts
+
+### The queue
+- **The queue is read from an index, not sorted per request.** Each record gets a random
+  `sort_key` when it is inserted, indexed with its project. "Random" order starts each
+  reviewer at their own point in that key (from a hash of their user id) and wraps round,
+  so two reviewers do not meet the same records in the same order, and the next page is
+  one index range scan. "Relevance" serves scored records first, then the same rotation.
+  Sorting 100,000 records with `ORDER BY random()` took 660 ms at p95; this takes 15.
+- **The queue does not say how many are left.** Counting what remains is the expensive
+  half of the query; the progress bar has its own endpoint and is refreshed after
+  decisions, not with every page.
+- **The browser holds ten records ahead** and asks for more when five remain, sending the
+  ids it already holds so they are not served twice. A decision moves to the next record
+  before the server answers; a refusal puts the record back with the reason.
+- **Decisions made offline are kept in memory, not in browser storage,** and sent when the
+  connection returns (or every ten seconds). Closing the tab would lose them, so while any
+  wait the page shows how many and the browser asks before leaving. Nothing about a review is written to `localStorage`.
+
+### Decisions
+- **Reasons are kept only on an exclusion.** Choosing reasons and then including drops
+  them, so a reason never explains the wrong decision.
+- **Time is added up across visits and capped at 30 minutes per visit,** so a tab left
+  open overnight does not become a record that took nine hours. It counts only while the
+  page is visible.
+- **Full-text maybe is pending,** not a separate status: full text has to end in include
+  or exclude, so maybe there only means "not yet". Title-and-abstract maybe follows the
+  review's `maybe_counts_as` setting, as guide 6.4 says.
+- **Changing the number of reviewers or how maybe counts recomputes every status** for
+  that stage, in batches of 5,000, one `UPDATE` per outcome.
+
+### Assignment
+- **Split assignment needs no table.** A record belongs to the N reviewers whose hash of
+  (record id, user id) is lowest — rendezvous hashing. It spreads records evenly, needs no
+  job when the team changes, and moves only the records of someone who joins or leaves.
+- **In split mode anyone who screens may still decide any record** they open from search
+  or history; the queue only chooses what to offer. Refusing would stop someone taking
+  over a colleague's share, and the extra decision just counts towards the total.
+
+### Blind mode
+- **Enforced in the services.** A blinded caller's queue, record, records list, counts,
+  filters and history are built without anyone else's decisions. The records list shows
+  their own decision where the status would be, so the status column cannot show that two
+  people disagree. Its filters and counts use their decisions too, and are cached per user.
+- **Other people's labels are hidden; team notes are not.** Labels often carry a decision
+  ("probably include"); a team note is something written for the team to read.
+- **Owners and admins see through blind mode by default** (guide 12.2) and can choose to
+  stay blind for their own screening. Conflicts are counted only for someone who can see
+  or resolve them.
+- **Decisions are never sent over the event stream,** so it cannot leak them.
+
+### Conflicts and bulk decisions
+- **A resolution is its own row** (`conflict_resolutions`, one per record and stage), not
+  a change to anyone's decision; both decisions stay as they were made, and the status
+  follows the resolution. It can be changed only while the record is still in conflict
+  or was resolved as a conflict.
+- **"Ask them to discuss" leaves a team note and emails the other reviewers** of that
+  record, with a link to it. Nothing else is sent.
+- **Bulk decisions are resolutions with source `bulk`,** so they sit above the reviewers'
+  decisions without faking any, and are audited as bulk. The request carries the count
+  the admin was shown; if the search now matches a different number, nothing changes and
+  the new count comes back (409), so no one excludes records they did not see.
+
+### The frontend
+- **Keyword highlighting runs in the browser** on the record's text, with every plain term
+  escaped, word edges that count accented letters as letters, a time budget per pattern
+  and a cap on how much text is searched, so a slow pattern cannot freeze the page.
+- **Shortcuts are the guide's defaults and cannot yet be changed.** Custom bindings are a
+  setting for later; they would need to be stored per user and checked for clashes.
+- **Swiping works only with touch,** and "maybe" only from the card's handle, so scrolling
+  a long abstract cannot decide it. The buttons under the card always do the same thing.
