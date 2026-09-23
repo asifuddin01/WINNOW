@@ -58,3 +58,17 @@ export function recordsSearch(search: Record<string, unknown>): {
     ...(sort ? { sort } : {}),
   };
 }
+
+const SCREEN_SORTS = ["relevance", "random", "year", "title", "added"] as const;
+
+/** The screening page keeps its order and search in the URL, so a reload resumes them. */
+export function screenSearch(search: Record<string, unknown>): {
+  sort?: (typeof SCREEN_SORTS)[number];
+  q?: string;
+} {
+  const sort = SCREEN_SORTS.find((value) => value === search.sort);
+  return {
+    ...(sort ? { sort } : {}),
+    ...(typeof search.q === "string" && search.q ? { q: search.q.slice(0, 500) } : {}),
+  };
+}

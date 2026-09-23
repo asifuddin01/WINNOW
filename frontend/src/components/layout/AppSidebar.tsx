@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 
 import { projectQuery } from "@/api/projects";
+import { progressQuery } from "@/api/screening";
 import { BrandMark, Wordmark } from "@/components/layout/Brand";
 import { projectNav, workspaceNav, type NavItem } from "@/components/layout/nav";
 import {
@@ -65,10 +66,12 @@ function NavLink({
   item,
   params,
   onNavigate,
+  count,
 }: {
   item: NavItem;
   params?: { pid: string };
   onNavigate: () => void;
+  count?: number | null;
 }) {
   return (
     <SidebarMenuItem>
@@ -82,6 +85,12 @@ function NavLink({
         >
           <item.icon aria-hidden="true" />
           <span>{item.label}</span>
+          {count ? (
+            <span className="ml-auto rounded-full bg-conflict px-1.5 text-xs font-semibold text-white tabular-nums dark:text-background">
+              {count}
+              <span className="sr-only"> waiting</span>
+            </span>
+          ) : null}
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -91,14 +100,29 @@ function NavLink({
 /** The pages of the review being looked at, titled with its name. */
 function ProjectGroup({ pid, onNavigate }: { pid: string; onNavigate: () => void }) {
   const { data: project } = useQuery(projectQuery(pid));
+  const resolver = project?.permissions.includes("resolve_conflicts") ?? false;
+  // Only for someone allowed to know: the count alone says reviewers disagreed.
+  const { data: progress } = useQuery({
+    ...progressQuery(pid, "title_abstract"),
+    enabled: resolver && (project?.permissions.includes("screen") ?? false),
+  });
+  const items = projectNav.filter(
+    (item) => !item.requires || (project?.permissions.includes(item.requires) ?? false),
+  );
   return (
     <nav aria-label="This review">
       <SidebarGroup>
         <SidebarGroupLabel className="truncate">{project?.title ?? "Review"}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
-            {projectNav.map((item) => (
-              <NavLink key={item.to} item={item} params={{ pid }} onNavigate={onNavigate} />
+            {items.map((item) => (
+              <NavLink
+                key={item.to}
+                item={item}
+                params={{ pid }}
+                onNavigate={onNavigate}
+                count={item.badge === "conflicts" ? progress?.conflicts : undefined}
+              />
             ))}
           </SidebarMenu>
         </SidebarGroupContent>

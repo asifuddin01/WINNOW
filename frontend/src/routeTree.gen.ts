@@ -22,10 +22,12 @@ import { Route as ResetTokenRouteImport } from './routes/reset.$token'
 import { Route as VerifyTokenRouteImport } from './routes/verify.$token'
 import { Route as AppPPidRouteImport } from './routes/_app/p/$pid'
 import { Route as AppPPidIndexRouteImport } from './routes/_app/p/$pid/index'
+import { Route as AppPPidConflictsRouteImport } from './routes/_app/p/$pid/conflicts'
 import { Route as AppPPidDuplicatesRouteImport } from './routes/_app/p/$pid/duplicates'
 import { Route as AppPPidImportRouteImport } from './routes/_app/p/$pid/import'
 import { Route as AppPPidRecordsRouteImport } from './routes/_app/p/$pid/records'
 import { Route as AppPPidSettingsRouteImport } from './routes/_app/p/$pid/settings'
+import { Route as AppPPidScreenTaRouteImport } from './routes/_app/p/$pid/screen/ta'
 import { Route as AppPPidSettingsIndexRouteImport } from './routes/_app/p/$pid/settings/index'
 import { Route as AppPPidSettingsCriteriaRouteImport } from './routes/_app/p/$pid/settings/criteria'
 import { Route as AppPPidSettingsKeywordsRouteImport } from './routes/_app/p/$pid/settings/keywords'
@@ -98,6 +100,11 @@ const AppPPidIndexRoute = AppPPidIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppPPidRoute,
 } as any)
+const AppPPidConflictsRoute = AppPPidConflictsRouteImport.update({
+  id: '/conflicts',
+  path: '/conflicts',
+  getParentRoute: () => AppPPidRoute,
+} as any)
 const AppPPidDuplicatesRoute = AppPPidDuplicatesRouteImport.update({
   id: '/duplicates',
   path: '/duplicates',
@@ -116,6 +123,11 @@ const AppPPidRecordsRoute = AppPPidRecordsRouteImport.update({
 const AppPPidSettingsRoute = AppPPidSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppPPidRoute,
+} as any)
+const AppPPidScreenTaRoute = AppPPidScreenTaRouteImport.update({
+  id: '/screen/ta',
+  path: '/screen/ta',
   getParentRoute: () => AppPPidRoute,
 } as any)
 const AppPPidSettingsIndexRoute = AppPPidSettingsIndexRouteImport.update({
@@ -167,11 +179,13 @@ export interface FileRoutesByFullPath {
   '/reset/$token': typeof ResetTokenRoute
   '/verify/$token': typeof VerifyTokenRoute
   '/p/$pid': typeof AppPPidRouteWithChildren
+  '/p/$pid/conflicts': typeof AppPPidConflictsRoute
   '/p/$pid/duplicates': typeof AppPPidDuplicatesRoute
   '/p/$pid/import': typeof AppPPidImportRoute
   '/p/$pid/records': typeof AppPPidRecordsRoute
   '/p/$pid/settings': typeof AppPPidSettingsRouteWithChildren
   '/p/$pid/': typeof AppPPidIndexRoute
+  '/p/$pid/screen/ta': typeof AppPPidScreenTaRoute
   '/p/$pid/settings/criteria': typeof AppPPidSettingsCriteriaRoute
   '/p/$pid/settings/keywords': typeof AppPPidSettingsKeywordsRoute
   '/p/$pid/settings/labels': typeof AppPPidSettingsLabelsRoute
@@ -191,10 +205,12 @@ export interface FileRoutesByTo {
   '/reset/$token': typeof ResetTokenRoute
   '/verify/$token': typeof VerifyTokenRoute
   '/': typeof AppIndexRoute
+  '/p/$pid/conflicts': typeof AppPPidConflictsRoute
   '/p/$pid/duplicates': typeof AppPPidDuplicatesRoute
   '/p/$pid/import': typeof AppPPidImportRoute
   '/p/$pid/records': typeof AppPPidRecordsRoute
   '/p/$pid': typeof AppPPidIndexRoute
+  '/p/$pid/screen/ta': typeof AppPPidScreenTaRoute
   '/p/$pid/settings/criteria': typeof AppPPidSettingsCriteriaRoute
   '/p/$pid/settings/keywords': typeof AppPPidSettingsKeywordsRoute
   '/p/$pid/settings/labels': typeof AppPPidSettingsLabelsRoute
@@ -217,11 +233,13 @@ export interface FileRoutesById {
   '/verify/$token': typeof VerifyTokenRoute
   '/_app/': typeof AppIndexRoute
   '/_app/p/$pid': typeof AppPPidRouteWithChildren
+  '/_app/p/$pid/conflicts': typeof AppPPidConflictsRoute
   '/_app/p/$pid/duplicates': typeof AppPPidDuplicatesRoute
   '/_app/p/$pid/import': typeof AppPPidImportRoute
   '/_app/p/$pid/records': typeof AppPPidRecordsRoute
   '/_app/p/$pid/settings': typeof AppPPidSettingsRouteWithChildren
   '/_app/p/$pid/': typeof AppPPidIndexRoute
+  '/_app/p/$pid/screen/ta': typeof AppPPidScreenTaRoute
   '/_app/p/$pid/settings/criteria': typeof AppPPidSettingsCriteriaRoute
   '/_app/p/$pid/settings/keywords': typeof AppPPidSettingsKeywordsRoute
   '/_app/p/$pid/settings/labels': typeof AppPPidSettingsLabelsRoute
@@ -244,11 +262,13 @@ export interface FileRouteTypes {
     | '/reset/$token'
     | '/verify/$token'
     | '/p/$pid'
+    | '/p/$pid/conflicts'
     | '/p/$pid/duplicates'
     | '/p/$pid/import'
     | '/p/$pid/records'
     | '/p/$pid/settings'
     | '/p/$pid/'
+    | '/p/$pid/screen/ta'
     | '/p/$pid/settings/criteria'
     | '/p/$pid/settings/keywords'
     | '/p/$pid/settings/labels'
@@ -268,10 +288,12 @@ export interface FileRouteTypes {
     | '/reset/$token'
     | '/verify/$token'
     | '/'
+    | '/p/$pid/conflicts'
     | '/p/$pid/duplicates'
     | '/p/$pid/import'
     | '/p/$pid/records'
     | '/p/$pid'
+    | '/p/$pid/screen/ta'
     | '/p/$pid/settings/criteria'
     | '/p/$pid/settings/keywords'
     | '/p/$pid/settings/labels'
@@ -293,11 +315,13 @@ export interface FileRouteTypes {
     | '/verify/$token'
     | '/_app/'
     | '/_app/p/$pid'
+    | '/_app/p/$pid/conflicts'
     | '/_app/p/$pid/duplicates'
     | '/_app/p/$pid/import'
     | '/_app/p/$pid/records'
     | '/_app/p/$pid/settings'
     | '/_app/p/$pid/'
+    | '/_app/p/$pid/screen/ta'
     | '/_app/p/$pid/settings/criteria'
     | '/_app/p/$pid/settings/keywords'
     | '/_app/p/$pid/settings/labels'
@@ -411,6 +435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPPidIndexRouteImport
       parentRoute: typeof AppPPidRoute
     }
+    '/_app/p/$pid/conflicts': {
+      id: '/_app/p/$pid/conflicts'
+      path: '/conflicts'
+      fullPath: '/p/$pid/conflicts'
+      preLoaderRoute: typeof AppPPidConflictsRouteImport
+      parentRoute: typeof AppPPidRoute
+    }
     '/_app/p/$pid/duplicates': {
       id: '/_app/p/$pid/duplicates'
       path: '/duplicates'
@@ -437,6 +468,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/p/$pid/settings'
       preLoaderRoute: typeof AppPPidSettingsRouteImport
+      parentRoute: typeof AppPPidRoute
+    }
+    '/_app/p/$pid/screen/ta': {
+      id: '/_app/p/$pid/screen/ta'
+      path: '/screen/ta'
+      fullPath: '/p/$pid/screen/ta'
+      preLoaderRoute: typeof AppPPidScreenTaRouteImport
       parentRoute: typeof AppPPidRoute
     }
     '/_app/p/$pid/settings/': {
@@ -516,19 +554,23 @@ const AppPPidSettingsRouteWithChildren = AppPPidSettingsRoute._addFileChildren(
 )
 
 interface AppPPidRouteChildren {
+  AppPPidConflictsRoute: typeof AppPPidConflictsRoute
   AppPPidDuplicatesRoute: typeof AppPPidDuplicatesRoute
   AppPPidImportRoute: typeof AppPPidImportRoute
   AppPPidRecordsRoute: typeof AppPPidRecordsRoute
   AppPPidSettingsRoute: typeof AppPPidSettingsRouteWithChildren
   AppPPidIndexRoute: typeof AppPPidIndexRoute
+  AppPPidScreenTaRoute: typeof AppPPidScreenTaRoute
 }
 
 const AppPPidRouteChildren: AppPPidRouteChildren = {
+  AppPPidConflictsRoute: AppPPidConflictsRoute,
   AppPPidDuplicatesRoute: AppPPidDuplicatesRoute,
   AppPPidImportRoute: AppPPidImportRoute,
   AppPPidRecordsRoute: AppPPidRecordsRoute,
   AppPPidSettingsRoute: AppPPidSettingsRouteWithChildren,
   AppPPidIndexRoute: AppPPidIndexRoute,
+  AppPPidScreenTaRoute: AppPPidScreenTaRoute,
 }
 
 const AppPPidRouteWithChildren =

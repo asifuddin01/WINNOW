@@ -1111,6 +1111,269 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{pid}/screening/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Screening Queue
+         * @description The next records for me, to hold ahead of the one on screen (guide 8.5).
+         *
+         *     `exclude` lists the records the screen already holds, so they are not sent twice.
+         */
+        get: operations["screening_queue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/screening/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Screening Progress
+         * @description How far I am, and — only if I may know — how many conflicts are waiting.
+         */
+        get: operations["screening_progress"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/screening/records/{rid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Screening Record
+         * @description One record as the screen shows it, whether or not I have decided about it.
+         */
+        get: operations["screening_record"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/records/{rid}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Decide
+         * @description Include, exclude or maybe; deciding again changes my decision.
+         */
+        put: operations["decide"];
+        post?: never;
+        /**
+         * Undo Decision
+         * @description Take my decision back (guide 8.5's undo).
+         */
+        delete: operations["undo_decision"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/my-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My History
+         * @description My decisions, latest first.
+         */
+        get: operations["my_history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/records/{rid}/labels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Labels
+         * @description Replace the labels I have put on this record.
+         */
+        put: operations["set_labels"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/records/{rid}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Note
+         * @description A note on the record: private to me, or for the team.
+         */
+        post: operations["add_note"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/notes/{nid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Note */
+        delete: operations["delete_note"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/bulk-decision/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk Preview
+         * @description How many records a bulk decision would settle, for the confirmation.
+         */
+        post: operations["bulk_preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/bulk-decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk Decision
+         * @description Decide every matching record at once (guide 8.5), logged with bulk=true.
+         */
+        post: operations["bulk_decision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/conflicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Conflicts
+         * @description Records whose reviewers disagree, with each decision side by side.
+         */
+        get: operations["list_conflicts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/conflicts/{rid}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Conflict
+         * @description The final decision on one record.
+         */
+        post: operations["resolve_conflict"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/conflicts/{rid}/discuss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Discuss Conflict
+         * @description Leave a team note and ask the record's reviewers to talk it over.
+         */
+        post: operations["discuss_conflict"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/invites/{token}": {
         parameters: {
             query?: never;
@@ -1226,6 +1489,40 @@ export interface components {
             search_string?: string | null;
         };
         /**
+         * BulkDecisionIn
+         * @description Guide 8.5: an owner or admin decides many records at once, with confirmation.
+         *
+         *     `expected` is the count the person was shown; if the filter now matches a different
+         *     number, nothing is changed and the new count comes back.
+         */
+        BulkDecisionIn: {
+            /** @default title_abstract */
+            stage: components["schemas"]["ScreeningStage"];
+            final_decision: components["schemas"]["FinalDecision"];
+            /**
+             * Q
+             * @default
+             */
+            q: string;
+            /** Status */
+            status?: ("pending" | "included" | "excluded" | "maybe" | "conflict") | null;
+            /** Batch */
+            batch?: string | null;
+            /** Record Ids */
+            record_ids?: string[] | null;
+            /** Reason Ids */
+            reason_ids?: string[];
+            /** Note */
+            note?: string | null;
+            /** Expected */
+            expected: number;
+        };
+        /** BulkDecisionOut */
+        BulkDecisionOut: {
+            /** Decided */
+            decided: number;
+        };
+        /**
          * Capability
          * @enum {string}
          */
@@ -1332,6 +1629,55 @@ export interface components {
                 [key: string]: string;
             } | null;
         };
+        /** ConflictDecision */
+        ConflictDecision: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Name */
+            name: string;
+            decision: components["schemas"]["DecisionValue"];
+            /** Reason Ids */
+            reason_ids: string[];
+            /** Note */
+            note: string | null;
+        };
+        /** ConflictOut */
+        ConflictOut: {
+            /**
+             * Record Id
+             * Format: uuid
+             */
+            record_id: string;
+            /** Title */
+            title: string | null;
+            /** Authors */
+            authors: string[];
+            /** Year */
+            year: number | null;
+            /** Journal */
+            journal: string | null;
+            /** Abstract */
+            abstract: string | null;
+            /** Doi */
+            doi: string | null;
+            /** Decisions */
+            decisions: components["schemas"]["ConflictDecision"][];
+            /** Notes */
+            notes: components["schemas"]["NoteOut"][];
+            resolution: components["schemas"]["FinalDecision"] | null;
+        };
+        /** ConflictPage */
+        ConflictPage: {
+            /** Items */
+            items: components["schemas"]["ConflictOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+            /** Total */
+            total: number;
+        };
         /** Count */
         Count: {
             /** Value */
@@ -1378,6 +1724,36 @@ export interface components {
             /** Csrf Token */
             csrf_token: string;
         };
+        /** DecisionIn */
+        DecisionIn: {
+            /** @default title_abstract */
+            stage: components["schemas"]["ScreeningStage"];
+            decision: components["schemas"]["DecisionValue"];
+            /** Reason Ids */
+            reason_ids?: string[];
+            /** Note */
+            note?: string | null;
+            /**
+             * Time Spent Ms
+             * @default 0
+             */
+            time_spent_ms: number;
+        };
+        /** DecisionOut */
+        DecisionOut: {
+            /**
+             * Record Id
+             * Format: uuid
+             */
+            record_id: string;
+            stage: components["schemas"]["ScreeningStage"];
+            decision: components["schemas"]["MyDecision"] | null;
+        };
+        /**
+         * DecisionValue
+         * @enum {string}
+         */
+        DecisionValue: "include" | "exclude" | "maybe";
         /** DedupStarted */
         DedupStarted: {
             /** Job Id */
@@ -1406,6 +1782,13 @@ export interface components {
             /** Code */
             code: string;
         };
+        /** DiscussIn */
+        DiscussIn: {
+            /** Body */
+            body: string;
+            /** @default title_abstract */
+            stage: components["schemas"]["ScreeningStage"];
+        };
         /** DuplicateSetupRequest */
         DuplicateSetupRequest: {
             /** Title */
@@ -1425,6 +1808,11 @@ export interface components {
          */
         FileFormat: "ris" | "bib" | "nbib" | "pubmed_xml" | "endnote_xml" | "csv";
         /**
+         * FinalDecision
+         * @enum {string}
+         */
+        FinalDecision: "include" | "exclude";
+        /**
          * FullTextStatus
          * @enum {string}
          */
@@ -1439,6 +1827,33 @@ export interface components {
             user: components["schemas"]["UserOut"];
             /** Redirect */
             redirect: string;
+        };
+        /** HistoryItem */
+        HistoryItem: {
+            /**
+             * Record Id
+             * Format: uuid
+             */
+            record_id: string;
+            /** Title */
+            title: string | null;
+            /** Year */
+            year: number | null;
+            decision: components["schemas"]["DecisionValue"];
+            /** Reason Ids */
+            reason_ids: string[];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** HistoryPage */
+        HistoryPage: {
+            /** Items */
+            items: components["schemas"]["HistoryItem"][];
+            /** Next Cursor */
+            next_cursor: string | null;
         };
         /** ImportAccepted */
         ImportAccepted: {
@@ -1755,6 +2170,11 @@ export interface components {
             /** Color */
             color?: ("gray" | "red" | "orange" | "amber" | "green" | "teal" | "blue" | "violet" | "pink") | null;
         };
+        /** LabelsIn */
+        LabelsIn: {
+            /** Label Ids */
+            label_ids?: string[];
+        };
         /** Liveness */
         Liveness: {
             /**
@@ -1843,6 +2263,74 @@ export interface components {
              */
             clusters: number;
         };
+        /** MyDecision */
+        MyDecision: {
+            decision: components["schemas"]["DecisionValue"];
+            /** Reason Ids */
+            reason_ids: string[];
+            /** Note */
+            note: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** NoteIn */
+        NoteIn: {
+            /** Body */
+            body: string;
+            /** @default private */
+            visibility: components["schemas"]["NoteVisibility"];
+        };
+        /** NoteOut */
+        NoteOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Body */
+            body: string;
+            visibility: components["schemas"]["NoteVisibility"];
+            /** Author */
+            author: string;
+            /** Mine */
+            mine: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * NoteVisibility
+         * @enum {string}
+         */
+        NoteVisibility: "private" | "team";
+        /**
+         * OtherDecision
+         * @description Someone else's decision: only ever sent to a caller who is allowed to see it.
+         */
+        OtherDecision: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Name */
+            name: string;
+            decision: components["schemas"]["DecisionValue"];
+            /** Reason Ids */
+            reason_ids: string[];
+            /** Note */
+            note: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** PersonOut */
         PersonOut: {
             /**
@@ -1885,6 +2373,33 @@ export interface components {
             request_id?: string | null;
         } & {
             [key: string]: unknown;
+        };
+        /** Progress */
+        Progress: {
+            stage: components["schemas"]["ScreeningStage"];
+            /** Screened */
+            screened: number;
+            /** Total */
+            total: number;
+            /** Remaining */
+            remaining: number;
+            /** Included */
+            included: number;
+            /** Excluded */
+            excluded: number;
+            /** Maybe */
+            maybe: number;
+            /** Conflicts */
+            conflicts: number | null;
+            /** Blind */
+            blind: boolean;
+            /** Can Resolve */
+            can_resolve: boolean;
+            /**
+             * Assignment
+             * @enum {string}
+             */
+            assignment: "all" | "split";
         };
         /** ProjectCreate */
         ProjectCreate: {
@@ -2095,6 +2610,15 @@ export interface components {
             pico?: components["schemas"]["Pico"] | null;
             status?: components["schemas"]["ProjectStatus"] | null;
             settings?: components["schemas"]["ProjectSettingsPatch"] | null;
+        };
+        /**
+         * QueuePage
+         * @description The next records for me. Fewer than asked for means the queue is empty after them;
+         *     how many are left overall is in the progress.
+         */
+        QueuePage: {
+            /** Items */
+            items: components["schemas"]["ScreeningItem"][];
         };
         /** Readiness */
         Readiness: {
@@ -2331,11 +2855,67 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** ResolveIn */
+        ResolveIn: {
+            /** @default title_abstract */
+            stage: components["schemas"]["ScreeningStage"];
+            final_decision: components["schemas"]["FinalDecision"];
+            /** Reason Ids */
+            reason_ids?: string[];
+            /** Note */
+            note?: string | null;
+        };
         /**
          * ReviewType
          * @enum {string}
          */
         ReviewType: "systematic" | "scoping" | "rapid" | "umbrella" | "other";
+        /**
+         * ScreeningItem
+         * @description One record as the screening screen shows it (guide 10's queue item).
+         */
+        ScreeningItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string | null;
+            /** Authors */
+            authors: string[];
+            /** Year */
+            year: number | null;
+            /** Journal */
+            journal: string | null;
+            /** Volume */
+            volume: string | null;
+            /** Issue */
+            issue: string | null;
+            /** Pages */
+            pages: string | null;
+            /** Doi */
+            doi: string | null;
+            /** Pmid */
+            pmid: string | null;
+            /** Url */
+            url: string | null;
+            /** Abstract */
+            abstract: string | null;
+            /** Keywords */
+            keywords: string[];
+            /** Publication Type */
+            publication_type: string[];
+            /** Relevance Score */
+            relevance_score: number | null;
+            my_decision: components["schemas"]["MyDecision"] | null;
+            /** Labels */
+            labels: string[];
+            /** Notes */
+            notes: components["schemas"]["NoteOut"][];
+            /** Others */
+            others: components["schemas"]["OtherDecision"][] | null;
+        };
         /**
          * ScreeningStage
          * @enum {string}
@@ -6541,6 +7121,915 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MergeResult"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    screening_queue: {
+        parameters: {
+            query?: {
+                stage?: components["schemas"]["ScreeningStage"];
+                n?: number;
+                sort?: "relevance" | "random" | "year" | "title" | "added";
+                exclude?: string[] | null;
+                q?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueuePage"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    screening_progress: {
+        parameters: {
+            query?: {
+                stage?: components["schemas"]["ScreeningStage"];
+            };
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Progress"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    screening_record: {
+        parameters: {
+            query?: {
+                stage?: components["schemas"]["ScreeningStage"];
+            };
+            header?: never;
+            path: {
+                rid: string;
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScreeningItem"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    decide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rid: string;
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    undo_decision: {
+        parameters: {
+            query?: {
+                stage?: components["schemas"]["ScreeningStage"];
+            };
+            header?: never;
+            path: {
+                rid: string;
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    my_history: {
+        parameters: {
+            query?: {
+                stage?: components["schemas"]["ScreeningStage"];
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryPage"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    set_labels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rid: string;
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LabelsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    add_note: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rid: string;
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    delete_note: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                nid: string;
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    bulk_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkDecisionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkDecisionOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    bulk_decision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkDecisionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkDecisionOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    list_conflicts: {
+        parameters: {
+            query?: {
+                stage?: components["schemas"]["ScreeningStage"];
+                reviewer_a?: string | null;
+                reviewer_b?: string | null;
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConflictPage"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    resolve_conflict: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rid: string;
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConflictOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    discuss_conflict: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rid: string;
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscussIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
                 };
             };
             /** @description Unauthorized */

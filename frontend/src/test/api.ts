@@ -104,6 +104,22 @@ export function projectRoutes(project: Project = PROJECT, members: Member[] = [O
       duplicates: 0,
     },
     [`GET ${base}/dedup/clusters`]: [],
+    [`GET ${base}/screening/queue`]: { items: [] },
+    [`GET ${base}/screening/progress`]: {
+      stage: "title_abstract",
+      screened: 0,
+      total: 0,
+      remaining: 0,
+      included: 0,
+      excluded: 0,
+      maybe: 0,
+      conflicts: 0,
+      blind: false,
+      can_resolve: true,
+      assignment: "all",
+    },
+    [`GET ${base}/my-history`]: { items: [], next_cursor: null },
+    [`GET ${base}/conflicts`]: { items: [], next_cursor: null, total: 0 },
   };
 }
 

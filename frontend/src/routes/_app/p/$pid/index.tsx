@@ -1,6 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { CheckIcon, CircleDashedIcon, FileUpIcon, SettingsIcon, UsersIcon } from "lucide-react";
+import {
+  CheckIcon,
+  CircleDashedIcon,
+  FileUpIcon,
+  ListChecksIcon,
+  SettingsIcon,
+  UsersIcon,
+} from "lucide-react";
 
 import { criteriaQuery, keywordGroupsQuery, membersQuery, projectQuery } from "@/api/projects";
 import { facetsQuery } from "@/api/records";
@@ -28,6 +35,7 @@ function Overview() {
 
   const team = members?.items ?? [];
   const canEdit = project.permissions.includes("edit_setup");
+  const screens = project.permissions.includes("screen");
   const records = facets?.total ?? 0;
   const checklist = [
     { done: criteria.length > 0, label: "Screening criteria", to: "/p/$pid/settings/criteria" },
@@ -52,8 +60,15 @@ function Overview() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {screens && records > 0 && (
+            <Button asChild size="lg">
+              <Link to="/p/$pid/screen/ta" params={{ pid }}>
+                <ListChecksIcon aria-hidden="true" /> Continue screening
+              </Link>
+            </Button>
+          )}
           {canEdit && (
-            <Button asChild>
+            <Button asChild variant={screens && records > 0 ? "outline" : "default"}>
               <Link to="/p/$pid/import" params={{ pid }}>
                 <FileUpIcon aria-hidden="true" /> Import records
               </Link>
