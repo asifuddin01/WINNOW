@@ -2,6 +2,40 @@
 
 All notable changes, one section per build phase (guide Section 17).
 
+## Phase 3: Import and records (2026-09-23)
+
+### Added
+- Storage behind one small interface: files land on disk under `UPLOAD_DIR` today, and S3
+  can slot in later without touching the import.
+- Readers for the six export formats in guide 8.1 — RIS, BibTeX, PubMed NBIB (MEDLINE),
+  PubMed XML, EndNote XML and CSV/TSV with a column mapping — each choosing itself from the
+  file's own content, not its extension.
+- Normalisation on the way in: titles folded for comparison, DOIs lowercased and stripped of
+  their prefix, authors split into `Family, Given`, years pulled out of dates, abstracts
+  cleaned of structured-abstract noise, and lists capped.
+- Upload, preview and confirm: nothing enters the review until the first records Winnow read
+  are on screen, with the CSV mapping it guessed from the headings, ready to correct.
+- The import itself runs in the worker and writes with PostgreSQL `COPY`, so 10,000 records
+  take about two seconds and 100,000 about 36. Progress arrives over a server-sent event
+  stream (`GET /projects/{id}/events`) that also catches up a page opened mid-import.
+- Records that cannot be read are reported with their line or entry number and the reason,
+  and the rest still come in. Import history lists every file, what came in and what did not,
+  with an undo that removes exactly what that file brought.
+- Records: a virtualised table that scrolls 100,000 rows, keyset pagination in six orders, a
+  detail panel, and filters with counts from a cached facets endpoint.
+- Full-text search from guide 8.9 — `"exact phrase"`, `-exclude`, `author:`, `journal:`,
+  `year:2018..2024`, and a DOI or PubMed id pasted straight in — over a generated tsvector
+  with GIN indexes, plus trigram indexes for title and author matching.
+- Parser fixtures for the databases in guide 15 (Ovid Embase, PubMed, Scopus, Web of
+  Science, CINAHL, Cochrane, Zotero, EndNote) and a deliberately messy file: BOM, CRLF,
+  HTML entities, accents and a record with no end marker.
+- Tests: the readers against those real exports, an end-to-end import through the worker, the
+  search syntax, and a Playwright journey from upload to a searchable record.
+
+### Changed
+- `records.doi` is text rather than `citext` — binary `COPY` has no encoder for `citext`, and
+  lookups use the normalised `doi_norm` column anyway.
+
 ## Phase 2: Reviews, team and settings (2026-09-23)
 
 ### Added

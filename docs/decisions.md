@@ -269,3 +269,61 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   reviewer's settings pages are simply read-only.
 - **Radix selects do not open on a jsdom click,** so component tests open them with the
   keyboard; buttons that pair an icon with a name carry an explicit `aria-label`.
+
+## Phase 3 — Import and records
+
+### Reading the files
+- **The format is decided by the content, not the extension.** A `.txt` from PubMed is
+  MEDLINE, a `.xml` may be PubMed or EndNote; each reader is asked whether the text looks
+  like its format and the first confident answer wins.
+- **Readers are generators** that yield either a record or a problem, so a 100,000-record
+  file never sits in memory whole and one unreadable entry cannot end the import. XML is read
+  with `defusedxml`'s streaming `iterparse` — entity expansion and external entities are
+  refused, which the tests exercise with an XXE payload.
+- **A record must have a title, a DOI or a PubMed id** to be worth keeping; anything else is
+  reported as a problem with its line or entry number. The first 200 problems are stored; the
+  count is exact.
+- **Only the fields the six formats agree on are parsed.** Anything else is kept verbatim in
+  `raw`, so nothing is lost and no reader has to guess.
+
+### Getting them into the database
+- **Imports are written with `COPY`** from the worker, in batches of 1,000. It is the only
+  way to meet the guide's budgets (10,000 in under 10 seconds, 100,000 in under 60); the
+  measured numbers are 2.4 s and 36 s.
+- **`records.doi` is `text`, not `citext`.** asyncpg's binary `COPY` has no encoder for
+  `citext`, and case-insensitive lookups use `doi_norm`, which is normalised anyway.
+- **Generated columns call IMMUTABLE SQL functions** (`winnow_search_vector`,
+  `winnow_authors_text`) because PostgreSQL will not accept `to_tsvector` with a
+  configuration name or `array_to_string` directly in a generated column.
+- **Memory is bounded by the upload cap,** not by the file's record count: the reader
+  streams, the rows are batched, and a file larger than `MAX_UPLOAD_MB` is refused at the
+  door with 413.
+- **Confirming sets the batch to `parsing` before the job is enqueued,** so a second confirm
+  arriving in the meantime cannot import the same file twice.
+- **Undo removes the batch and its records in one statement** and leaves the file on disk for
+  the retention job; the review's counts are recomputed, not adjusted.
+
+### Reading them back
+- **Search uses `websearch_to_tsquery` over the generated vector,** with the field filters
+  parsed out first. A pasted DOI or PubMed id is recognised and answered exactly, because that
+  is what someone pasting one wants.
+- **Author search is a trigram index on a generated `authors_text` column.** Without it,
+  `author:smith` was 209 ms on 100,000 records; with it, 32 ms.
+- **Paging is by keyset,** with a cursor encoding the sort key and the id, so page 500 costs
+  the same as page 1 and a record added mid-scroll cannot duplicate a row.
+- **Facet counts are cached in Redis for five seconds.** They are a summary, not a source of
+  truth, and recomputing them on every keystroke is what made them slow.
+- **S3 storage is defined but not implemented** (`create_storage` raises for it). The guide
+  lists it as optional and the interface is three methods wide when it is wanted.
+
+### The frontend
+- **The records table is virtualised** with a fixed row height and the next page is fetched
+  as the end comes into view, so 100,000 records scroll like 50. jsdom lays nothing out, so
+  the test setup gives elements a window-sized box; without it the virtualiser has a
+  zero-height viewport and renders no rows.
+- **Search, filters and order live in the URL,** so a link shares exactly what someone is
+  looking at, and the browser's back button works as they expect.
+- **Progress comes from the project's event stream,** which the import page uses only to
+  invalidate queries — the numbers themselves still come from the API, so a missed event
+  cannot leave the page telling a story the database does not support.
+
