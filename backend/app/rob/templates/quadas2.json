@@ -1,0 +1,165 @@
+{
+  "key": "quadas2",
+  "name": "QUADAS-2",
+  "version": "2011",
+  "source_url": "https://www.bristol.ac.uk/population-health-sciences/projects/quadas/history/quadas-2/",
+  "content_note": "Guide-required QUADAS-2 structure, although QUADAS-3 is now current. Winnow uses independently worded concise prompts; each review must tailor signalling guidance to its question before use.",
+  "variants": [
+    {
+      "key": "diagnostic_accuracy",
+      "name": "Diagnostic accuracy studies",
+      "domains": [
+        {
+          "key": "patient_selection",
+          "name": "Patient selection",
+          "signalling_questions": [
+            {
+              "key": "consecutive_or_random_sample",
+              "prompt": "Was a consecutive or random sample enrolled?",
+              "allowed_answers": ["yes", "no", "unclear"]
+            },
+            {
+              "key": "case_control_avoided",
+              "prompt": "Was a case-control design avoided?",
+              "allowed_answers": ["yes", "no", "unclear"]
+            },
+            {
+              "key": "inappropriate_exclusions_avoided",
+              "prompt": "Were inappropriate participant exclusions avoided?",
+              "allowed_answers": ["yes", "no", "unclear"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "risk_of_bias",
+              "name": "Risk of bias",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low risk"},
+                {"key": "high", "label": "High risk"},
+                {"key": "unclear", "label": "Unclear risk"}
+              ]
+            },
+            {
+              "key": "applicability",
+              "name": "Applicability concern",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low concern"},
+                {"key": "high", "label": "High concern"},
+                {"key": "unclear", "label": "Unclear concern"}
+              ]
+            }
+          ]
+        },
+        {
+          "key": "index_test",
+          "name": "Index test",
+          "signalling_questions": [
+            {
+              "key": "blinded_to_reference_standard",
+              "prompt": "Was the index test interpreted without knowledge of the reference-standard result?",
+              "allowed_answers": ["yes", "no", "unclear"]
+            },
+            {
+              "key": "threshold_prespecified",
+              "prompt": "When a threshold was used, was it specified before analysis?",
+              "allowed_answers": ["yes", "no", "unclear"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "risk_of_bias",
+              "name": "Risk of bias",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low risk"},
+                {"key": "high", "label": "High risk"},
+                {"key": "unclear", "label": "Unclear risk"}
+              ]
+            },
+            {
+              "key": "applicability",
+              "name": "Applicability concern",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low concern"},
+                {"key": "high", "label": "High concern"},
+                {"key": "unclear", "label": "Unclear concern"}
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reference_standard",
+          "name": "Reference standard",
+          "signalling_questions": [
+            {
+              "key": "accurate_target_classification",
+              "prompt": "Was the reference standard likely to classify the target condition correctly?",
+              "allowed_answers": ["yes", "no", "unclear"]
+            },
+            {
+              "key": "blinded_to_index_test",
+              "prompt": "Was the reference standard interpreted without knowledge of the index-test result?",
+              "allowed_answers": ["yes", "no", "unclear"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "risk_of_bias",
+              "name": "Risk of bias",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low risk"},
+                {"key": "high", "label": "High risk"},
+                {"key": "unclear", "label": "Unclear risk"}
+              ]
+            },
+            {
+              "key": "applicability",
+              "name": "Applicability concern",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low concern"},
+                {"key": "high", "label": "High concern"},
+                {"key": "unclear", "label": "Unclear concern"}
+              ]
+            }
+          ]
+        },
+        {
+          "key": "flow_and_timing",
+          "name": "Flow and timing",
+          "signalling_questions": [
+            {
+              "key": "appropriate_interval",
+              "prompt": "Was the interval between index test and reference standard appropriate?",
+              "allowed_answers": ["yes", "no", "unclear"]
+            },
+            {
+              "key": "reference_standard_for_all",
+              "prompt": "Did all participants receive a reference standard?",
+              "allowed_answers": ["yes", "no", "unclear"]
+            },
+            {
+              "key": "same_reference_standard",
+              "prompt": "Did all participants receive the same reference standard?",
+              "allowed_answers": ["yes", "no", "unclear"]
+            },
+            {
+              "key": "all_included_in_analysis",
+              "prompt": "Were all enrolled participants included in the analysis?",
+              "allowed_answers": ["yes", "no", "unclear"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "risk_of_bias",
+              "name": "Risk of bias",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low risk"},
+                {"key": "high", "label": "High risk"},
+                {"key": "unclear", "label": "Unclear risk"}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

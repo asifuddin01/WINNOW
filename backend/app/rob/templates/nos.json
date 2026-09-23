@@ -1,0 +1,219 @@
+{
+  "key": "nos",
+  "name": "Newcastle–Ottawa Scale",
+  "version": "cohort and case-control forms accessed 23 September 2026",
+  "source_url": "https://ohri.ca/en/who-we-are/core-facilities-and-platforms/ottawa-methods-centre/newcastle-ottawa-scale",
+  "content_note": "Separate cohort and case-control variants preserve the official three-perspective star structure. Prompts are independently worded concise summaries; review-specific thresholds must be set before assessment.",
+  "variants": [
+    {
+      "key": "cohort",
+      "name": "Cohort studies",
+      "domains": [
+        {
+          "key": "selection",
+          "name": "Selection",
+          "signalling_questions": [
+            {
+              "key": "representative_exposed_cohort",
+              "prompt": "Is the exposed cohort representative of the target population?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            },
+            {
+              "key": "comparable_unexposed_cohort",
+              "prompt": "Was the unexposed cohort drawn from the same source population?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            },
+            {
+              "key": "secure_exposure_ascertainment",
+              "prompt": "Was exposure established through a secure record or structured method?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            },
+            {
+              "key": "outcome_absent_at_start",
+              "prompt": "Was the outcome of interest absent at the start of follow-up?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "stars",
+              "name": "Stars awarded",
+              "allowed_judgements": [
+                {"key": "stars_0", "label": "0 stars"},
+                {"key": "stars_1", "label": "1 star"},
+                {"key": "stars_2", "label": "2 stars"},
+                {"key": "stars_3", "label": "3 stars"},
+                {"key": "stars_4", "label": "4 stars"}
+              ]
+            }
+          ]
+        },
+        {
+          "key": "comparability",
+          "name": "Comparability",
+          "signalling_questions": [
+            {
+              "key": "primary_factor_controlled",
+              "prompt": "Did design or analysis control for the prespecified most important factor?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            },
+            {
+              "key": "additional_factor_controlled",
+              "prompt": "Did design or analysis control for a prespecified additional factor?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "stars",
+              "name": "Stars awarded",
+              "allowed_judgements": [
+                {"key": "stars_0", "label": "0 stars"},
+                {"key": "stars_1", "label": "1 star"},
+                {"key": "stars_2", "label": "2 stars"}
+              ]
+            }
+          ]
+        },
+        {
+          "key": "outcome",
+          "name": "Outcome",
+          "signalling_questions": [
+            {
+              "key": "robust_outcome_assessment",
+              "prompt": "Was outcome assessment independent or based on secure records?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            },
+            {
+              "key": "adequate_follow_up_duration",
+              "prompt": "Was follow-up long enough for the outcome to occur?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            },
+            {
+              "key": "adequate_follow_up_completeness",
+              "prompt": "Was follow-up complete or unlikely to introduce attrition bias?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "stars",
+              "name": "Stars awarded",
+              "allowed_judgements": [
+                {"key": "stars_0", "label": "0 stars"},
+                {"key": "stars_1", "label": "1 star"},
+                {"key": "stars_2", "label": "2 stars"},
+                {"key": "stars_3", "label": "3 stars"}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "case_control",
+      "name": "Case-control studies",
+      "domains": [
+        {
+          "key": "selection",
+          "name": "Selection",
+          "signalling_questions": [
+            {
+              "key": "adequate_case_definition",
+              "prompt": "Was the case definition independently validated or otherwise secure?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            },
+            {
+              "key": "representative_cases",
+              "prompt": "Were cases consecutive or otherwise representative of eligible cases?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            },
+            {
+              "key": "appropriate_control_selection",
+              "prompt": "Were controls selected from the source population that produced the cases?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            },
+            {
+              "key": "appropriate_control_definition",
+              "prompt": "Were controls defined as having no history of the outcome condition?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "stars",
+              "name": "Stars awarded",
+              "allowed_judgements": [
+                {"key": "stars_0", "label": "0 stars"},
+                {"key": "stars_1", "label": "1 star"},
+                {"key": "stars_2", "label": "2 stars"},
+                {"key": "stars_3", "label": "3 stars"},
+                {"key": "stars_4", "label": "4 stars"}
+              ]
+            }
+          ]
+        },
+        {
+          "key": "comparability",
+          "name": "Comparability",
+          "signalling_questions": [
+            {
+              "key": "primary_factor_controlled",
+              "prompt": "Did design or analysis control for the prespecified most important factor?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            },
+            {
+              "key": "additional_factor_controlled",
+              "prompt": "Did design or analysis control for a prespecified additional factor?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "stars",
+              "name": "Stars awarded",
+              "allowed_judgements": [
+                {"key": "stars_0", "label": "0 stars"},
+                {"key": "stars_1", "label": "1 star"},
+                {"key": "stars_2", "label": "2 stars"}
+              ]
+            }
+          ]
+        },
+        {
+          "key": "exposure",
+          "name": "Exposure",
+          "signalling_questions": [
+            {
+              "key": "robust_exposure_ascertainment",
+              "prompt": "Was exposure established securely and without differential knowledge of case status?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            },
+            {
+              "key": "same_ascertainment_method",
+              "prompt": "Was the same exposure ascertainment method used for cases and controls?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            },
+            {
+              "key": "comparable_nonresponse",
+              "prompt": "Were non-response rates comparable or adequately described across groups?",
+              "allowed_answers": ["awarded", "not_awarded", "unclear"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "stars",
+              "name": "Stars awarded",
+              "allowed_judgements": [
+                {"key": "stars_0", "label": "0 stars"},
+                {"key": "stars_1", "label": "1 star"},
+                {"key": "stars_2", "label": "2 stars"},
+                {"key": "stars_3", "label": "3 stars"}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,190 @@
+{
+  "key": "rob2",
+  "name": "RoB 2",
+  "version": "22 August 2019",
+  "source_url": "https://www.riskofbias.info/welcome/rob-2-0-tool/current-version-of-rob-2",
+  "content_note": "Individually randomised parallel-group trial variant for the effect of assignment. Winnow uses independently worded concise prompts and factual domain structure; reviewers must consult the official tool and guidance.",
+  "variants": [
+    {
+      "key": "parallel_assignment",
+      "name": "Parallel-group trials — effect of assignment",
+      "domains": [
+        {
+          "key": "randomisation_process",
+          "name": "Bias arising from the randomisation process",
+          "signalling_questions": [
+            {
+              "key": "random_sequence",
+              "prompt": "Was the allocation sequence generated using a random method?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "allocation_concealment",
+              "prompt": "Was allocation concealed until participants were enrolled and assigned?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "baseline_imbalance",
+              "prompt": "Do baseline differences indicate a possible problem with randomisation?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "risk_of_bias",
+              "name": "Risk of bias",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low risk"},
+                {"key": "some_concerns", "label": "Some concerns"},
+                {"key": "high", "label": "High risk"}
+              ]
+            }
+          ]
+        },
+        {
+          "key": "deviations_from_intended_interventions",
+          "name": "Bias due to deviations from intended interventions",
+          "signalling_questions": [
+            {
+              "key": "participant_awareness",
+              "prompt": "Were participants aware of their assigned intervention during the trial?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "provider_awareness",
+              "prompt": "Were intervention providers aware of participants' assignments?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "context_deviations",
+              "prompt": "Did trial-context deviations from intended intervention occur and potentially affect the outcome?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "balanced_deviations",
+              "prompt": "Were important deviations balanced between intervention groups?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "appropriate_analysis",
+              "prompt": "Was an appropriate analysis used to estimate the effect of assignment?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "risk_of_bias",
+              "name": "Risk of bias",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low risk"},
+                {"key": "some_concerns", "label": "Some concerns"},
+                {"key": "high", "label": "High risk"}
+              ]
+            }
+          ]
+        },
+        {
+          "key": "missing_outcome_data",
+          "name": "Bias due to missing outcome data",
+          "signalling_questions": [
+            {
+              "key": "outcome_data_available",
+              "prompt": "Were outcome data available for all or nearly all randomised participants?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "evidence_against_bias",
+              "prompt": "Is there evidence that missing outcome data did not bias the result?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "missingness_depends_on_value",
+              "prompt": "Could the chance of missingness depend on the true outcome value?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "risk_of_bias",
+              "name": "Risk of bias",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low risk"},
+                {"key": "some_concerns", "label": "Some concerns"},
+                {"key": "high", "label": "High risk"}
+              ]
+            }
+          ]
+        },
+        {
+          "key": "measurement_of_outcome",
+          "name": "Bias in measurement of the outcome",
+          "signalling_questions": [
+            {
+              "key": "appropriate_measure",
+              "prompt": "Was the outcome measurement method appropriate?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "comparable_measurement",
+              "prompt": "Could outcome measurement or ascertainment differ between intervention groups?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "assessor_awareness",
+              "prompt": "Were outcome assessors aware of the intervention received?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "awareness_influence",
+              "prompt": "Could knowledge of intervention plausibly influence outcome assessment?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "risk_of_bias",
+              "name": "Risk of bias",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low risk"},
+                {"key": "some_concerns", "label": "Some concerns"},
+                {"key": "high", "label": "High risk"}
+              ]
+            }
+          ]
+        },
+        {
+          "key": "selection_of_reported_result",
+          "name": "Bias in selection of the reported result",
+          "signalling_questions": [
+            {
+              "key": "prespecified_analysis",
+              "prompt": "Was the reported result analysed according to a prespecified plan finalised before unblinded outcome data were available?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "multiple_measurements",
+              "prompt": "Could the result have been selected from multiple eligible outcome measurements?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            },
+            {
+              "key": "multiple_analyses",
+              "prompt": "Could the result have been selected from multiple eligible analyses of the data?",
+              "allowed_answers": ["yes", "probably_yes", "probably_no", "no", "no_information", "not_applicable"]
+            }
+          ],
+          "judgement_axes": [
+            {
+              "key": "risk_of_bias",
+              "name": "Risk of bias",
+              "allowed_judgements": [
+                {"key": "low", "label": "Low risk"},
+                {"key": "some_concerns", "label": "Some concerns"},
+                {"key": "high", "label": "High risk"}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
