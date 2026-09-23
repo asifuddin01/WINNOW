@@ -28,6 +28,33 @@ from app.services.errors import ConflictError, NotFoundError, NotInClusterError
 # The review screen shows the least certain clusters first: those are the ones that need
 # a person. Certain ones are either already merged or one click away.
 MAX_CLUSTERS = 500
+# How long to wait after an import before looking: a drop of twenty files finishes as
+# twenty imports within seconds, and they should make one dedup run, not twenty.
+SETTLE_SECONDS = 5
+
+
+def dedup_job_id(project_id: uuid.UUID) -> str:
+    """One dedup job per review at a time. Two at once would each replace the other's
+    pending clusters and could merge the same records twice."""
+    return f"dedup:{project_id}"
+
+
+async def enqueue_dedup(queue: ArqRedis, project_id: uuid.UUID, *, settle: float = 0) -> str | None:
+    """Queue a dedup run unless one is already queued or running for this review.
+
+    arq refuses a second job with the same id, so a burst of imports collapses into the
+    one run that is waiting; the run itself goes round again if records arrive while it
+    works (see `run_dedup`).
+    """
+    from app.workers.settings import DEDUP_JOB
+
+    job = await queue.enqueue_job(
+        DEDUP_JOB,
+        str(project_id),
+        _job_id=dedup_job_id(project_id),
+        _defer_by=settle or None,
+    )
+    return job.job_id if job else None
 
 
 async def merge_cluster(
@@ -54,6 +81,12 @@ async def merge_cluster(
                 duplicate_of=primary_id,
                 updated_at=now or datetime.now(UTC),
             )
+        )
+        # Whatever was merged into these earlier now points at the record that was kept.
+        await session.execute(
+            update(Record)
+            .where(Record.duplicate_of.in_(secondaries))
+            .values(duplicate_of=primary_id)
         )
         await migrate_work(session, secondaries, primary_id)
     # The primary the person chose may not be the one the algorithm picked.
@@ -111,6 +144,14 @@ async def merge_clusters(
             .values(is_duplicate=True, duplicate_of=pairs.c.kept, updated_at=when)
             .execution_options(synchronize_session=None)
         )
+        # Copies merged earlier into a record that is itself merged now follow it, so
+        # duplicate_of always names the record that was kept, never a link in a chain.
+        await session.execute(
+            update(Record)
+            .where(Record.duplicate_of == pairs.c.rid)
+            .values(duplicate_of=pairs.c.kept, updated_at=when)
+            .execution_options(synchronize_session=None)
+        )
         await migrate_work(session, [row["rid"] for row in secondaries], None)
     primaries = list(primary_by_cluster.values())
     await session.execute(
@@ -153,9 +194,11 @@ class DedupService:
     # --- Running -----------------------------------------------------------------------
 
     async def run(self, access: ProjectAccess, actor: Actor) -> DedupStarted:
-        """Hand the whole project to the worker (guide 8.4: it is never a request's job)."""
-        from app.workers.settings import DEDUP_JOB
+        """Hand the whole project to the worker (guide 8.4: it is never a request's job).
 
+        If a run is already queued or under way, that run is the answer: it will see
+        everything this one would have.
+        """
         audit.record(
             self._db,
             "dedup.started",
@@ -166,8 +209,8 @@ class DedupService:
             entity_id=access.project_id,
         )
         await self._db.commit()
-        job = await self._queue.enqueue_job(DEDUP_JOB, str(access.project_id))
-        return DedupStarted(job_id=job.job_id if job else None)
+        job_id = await enqueue_dedup(self._queue, access.project_id)
+        return DedupStarted(job_id=job_id or dedup_job_id(access.project_id))
 
     # --- Reading -----------------------------------------------------------------------
 

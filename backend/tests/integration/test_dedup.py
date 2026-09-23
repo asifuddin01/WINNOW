@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import pytest
 from fastapi import FastAPI
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -503,3 +504,108 @@ async def test_the_known_duplicates_fixture_meets_the_acceptance_bar(
 
 def _pairs(ids: list[uuid.UUID]) -> list[tuple[uuid.UUID, uuid.UUID]]:
     return [(left, right) for index, left in enumerate(ids) for right in ids[index + 1 :]]
+
+
+async def test_a_slow_trigram_block_gives_way_to_the_word_block(
+    db_app: FastAPI, db: AsyncSession, mailer: MemoryMailer, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """If the database runs out of time, dedup still runs — on the in-memory blocks."""
+    from sqlalchemy.exc import DBAPIError
+
+    from app.workers import dedup as job
+
+    async def too_slow(*_: object) -> list[tuple[uuid.UUID, uuid.UUID]]:
+        raise DBAPIError("SELECT …", {}, Exception("canceling statement due to statement timeout"))
+
+    monkeypatch.setattr(job, "_trigram_query", too_slow)
+    async with person(db_app, mailer, OWNER) as owner:
+        project = await create_project(owner)
+        pid = project["id"]
+        await add_records(
+            db,
+            uuid.UUID(pid),
+            [
+                {
+                    "title": "A prospective cohort study of night shifts and sleep in nurses",
+                    "title_norm": "a prospective cohort study of night shifts and sleep in nurses",
+                    "authors": ["Rahman, Imran"],
+                    "year": 2020,
+                    "journal": "Sleep Medicine",
+                },
+                {
+                    "title": "Night shifts and sleep in nurses: a prospective cohort study",
+                    "title_norm": "night shifts and sleep in nurses a prospective cohort study",
+                    "authors": ["Rahman, I"],
+                    "year": 2020,
+                    "journal": "Sleep Medicine",
+                },
+            ],
+        )
+        await db.commit()
+        await manual_only(owner, pid)
+
+        result = await dedup(db_app, pid)
+        assert result.clusters == 1, "the word block finds the reordered title on its own"
+
+
+async def test_identical_copies_are_merged_so_only_the_real_question_is_asked(
+    db_app: FastAPI, db: AsyncSession, mailer: MemoryMailer
+) -> None:
+    """Overlapping arXiv queries return one preprint many times; the published chapter
+    is the only thing a person has to judge it against."""
+    preprint = {
+        "title": "Analyzing tumors by synthesis",
+        "title_norm": "analyzing tumors by synthesis",
+        "authors": ["Chen, Qi", "Lai, Yuxiang"],
+        "year": 2024,
+        "journal": "arXiv preprint arXiv:2409.06035",
+    }
+    async with person(db_app, mailer, OWNER) as owner:
+        project = await create_project(owner)
+        pid = project["id"]
+        await add_records(
+            db,
+            uuid.UUID(pid),
+            [
+                dict(preprint),
+                dict(preprint),
+                dict(preprint),
+                {
+                    "title": "Analyzing Tumors by Synthesis",
+                    "title_norm": "analyzing tumors by synthesis",
+                    "authors": ["Chen, Q.", "Lai, Y."],
+                    "year": 2025,
+                    "journal": "Generative Machine Learning Models in Medical Image Computing",
+                    "pages": "85-110",
+                    "doi_norm": "10.1007/978-3-031-80965-1_5",
+                },
+            ],
+        )
+        await db.commit()
+
+        result = await dedup(db_app, pid)
+        assert result.duplicates == 2, "two of the three identical preprints merge at once"
+        pending = (await get(owner, f"/projects/{pid}/dedup/clusters")).json()
+        assert len(pending) == 1
+        assert len(pending[0]["members"]) == 2, "one preprint against the chapter"
+
+        chapter = next(member for member in pending[0]["members"] if member["doi"])
+        merge = await post(
+            owner,
+            f"/projects/{pid}/dedup/clusters/{pending[0]['id']}/merge",
+            {"primary_id": chapter["id"]},
+        )
+        assert merge.status_code == 200
+
+        # Every copy now names the chapter directly: no chains through a merged record.
+        copies = list(
+            await db.scalars(
+                select(Record).where(
+                    Record.project_id == uuid.UUID(pid), Record.is_duplicate.is_(True)
+                )
+            )
+        )
+        for copy in copies:
+            await db.refresh(copy)
+        assert len(copies) == 3
+        assert {str(copy.duplicate_of) for copy in copies} == {chapter["id"]}

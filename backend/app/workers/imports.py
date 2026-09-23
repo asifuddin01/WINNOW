@@ -178,12 +178,12 @@ async def _dedup_if_wanted(
     project_id: uuid.UUID,
 ) -> None:
     """Guide 8.4: look for duplicates as soon as an import lands, if the review wants it."""
-    from app.workers.settings import DEDUP_JOB
+    from app.services.dedup import SETTLE_SECONDS, enqueue_dedup
 
     async with sessionmaker() as session:
         raw = await session.scalar(select(Project.settings).where(Project.id == project_id))
     if ProjectSettings.model_validate(raw or {}).dedup_on_import:
-        await queue.enqueue_job(DEDUP_JOB, str(project_id))
+        await enqueue_dedup(queue, project_id, settle=SETTLE_SECONDS)
 
 
 async def _progress(

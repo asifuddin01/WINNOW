@@ -93,7 +93,9 @@ class WorkerSettings:
         func(import_records, name=IMPORT_RECORDS_JOB, max_tries=1, timeout=1800),
         # Deduplication reads the whole project; 50,000 records take well under a minute
         # (guide 2.2), but a very large review is given room.
-        func(dedup_project, name=DEDUP_JOB, max_tries=1, timeout=1800),
+        # keep_result=0 frees the per-review job id as soon as a run ends (see
+        # app.services.dedup.enqueue_dedup), so the next import can queue the next run.
+        func(dedup_project, name=DEDUP_JOB, max_tries=1, timeout=1800, keep_result=0),
     ]
     on_startup = startup
     on_shutdown = shutdown

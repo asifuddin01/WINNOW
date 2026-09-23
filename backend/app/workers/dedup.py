@@ -13,6 +13,7 @@ from typing import Any
 import structlog
 from redis.asyncio import Redis
 from sqlalchemy import Row, and_, delete, func, insert, select
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import aliased
 
@@ -22,7 +23,7 @@ from app.models.base import uuid7
 from app.schemas.projects import ProjectSettings
 from app.services import events
 from app.services.dedup import merge_clusters
-from app.services.dedup_blocks import merged, token_pairs
+from app.services.dedup_blocks import merged, split_certain, token_pairs
 
 log = structlog.get_logger(__name__)
 
@@ -31,11 +32,14 @@ TRIGRAM_THRESHOLD = 0.6
 # A cap on what the database hands back, so one project of near-identical titles cannot
 # turn into a pairwise explosion.
 MAX_TRIGRAM_PAIRS = 100_000
-# Above this many records the trigram self-join costs minutes rather than seconds, and the
-# word-based block in `app.services.dedup_blocks` already covers the same reordered and
-# subtitled titles in memory. Measured: 50,000 records take over two minutes in the
-# database and under a second in process.
-TRIGRAM_MAX_RECORDS = 10_000
+# The trigram self-join only for small reviews. A review is about one topic, so its titles
+# share most of their trigrams ("kidney", "ct", "segmentation") and every index probe
+# returns much of the table: on a real 8,278-record scoping review the join ran past 60 s,
+# where the word block in `app.services.dedup_blocks` took under a second and, measured
+# against a real search's provenance, missed nothing.
+TRIGRAM_MAX_RECORDS = 1_000
+# And even there, never long enough to matter.
+TRIGRAM_TIMEOUT_MS = 5_000
 
 FIELDS = (
     Record.id,
@@ -89,6 +93,25 @@ async def load_records(session: AsyncSession, project_id: uuid.UUID) -> list[Rec
 
 
 async def trigram_pairs(
+    sessionmaker: async_sessionmaker[AsyncSession], project_id: uuid.UUID
+) -> list[tuple[uuid.UUID, uuid.UUID]]:
+    """Block C through the database, bounded by a statement timeout (see TRIGRAM_*).
+
+    It runs in a session of its own that is never committed, so the timeout and threshold
+    set for it are rolled back with it. If it runs out of time, the word block stands in.
+    """
+    try:
+        async with sessionmaker() as session:
+            await session.execute(
+                select(func.set_config("statement_timeout", str(TRIGRAM_TIMEOUT_MS), True))
+            )
+            return await _trigram_query(session, project_id)
+    except DBAPIError:
+        log.warning("dedup.trigram_skipped", project_id=str(project_id))
+        return []
+
+
+async def _trigram_query(
     session: AsyncSession, project_id: uuid.UUID
 ) -> list[tuple[uuid.UUID, uuid.UUID]]:
     """Block C: pairs whose titles are similar enough for the trigram index to say so.
@@ -122,6 +145,13 @@ async def trigram_pairs(
         .limit(MAX_TRIGRAM_PAIRS)
     )
     return [(left, right) for left, right in rows]
+
+
+async def _settings(
+    sessionmaker: async_sessionmaker[AsyncSession], project_id: uuid.UUID
+) -> ProjectSettings:
+    async with sessionmaker() as session:
+        return await _settings_of(session, project_id)
 
 
 async def _settings_of(session: AsyncSession, project_id: uuid.UUID) -> ProjectSettings:
@@ -187,7 +217,61 @@ async def _replace_pending(
     return len(rows)
 
 
+# If imports keep landing while a run works, it looks again — but not for ever.
+MAX_PASSES = 3
+
+
+async def _live_count(session: AsyncSession, project_id: uuid.UUID) -> int:
+    count = await session.scalar(
+        select(func.count())
+        .select_from(Record)
+        .where(Record.project_id == project_id, Record.is_duplicate.is_(False))
+    )
+    return count or 0
+
+
 async def run_dedup(
+    *,
+    sessionmaker: async_sessionmaker[AsyncSession],
+    redis: Redis,
+    project_id: uuid.UUID,
+) -> DedupResult:
+    """Run 9.1 until the review stops changing under it.
+
+    Only one run per review is ever queued (`enqueue_dedup`), so an import that finishes
+    while this one works cannot queue its own; instead, when a pass ends and there are
+    records it did not see, it goes round again.
+    """
+    await events.publish(redis, project_id, "dedup.started", {})
+    total = DedupResult(records=0, clusters=0, duplicates=0, auto_resolved=0)
+    for _ in range(MAX_PASSES):
+        result = await _one_pass(sessionmaker=sessionmaker, redis=redis, project_id=project_id)
+        total = DedupResult(
+            records=result.records,
+            clusters=total.clusters + result.clusters,
+            duplicates=total.duplicates + result.duplicates,
+            auto_resolved=total.auto_resolved + result.auto_resolved,
+        )
+        async with sessionmaker() as session:
+            live = await _live_count(session, project_id)
+        # Everything live now was seen by this pass (merging only ever lowers the count).
+        if live <= result.records - result.duplicates:
+            break
+    await events.publish(
+        redis,
+        project_id,
+        "dedup.finished",
+        {
+            "records": total.records,
+            "clusters": total.clusters - total.auto_resolved,
+            "duplicates": total.duplicates,
+            "auto_resolved": total.auto_resolved,
+        },
+    )
+    return total
+
+
+async def _one_pass(
     *,
     sessionmaker: async_sessionmaker[AsyncSession],
     redis: Redis,
@@ -199,19 +283,22 @@ async def run_dedup(
     two writes are one transaction each, and the review screen is told over the event
     stream when there is something new to look at.
     """
-    await events.publish(redis, project_id, "dedup.started", {})
     async with sessionmaker() as session:
         records = await load_records(session, project_id)
-        # Blocks A and B key on the start of a title; these two catch the rest. The
-        # database's trigram index is the better of them, but only while it is affordable.
-        by_words = token_pairs(records)
-        by_trigram = (
-            await trigram_pairs(session, project_id)
-            if 0 < len(records) <= TRIGRAM_MAX_RECORDS
-            else []
-        )
+    # Blocks A and B key on the start of a title; these two catch the rest: the word block
+    # always, and the database's trigram index while the review is small enough for it.
+    by_words = token_pairs(records)
+    by_trigram = (
+        await trigram_pairs(sessionmaker, project_id)
+        if 0 < len(records) <= TRIGRAM_MAX_RECORDS
+        else []
+    )
     extra = merged(by_words, by_trigram)
     found = cluster(records, extra_pairs=extra) if len(records) > 1 else []
+    settings = await _settings(sessionmaker, project_id)
+    if settings.dedup_auto_resolve:
+        # Identical copies inside an uncertain group are not a question for anyone.
+        found = split_certain(found, records)
 
     async with sessionmaker() as session:
         saved = await _replace_pending(session, project_id, found)
@@ -246,23 +333,12 @@ async def run_dedup(
         auto_resolved=auto_resolved,
     )
     log.info(
-        "dedup.finished",
+        "dedup.pass",
         project_id=str(project_id),
         records=result.records,
         clusters=result.clusters,
         auto_resolved=result.auto_resolved,
         candidate_pairs=len(extra),
         trigram_pairs=len(by_trigram),
-    )
-    await events.publish(
-        redis,
-        project_id,
-        "dedup.finished",
-        {
-            "records": result.records,
-            "clusters": result.clusters - result.auto_resolved,
-            "duplicates": result.duplicates,
-            "auto_resolved": result.auto_resolved,
-        },
     )
     return result

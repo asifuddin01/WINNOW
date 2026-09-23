@@ -15,7 +15,7 @@ import uuid
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Sequence
 
-from app.dedup import RecordForDedup
+from app.dedup import Cluster, RecordForDedup
 from app.dedup.normalisation import normalise_title
 
 # Words this common carry no information about which record is which.
@@ -125,3 +125,63 @@ def merged(*sources: Iterable[tuple[uuid.UUID, uuid.UUID]]) -> list[tuple[uuid.U
         for left, right in source:
             seen.add((left, right) if left.int < right.int else (right, left))
     return list(seen)
+
+
+def _same_copy_key(record: RecordForDedup) -> tuple[str, int | None, str, str] | None:
+    """What makes two records the same export of the same entry: title, year, first
+    author's surname and source, all normalised. None when the title is missing."""
+    title = normalise_title(record.title_norm or record.title)
+    if not title:
+        return None
+    first = record.authors[0] if record.authors else ""
+    surname = normalise_title(first.split(",")[0])
+    journal = normalise_title(record.journal or "")
+    return (title, record.year, surname, journal)
+
+
+def split_certain(found: Sequence[Cluster], records: Sequence[RecordForDedup]) -> list[Cluster]:
+    """Take the identical copies out of the clusters that need a person.
+
+    Overlapping searches of one database return the same entry again and again: a group
+    of an arXiv preprint and a journal chapter can arrive as five identical preprints and
+    the chapter. The five are certain; only the preprint-against-chapter question needs a
+    reviewer. So each uncertain cluster becomes a certain cluster per set of identical
+    copies (merged like any certain cluster) plus a smaller one of what is left to ask.
+    """
+    by_id = {record.id: record for record in records}
+    result: list[Cluster] = []
+    for group in found:
+        if group.auto_resolvable:
+            result.append(group)
+            continue
+        copies: dict[object, list[uuid.UUID]] = {}
+        for member_id in group.members:
+            key = _same_copy_key(by_id[member_id]) or member_id
+            copies.setdefault(key, []).append(member_id)
+        representatives: list[uuid.UUID] = []
+        for ids in copies.values():
+            keep = (
+                group.primary_id
+                if group.primary_id in ids
+                else min(ids, key=lambda item: (by_id[item].imported_at, item.int))
+            )
+            representatives.append(keep)
+            if len(ids) > 1:
+                result.append(
+                    Cluster(
+                        members=tuple(sorted(ids, key=lambda item: item.int)),
+                        score=1.0,
+                        primary_id=keep,
+                        auto_resolvable=True,
+                    )
+                )
+        if len(representatives) > 1:
+            result.append(
+                Cluster(
+                    members=tuple(sorted(representatives, key=lambda item: item.int)),
+                    score=group.score,
+                    primary_id=group.primary_id,
+                    auto_resolvable=False,
+                )
+            )
+    return result

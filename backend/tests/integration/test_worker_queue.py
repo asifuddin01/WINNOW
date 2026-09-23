@@ -29,3 +29,28 @@ async def test_ping_job_round_trip(db_settings: Settings) -> None:
         assert await job.result(timeout=5) == "pong"
     finally:
         await pool.aclose()
+
+
+async def test_a_burst_of_imports_queues_one_dedup_run(db_settings: Settings) -> None:
+    """Twenty files finish as twenty imports within seconds; they must make one dedup run.
+
+    Two runs at once on one review would each replace the other's pending clusters and
+    could merge the same records twice.
+    """
+    import uuid
+
+    from app.services.dedup import dedup_job_id, enqueue_dedup
+
+    redis_settings = RedisSettings.from_dsn(db_settings.redis_url)
+    pool = await create_pool(redis_settings, default_queue_name="winnow:test-dedup")
+    project_id = uuid.uuid4()
+    try:
+        first = await enqueue_dedup(pool, project_id, settle=60)
+        repeats = [await enqueue_dedup(pool, project_id, settle=60) for _ in range(19)]
+        assert first == dedup_job_id(project_id)
+        assert repeats == [None] * 19
+        # Another review is not held up by this one.
+        assert await enqueue_dedup(pool, uuid.uuid4(), settle=60) is not None
+    finally:
+        await pool.flushdb()
+        await pool.aclose()
