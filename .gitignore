@@ -39,3 +39,6 @@ graphify-out/
 
 # uv keeps its download cache here when the container runs with HOME in the project
 backend/.cache/
+
+# Benchmark data fetched from SYNERGY and OpenAlex (backend/benchmarks/synergy.py)
+backend/benchmarks/data/

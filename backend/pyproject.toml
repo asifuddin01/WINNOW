@@ -65,6 +65,8 @@ known-third-party = ["alembic"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "S105", "S106"]
+# Benchmarks shuffle with seeded, reproducible randomness and fetch fixed https URLs.
+"benchmarks/**" = ["S310", "S311"]
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "sqlalchemy.text".msg = "Build queries with SQLAlchemy expressions; text() needs bound params and review (guide 12.3)."
@@ -73,7 +75,7 @@ known-third-party = ["alembic"]
 strict = true
 python_version = "3.12"
 plugins = ["pydantic.mypy"]
-files = ["app", "tests", "alembic"]
+files = ["app", "tests", "alembic", "benchmarks"]
 
 [[tool.mypy.overrides]]
 # asyncpg ships no type information; only tests use it directly.
