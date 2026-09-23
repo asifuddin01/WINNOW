@@ -39,13 +39,14 @@ export async function createProject(
 }
 
 /**
- * Registration is limited to five an hour per address (guide 12.6) and the whole suite
- * comes from one, so the counter is cleared before each account it makes. The limit itself
- * is exercised by the backend security tests.
+ * Registration is limited to five an hour per address, and confirming an email to twenty
+ * (guide 12.6), and the whole suite comes from one address, so both counters are cleared
+ * before each account it makes. The limits themselves are exercised by the backend
+ * security tests.
  */
 export function clearRegistrationLimits(): void {
   execSync(
-    `docker compose exec -T redis sh -c "redis-cli --scan --pattern 'rl:register-ip:*' | xargs -r redis-cli del"`,
+    `docker compose exec -T redis sh -c "redis-cli --scan --pattern 'rl:register-ip:*' | xargs -r redis-cli del; redis-cli --scan --pattern 'rl:verify-email-ip:*' | xargs -r redis-cli del"`,
     { stdio: "ignore", cwd: ".." },
   );
 }
@@ -62,4 +63,59 @@ export async function createSignedInUser(
   const verify = await emailedLink(request, email, "verify");
   await apiPost(request, baseURL, "/verify-email", { token: verify.split("/").pop() });
   await apiPost(request, baseURL, "/login", { email, password: PASSWORD });
+}
+
+/** Invite `email` to the review and have `joiner` (already signed in) accept. */
+export async function addMember(
+  owner: APIRequestContext,
+  joiner: APIRequestContext,
+  baseURL: string,
+  pid: string,
+  email: string,
+  role = "reviewer",
+): Promise<void> {
+  const invite = (await apiPost(owner, baseURL, `/api/v1/projects/${pid}/invites`, {
+    email,
+    role,
+  })) as { link: string };
+  const token = invite.link.split("/").pop() ?? "";
+  await apiPost(joiner, baseURL, `/api/v1/invites/${token}/accept`, {});
+}
+
+/** Put a search export into the review through the same upload and confirm the app uses,
+ * and wait for the worker to finish it. */
+export async function importRis(
+  request: APIRequestContext,
+  baseURL: string,
+  pid: string,
+  ris: string,
+): Promise<void> {
+  const { csrf_token } = (await (await request.get("/api/v1/auth/csrf")).json()) as {
+    csrf_token: string;
+  };
+  const uploaded = await request.post(`/api/v1/projects/${pid}/imports`, {
+    headers: { "X-CSRF-Token": csrf_token, Origin: baseURL },
+    multipart: {
+      files: {
+        name: "search.ris",
+        mimeType: "application/x-research-info-systems",
+        buffer: Buffer.from(ris),
+      },
+      database_name: "PubMed",
+    },
+  });
+  if (!uploaded.ok())
+    throw new Error(`upload answered ${uploaded.status()}: ${await uploaded.text()}`);
+  const { batches } = (await uploaded.json()) as { batches: { id: string }[] };
+  const batch = batches[0]?.id ?? "";
+  await apiPost(request, baseURL, `/api/v1/projects/${pid}/imports/${batch}/confirm`, {});
+  for (let attempt = 0; attempt < 60; attempt++) {
+    const history = (await (await request.get(`/api/v1/projects/${pid}/imports`)).json()) as {
+      id: string;
+      status: string;
+    }[];
+    if (history.find((item) => item.id === batch)?.status === "done") return;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error("the import did not finish");
 }
