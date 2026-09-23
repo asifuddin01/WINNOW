@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useProjectMutation } from "@/features/projects/use-project-mutation";
+import { suggestionsExportUrl } from "@/api/llm";
 
 const REVIEWERS = [1, 2, 3, 4, 5].map((n) => ({
   value: String(n),
@@ -19,6 +20,7 @@ const REVIEWERS = [1, 2, 3, 4, 5].map((n) => ({
 export function ScreeningSettings({ project }: { project: Project }) {
   const { data: options } = useQuery(authOptionsQuery);
   const [draft, setDraft] = useState<ProjectSettings>(project.settings);
+  const isOwner = project.membership.role === "owner";
   const save = useProjectMutation(
     (settings: ProjectSettings) => updateSettings(project.id, settings),
     {
@@ -126,16 +128,27 @@ export function ScreeningSettings({ project }: { project: Project }) {
         id="llm"
         label="AI suggestions with reasons"
         hint={
-          options?.llm_available
-            ? "Sends record titles and abstracts to the configured provider. Off by default."
-            : "This Winnow instance has no AI provider set up, so this stays off."
+          !options?.llm_available
+            ? "This Winnow instance has no AI provider set up, so this stays off."
+            : !isOwner && !project.settings.llm_assist_enabled
+              ? "Sending records to an AI provider is the owner's decision: only they can turn this on."
+              : "When a reviewer asks, sends that record's title, abstract and keywords, and the criteria, to the configured provider. It never decides. Off by default."
         }
-        disabled={!options?.llm_available}
+        disabled={!options?.llm_available || (!isOwner && !project.settings.llm_assist_enabled)}
         checked={draft.llm_assist_enabled}
         onChange={(checked) => {
           set("llm_assist_enabled", checked);
         }}
       />
+      {project.settings.llm_assist_enabled && (
+        <a
+          href={suggestionsExportUrl(project.id)}
+          download
+          className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
+          Download every AI suggestion (CSV), for reporting AI use in your methods
+        </a>
+      )}
       <div className="grid gap-4 sm:grid-cols-2">
         <SelectField
           label="Stopping rule"

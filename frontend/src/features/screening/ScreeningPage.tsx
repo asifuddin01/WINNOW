@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { authOptionsQuery } from "@/api/auth";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -53,6 +54,7 @@ import { useShortcuts } from "@/features/screening/use-shortcuts";
 import { useVisibleTime } from "@/features/screening/use-visible-time";
 import { DECIDED_TEXT } from "@/features/screening/wording";
 import { StoppingBanner } from "@/features/ranking/StoppingBanner";
+import { SuggestionBox } from "@/features/screening/SuggestionBox";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -91,6 +93,7 @@ export function ScreeningPage({
   const { data: allReasons = [] } = useQuery(reasonsQuery(pid));
   const { data: labels = [] } = useQuery(labelsQuery(pid));
   const { data: progress } = useQuery(progressQuery(pid, stage));
+  const { data: options } = useQuery(authOptionsQuery);
 
   const [focus, setFocus] = useState(false);
   const [highlightOn, setHighlightOn] = useState(true);
@@ -474,6 +477,15 @@ export function ScreeningPage({
         </h3>
         <Notes key={current.id} notes={current.notes} onAdd={addNote} inputId={noteId} />
       </section>
+      {settings?.llm_assist_enabled && options?.llm_available && (
+        <SuggestionBox
+          key={current.id}
+          pid={pid}
+          rid={current.id}
+          stage={stage}
+          provider={options.llm_provider}
+        />
+      )}
       <OthersDecisions item={current} reasons={reasons} />
     </div>
   );
