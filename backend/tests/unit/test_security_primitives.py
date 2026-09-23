@@ -122,3 +122,12 @@ def test_uuid7_is_version_7_and_time_ordered() -> None:
     assert first.variant == uuid.RFC_4122
     assert first < second
     assert abs((first.int >> 80) - time.time_ns() // 1_000_000) < 5_000
+
+
+def test_uuid7_keeps_the_order_ids_were_made_in_within_a_millisecond() -> None:
+    """Records read from one file get their ids in the same millisecond; sorting by id
+    must give the file's order back ("import order" in the screening queue)."""
+    ids = [uuid7() for _ in range(10_000)]
+    assert ids == sorted(ids)
+    assert len(set(ids)) == len(ids)
+    assert all(each.version == 7 and each.variant == uuid.RFC_4122 for each in ids)

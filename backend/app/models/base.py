@@ -1,7 +1,8 @@
 """Declarative base shared by every model, with deterministic constraint names."""
 
 import enum
-import os
+import secrets
+import threading
 import time
 import uuid
 from datetime import datetime
@@ -20,15 +21,37 @@ NAMING_CONVENTION = {
 }
 
 
-def uuid7() -> uuid.UUID:
-    """RFC 9562 UUIDv7: a 48-bit millisecond timestamp then random bits (guide 6).
+class _Clock:
+    """The last (millisecond, counter) handed out, so ids never go backwards."""
 
-    Time-ordered ids keep B-tree inserts at the right edge of the index.
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._last = 0
+
+    def next(self) -> int:
+        # A new millisecond starts its counter at a random point in the lower half, so the
+        # counter itself does not tell how many ids came before it.
+        now = (time.time_ns() // 1_000_000) << 12 | secrets.randbits(11)
+        with self._lock:
+            self._last = now if now > self._last else self._last + 1
+            return self._last
+
+
+_clock = _Clock()
+
+
+def uuid7() -> uuid.UUID:
+    """RFC 9562 UUIDv7: a 48-bit millisecond timestamp, a 12-bit counter, random bits.
+
+    Time-ordered ids keep B-tree inserts at the right edge of the index. The counter
+    (RFC 9562 section 6.2, method 1) makes the ids from one process strictly increasing
+    even within a millisecond, so records keep the order they were read from a file in;
+    if it overflows, the id borrows the next millisecond.
     """
-    millis = time.time_ns() // 1_000_000
-    rand_a = int.from_bytes(os.urandom(2), "big") & 0x0FFF
-    rand_b = int.from_bytes(os.urandom(8), "big") & ((1 << 62) - 1)
-    value = (millis & ((1 << 48) - 1)) << 80 | 0x7 << 76 | rand_a << 64 | 0b10 << 62 | rand_b
+    head = _clock.next()
+    millis, counter = head >> 12, head & 0x0FFF
+    rand_b = secrets.randbits(62)
+    value = (millis & ((1 << 48) - 1)) << 80 | 0x7 << 76 | counter << 64 | 0b10 << 62 | rand_b
     return uuid.UUID(int=value)
 
 
