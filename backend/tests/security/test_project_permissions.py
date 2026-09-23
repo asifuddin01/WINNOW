@@ -46,6 +46,8 @@ REVIEWER_WRITES = VIEWER_WRITES | {
     ("PUT", "/api/v1/projects/{pid}/records/{rid}/labels"),
     ("POST", "/api/v1/projects/{pid}/records/{rid}/notes"),
     ("DELETE", "/api/v1/projects/{pid}/notes/{nid}"),
+    # Anyone who screens may ask for the order to catch up with their decisions.
+    ("POST", "/api/v1/projects/{pid}/ranking/train"),
 }
 
 

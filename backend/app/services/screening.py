@@ -12,6 +12,7 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Any
 
+from arq.connections import ArqRedis
 from sqlalchemy import ColumnElement, Select, Text, and_, cast, delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,6 +30,7 @@ from app.models import (
     ReasonStage,
     Record,
     RecordLabel,
+    RecordScore,
     ResolutionSource,
     ScreeningStage,
     TitleAbstractStatus,
@@ -63,6 +65,7 @@ from app.services.errors import (
     NotFoundError,
 )
 from app.services.pagination import decode_cursor, encode_cursor
+from app.services.ranking import EXPLORE_EVERY, nudge
 from app.services.records import apply_search
 from app.services.search import parse_query
 from app.services.status import recompute
@@ -158,8 +161,10 @@ async def check_reasons(
 
 
 class ScreeningService:
-    def __init__(self, db: AsyncSession) -> None:
+    def __init__(self, db: AsyncSession, queue: ArqRedis | None = None) -> None:
         self._db = db
+        # Decisions nudge the ranking job (guide 8.10); None where no queue is needed.
+        self._queue = queue
 
     # --- What is left to screen --------------------------------------------------------
 
@@ -174,7 +179,7 @@ class ScreeningService:
             conditions.append(assigned_to(access, stage, access.user.id))
         return conditions
 
-    def _waiting(self, access: ProjectAccess, stage: ScreeningStage) -> list[Any]:
+    def waiting(self, access: ProjectAccess, stage: ScreeningStage) -> list[Any]:
         """Eligible, not decided by me, and not settled by a resolution."""
         mine = (
             select(Decision.id)
@@ -204,7 +209,7 @@ class ScreeningService:
     ) -> QueuePage:
         """The next records for me, for the screen to hold ahead of time (guide 8.5)."""
         self._require_screening(access, stage)
-        waiting = select(Record).where(*self._waiting(access, stage))
+        waiting = select(Record).where(*self.waiting(access, stage))
         if search:
             waiting = apply_search(
                 waiting,
@@ -213,8 +218,67 @@ class ScreeningService:
             )
         if exclude:
             waiting = waiting.where(Record.id.not_in(exclude[:MAX_EXCLUDE]))
-        rows = await self._in_order(waiting, sort, access.user.id, min(n, MAX_QUEUE))
+        n = min(n, MAX_QUEUE)
+        if sort == "relevance" and not settings_of(access).ranking_enabled:
+            sort = "random"
+        if sort == "relevance":
+            # Where these records fall in my screening, so that exactly one in
+            # EXPLORE_EVERY of everything I am served comes from random order.
+            decided = await self._db.scalar(
+                select(func.count()).where(
+                    Decision.project_id == access.project_id,
+                    Decision.user_id == access.user.id,
+                    Decision.stage == stage,
+                )
+            )
+            rows = await self._relevant_first(
+                waiting,
+                access.user.id,
+                n,
+                position=(decided or 0) + len(exclude or []),
+                stage=stage,
+            )
+        else:
+            rows = await self._in_order(waiting, sort, access.user.id, n)
         return QueuePage(items=await self._items(access, stage, rows))
+
+    async def _relevant_first(
+        self,
+        waiting: Select[Any],
+        user_id: uuid.UUID,
+        n: int,
+        *,
+        position: int,
+        stage: ScreeningStage,
+    ) -> list[Record]:
+        """Guide 9.2: most likely relevant first, by the model's score, but every
+        EXPLORE_EVERY-th record from the random order, so the model also learns from
+        records it would rank low. Records the model has not scored yet (none, before the
+        first model) come in random order."""
+        scored = list(
+            await self._db.scalars(
+                waiting.join(
+                    RecordScore,
+                    and_(RecordScore.record_id == Record.id, RecordScore.stage == stage),
+                )
+                .order_by(RecordScore.score.desc(), Record.id)
+                .limit(n)
+            )
+        )
+        shuffled = await self._in_order(waiting, "random", user_id, n)
+        rows: list[Record] = []
+        seen: set[uuid.UUID] = set()
+        for slot in range(n):
+            explore = (position + slot + 1) % EXPLORE_EVERY == 0
+            first, second = (shuffled, scored) if explore else (scored, shuffled)
+            pick = next((row for row in first if row.id not in seen), None)
+            if pick is None:
+                pick = next((row for row in second if row.id not in seen), None)
+            if pick is None:
+                break
+            seen.add(pick.id)
+            rows.append(pick)
+        return rows
 
     async def _in_order(
         self, waiting: Select[Any], sort: QueueSort, user_id: uuid.UUID, n: int
@@ -223,8 +287,7 @@ class ScreeningService:
 
         "random" walks the records' stored random sort key from a point that is fixed for
         each person, wrapping round at the end: stable, so the records held ahead do not
-        reshuffle, and different for each reviewer. "relevance" takes scored records best
-        first and, until the ranking model has scored them, the random order.
+        reshuffle, and different for each reviewer. ("relevance" is `_relevant_first`.)
         """
         if sort == "year":
             ordered = waiting.order_by(Record.year.desc().nullslast(), Record.id)
@@ -235,12 +298,6 @@ class ScreeningService:
         if sort == "added":
             return list(await self._db.scalars(waiting.order_by(Record.id).limit(n)))
         rows: list[Record] = []
-        if sort == "relevance":
-            scored = waiting.where(Record.relevance_score.is_not(None)).order_by(
-                Record.relevance_score.desc(), Record.id
-            )
-            rows = list(await self._db.scalars(scored.limit(n)))
-            waiting = waiting.where(Record.relevance_score.is_(None))
         start = _start_for(user_id)
         for part in (Record.sort_key >= start, Record.sort_key < start):
             if len(rows) >= n:
@@ -261,7 +318,7 @@ class ScreeningService:
         eligible = self._eligible(access, stage)
         total = await self._db.scalar(select(func.count()).select_from(Record).where(*eligible))
         remaining = await self._db.scalar(
-            select(func.count()).select_from(Record).where(*self._waiting(access, stage))
+            select(func.count()).select_from(Record).where(*self.waiting(access, stage))
         )
         mine = await self._db.execute(
             select(Decision.decision, func.count())
@@ -366,6 +423,7 @@ class ScreeningService:
             after={"stage": stage.value, "decision": body.decision.value, "reasons": len(reasons)},
         )
         await self._db.commit()
+        await nudge(self._queue, access.project_id, stage, settings)
         return DecisionOut(
             record_id=record.id,
             stage=stage,
@@ -406,6 +464,7 @@ class ScreeningService:
             before={"stage": stage.value, "decision": removed.value},
         )
         await self._db.commit()
+        await nudge(self._queue, access.project_id, stage, settings_of(access))
         return DecisionOut(record_id=record.id, stage=stage, decision=None)
 
     async def history(
@@ -618,6 +677,10 @@ class ScreeningService:
             },
         )
         await self._db.commit()
+        if ids:
+            await nudge(
+                self._queue, access.project_id, body.stage, settings_of(access), count=len(ids)
+            )
         return BulkDecisionOut(decided=len(ids))
 
     # --- Internals ---------------------------------------------------------------------
@@ -653,6 +716,17 @@ class ScreeningService:
         ids = [record.id for record in records]
         me = access.user.id
         see_all = sees_others(access)
+        scores: dict[uuid.UUID, float] = dict(
+            (
+                await self._db.execute(
+                    select(RecordScore.record_id, RecordScore.score).where(
+                        RecordScore.record_id.in_(ids), RecordScore.stage == stage
+                    )
+                )
+            )
+            .tuples()
+            .all()
+        )
 
         decisions: defaultdict[uuid.UUID, list[tuple[Decision, str]]] = defaultdict(list)
         decided = (
@@ -731,7 +805,7 @@ class ScreeningService:
                     abstract=record.abstract,
                     keywords=record.keywords,
                     publication_type=record.publication_type,
-                    relevance_score=record.relevance_score,
+                    relevance_score=scores.get(record.id),
                     my_decision=MyDecision(
                         decision=own.decision,
                         reason_ids=list(own.reason_ids),

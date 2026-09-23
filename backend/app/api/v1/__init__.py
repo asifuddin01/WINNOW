@@ -12,6 +12,7 @@ from app.api.v1 import (
     imports,
     invites,
     projects,
+    ranking,
     records,
     screening,
     setup,
@@ -29,4 +30,5 @@ api_router.include_router(records.router)
 api_router.include_router(dedup.router)
 api_router.include_router(screening.router)
 api_router.include_router(conflicts.router)
+api_router.include_router(ranking.router)
 api_router.include_router(invites.router)

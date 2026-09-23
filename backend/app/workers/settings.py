@@ -17,13 +17,16 @@ from app.db import create_engine, create_sessionmaker
 from app.email.mailer import SEND_EMAIL_JOB, deliver
 from app.email.messages import Email
 from app.logging_config import configure_logging
+from app.models import ScreeningStage
 from app.redis_client import create_redis
 from app.storage import create_storage
 from app.workers.dedup import run_dedup
 from app.workers.imports import run_import
+from app.workers.ranking import run_ranking
 
 IMPORT_RECORDS_JOB = "import_records"
 DEDUP_JOB = "dedup_project"
+RANK_JOB = "rank_project"
 
 log = structlog.get_logger(__name__)
 
@@ -65,6 +68,17 @@ async def dedup_project(ctx: dict[str, Any], project_id: str) -> dict[str, int]:
     }
 
 
+async def rank_project(ctx: dict[str, Any], project_id: str, stage: str) -> dict[str, Any]:
+    """Train on a stage's decisions and score what is left (guide 8.10, 9.2)."""
+    result = await run_ranking(
+        sessionmaker=ctx["sessionmaker"],
+        redis=ctx["events"],
+        project_id=uuid.UUID(project_id),
+        stage=ScreeningStage(stage),
+    )
+    return {"trained": result.trained, "labeled": result.labeled, "scored": result.scored}
+
+
 async def startup(ctx: dict[str, Any]) -> None:
     settings = get_settings()
     configure_logging(settings)
@@ -96,6 +110,9 @@ class WorkerSettings:
         # keep_result=0 frees the per-review job id as soon as a run ends (see
         # app.services.dedup.enqueue_dedup), so the next import can queue the next run.
         func(dedup_project, name=DEDUP_JOB, max_tries=1, timeout=1800, keep_result=0),
+        # One run per review and stage at a time (app.services.ranking.ranking_job_id);
+        # keep_result=0 frees the id for the next run the moment this one ends.
+        func(rank_project, name=RANK_JOB, max_tries=1, timeout=600, keep_result=0),
     ]
     on_startup = startup
     on_shutdown = shutdown

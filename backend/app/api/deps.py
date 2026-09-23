@@ -8,6 +8,7 @@ from urllib.parse import urlsplit
 import httpx
 from arq.connections import ArqRedis
 from fastapi import Depends, Path, Request, status
+from redis.asyncio import Redis
 
 from app.config import Settings
 from app.db import SessionDep
@@ -33,6 +34,7 @@ from app.services.errors import NotAuthenticatedError
 from app.services.imports import ImportService
 from app.services.members import MemberService
 from app.services.projects import ProjectService
+from app.services.ranking import RankingService
 from app.services.records import RecordService
 from app.services.screening import ScreeningService
 from app.services.setup import SetupService
@@ -208,12 +210,20 @@ def get_dedup(request: Request, db: SessionDep) -> DedupService:
 DedupDep = Annotated[DedupService, Depends(get_dedup)]
 
 
-def get_screening(db: SessionDep) -> ScreeningService:
-    return ScreeningService(db)
+def get_screening(request: Request, db: SessionDep) -> ScreeningService:
+    queue: ArqRedis = request.app.state.queue
+    return ScreeningService(db, queue)
 
 
-def get_conflicts(db: SessionDep) -> ConflictService:
-    return ConflictService(db)
+def get_conflicts(request: Request, db: SessionDep) -> ConflictService:
+    queue: ArqRedis = request.app.state.queue
+    return ConflictService(db, queue)
+
+
+def get_ranking(request: Request, db: SessionDep) -> RankingService:
+    queue: ArqRedis = request.app.state.queue
+    redis: Redis = request.app.state.redis
+    return RankingService(db, queue, redis)
 
 
 def get_mailer(request: Request) -> Mailer:
@@ -222,6 +232,7 @@ def get_mailer(request: Request) -> Mailer:
 
 
 ScreeningDep = Annotated[ScreeningService, Depends(get_screening)]
+RankingDep = Annotated[RankingService, Depends(get_ranking)]
 ConflictsDep = Annotated[ConflictService, Depends(get_conflicts)]
 MailerDep = Annotated[Mailer, Depends(get_mailer)]
 

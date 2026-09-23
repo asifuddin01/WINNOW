@@ -17,7 +17,7 @@ from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.models import COPY_COLUMNS, ImportBatch, ImportStatus, Project
+from app.models import COPY_COLUMNS, ImportBatch, ImportStatus, Project, ScreeningStage
 from app.models.base import uuid7
 from app.parsers import ParsedRecord, ParseProblem, parse
 from app.parsers.xml_reader import MalformedXMLError
@@ -177,13 +177,22 @@ async def _dedup_if_wanted(
     queue: ArqRedis,
     project_id: uuid.UUID,
 ) -> None:
-    """Guide 8.4: look for duplicates as soon as an import lands, if the review wants it."""
+    """Guide 8.4: look for duplicates as soon as an import lands, if the review wants it,
+    and rank the new records."""
     from app.services.dedup import SETTLE_SECONDS, enqueue_dedup
 
     async with sessionmaker() as session:
         raw = await session.scalar(select(Project.settings).where(Project.id == project_id))
-    if ProjectSettings.model_validate(raw or {}).dedup_on_import:
+    settings = ProjectSettings.model_validate(raw or {})
+    if settings.dedup_on_import:
         await enqueue_dedup(queue, project_id, settle=SETTLE_SECONDS)
+    if settings.ranking_enabled:
+        # New records have no score yet: rank them in with the rest (guide 8.10). The job
+        # does nothing until the review has enough decisions for a model.
+        from app.services.ranking import SETTLE_SECONDS as RANK_SETTLE
+        from app.services.ranking import enqueue_ranking
+
+        await enqueue_ranking(queue, project_id, ScreeningStage.TITLE_ABSTRACT, defer=RANK_SETTLE)
 
 
 async def _progress(

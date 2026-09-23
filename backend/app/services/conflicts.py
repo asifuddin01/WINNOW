@@ -9,6 +9,7 @@ import uuid
 from collections import defaultdict
 from typing import Any
 
+from arq.connections import ArqRedis
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -42,6 +43,7 @@ from app.services.audit import Actor
 from app.services.blinding import can_resolve, settings_of
 from app.services.errors import ConflictError, ForbiddenError, NotFoundError
 from app.services.pagination import decode_cursor, encode_cursor
+from app.services.ranking import nudge
 from app.services.screening import check_reasons
 from app.services.status import recompute
 
@@ -56,8 +58,10 @@ def _status_column(stage: ScreeningStage) -> Any:
 
 
 class ConflictService:
-    def __init__(self, db: AsyncSession) -> None:
+    def __init__(self, db: AsyncSession, queue: ArqRedis | None = None) -> None:
         self._db = db
+        # A resolution changes a training label; it nudges the ranking job (guide 8.10).
+        self._queue = queue
 
     async def page(
         self,
@@ -151,6 +155,7 @@ class ConflictService:
             after={"stage": body.stage.value, "decision": body.final_decision.value},
         )
         await self._db.commit()
+        await nudge(self._queue, access.project_id, body.stage, settings_of(access))
         await self._db.refresh(record)
         (item,) = await self._items(access, body.stage, [record])
         return item

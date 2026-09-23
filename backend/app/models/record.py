@@ -177,18 +177,12 @@ class Record(UUIDPrimaryKey, Timestamps, Base):
         default=FullTextStatus.NOT_ELIGIBLE,
         server_default="not_eligible",
     )
-    relevance_score: Mapped[float | None] = mapped_column(Float)
     # A random place in the screening order, fixed when the record arrives, so the queue's
     # "random" order is read from an index instead of sorting the whole review each time.
     sort_key: Mapped[float] = mapped_column(Float, server_default=func.random())
 
 
 # The screening queue reads the best-scoring records first; nulls (not yet scored) last.
-Index(
-    "ix_records_project_id_relevance_score",
-    Record.project_id,
-    Record.relevance_score.desc().nullslast(),
-)
 
 
 # The columns an import writes with COPY, in order. Anything left out takes its default:

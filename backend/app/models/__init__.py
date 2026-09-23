@@ -13,6 +13,7 @@ from app.models.project import (
     ReviewType,
     ScreeningStage,
 )
+from app.models.ranking import RankingModel, RecordScore
 from app.models.record import (
     COPY_COLUMNS,
     FileFormat,
@@ -77,9 +78,11 @@ __all__ = [
     "ProjectMember",
     "ProjectRole",
     "ProjectStatus",
+    "RankingModel",
     "ReasonStage",
     "Record",
     "RecordLabel",
+    "RecordScore",
     "ResolutionSource",
     "ReviewType",
     "ScreeningStage",

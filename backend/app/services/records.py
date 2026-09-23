@@ -19,6 +19,7 @@ from app.models import (
     Label,
     Record,
     RecordLabel,
+    RecordScore,
     ScreeningStage,
     TitleAbstractStatus,
 )
@@ -127,8 +128,13 @@ class RecordService:
             statement = statement.where(_after(sort, cursor))
         rows = list(await self._db.scalars(statement.limit(limit + 1)))
         own = await self._own_statuses(access, [record.id for record in rows[:limit]])
-        items = [_out(record, own) for record in rows[:limit]]
-        next_cursor = _cursor_for(sort, rows[limit - 1]) if len(rows) > limit else None
+        scores = await self._scores([record.id for record in rows[:limit]])
+        items = [_out(record, own, scores.get(record.id)) for record in rows[:limit]]
+        next_cursor = (
+            _cursor_for(sort, rows[limit - 1], scores.get(rows[limit - 1].id))
+            if len(rows) > limit
+            else None
+        )
         total, exact = await self._count(base)
         return RecordPage(items=items, next_cursor=next_cursor, total=total, total_is_exact=exact)
 
@@ -149,7 +155,24 @@ class RecordService:
             raise NotFoundError("That record is not in this review.")
         record, source = row
         own = await self._own_statuses(access, [record.id])
-        return RecordDetail(**_out(record, own).model_dump(), **_extra(record), source=source)
+        scores = await self._scores([record.id])
+        return RecordDetail(
+            **_out(record, own, scores.get(record.id)).model_dump(),
+            **_extra(record),
+            source=source,
+        )
+
+    async def _scores(self, record_ids: list[uuid.UUID]) -> dict[uuid.UUID, float]:
+        """The title/abstract relevance of these records, where the model has one."""
+        if not record_ids:
+            return {}
+        rows = await self._db.execute(
+            select(RecordScore.record_id, RecordScore.score).where(
+                RecordScore.record_id.in_(record_ids),
+                RecordScore.stage == ScreeningStage.TITLE_ABSTRACT,
+            )
+        )
+        return dict(rows.tuples().all())
 
     async def _own_statuses(
         self, access: ProjectAccess, record_ids: list[uuid.UUID]
@@ -324,22 +347,36 @@ def _ordered(statement: Select[Any], sort: Sort) -> Select[Any]:
     if sort == "title":
         return statement.order_by(Record.title_norm.asc().nullslast(), Record.id.desc())
     if sort == "relevance":
-        return statement.order_by(Record.relevance_score.desc().nullslast(), Record.id.desc())
+        return statement.order_by(_relevance().desc().nullslast(), Record.id.desc())
     return statement.order_by(Record.id.desc())
 
 
-def _cursor_for(sort: Sort, record: Record) -> str:
+def _relevance() -> Any:
+    """A record's title/abstract score, for ordering the records list by relevance."""
+    return (
+        select(RecordScore.score)
+        .where(
+            RecordScore.record_id == Record.id,
+            RecordScore.stage == ScreeningStage.TITLE_ABSTRACT,
+        )
+        .correlate(Record)
+        .scalar_subquery()
+    )
+
+
+def _cursor_for(sort: Sort, record: Record, score: float | None) -> str:
     if sort in {"added", "oldest"}:
         return encode_cursor(str(record.id))
-    return encode_cursor(_sort_value(sort, record), str(record.id))
+    return encode_cursor(_sort_value(sort, record, score), str(record.id))
 
 
-def _sort_value(sort: Sort, record: Record) -> str:
+def _sort_value(sort: Sort, record: Record, score: float | None) -> str:
     if sort in {"year", "year_asc"}:
         return "" if record.year is None else str(record.year)
     if sort == "title":
         return record.title_norm or ""
-    return "" if record.relevance_score is None else f"{record.relevance_score:.6f}"
+    # Every digit a float has, so the cursor falls exactly between two records.
+    return "" if score is None else repr(score)
 
 
 def _after(sort: Sort, cursor: str) -> Any:
@@ -367,7 +404,7 @@ def _sort_column(sort: Sort) -> tuple[Any, bool]:
         return Record.year, sort == "year_asc"
     if sort == "title":
         return Record.title_norm, True
-    return Record.relevance_score, False
+    return _relevance(), False
 
 
 def _uuid(value: str) -> uuid.UUID:
@@ -377,7 +414,7 @@ def _uuid(value: str) -> uuid.UUID:
         raise InvalidCursorError from None
 
 
-def _out(record: Record, own: OwnStatuses | None = None) -> RecordOut:
+def _out(record: Record, own: OwnStatuses | None = None, score: float | None = None) -> RecordOut:
     ta_final, ft_final = record.ta_final, record.ft_final
     if own is not None:  # a blinded caller: their own decision is the status they see
         mine_ta = own.get((record.id, ScreeningStage.TITLE_ABSTRACT))
@@ -395,7 +432,7 @@ def _out(record: Record, own: OwnStatuses | None = None) -> RecordOut:
         ta_final=ta_final,
         ft_final=ft_final,
         is_duplicate=record.is_duplicate,
-        relevance_score=record.relevance_score,
+        relevance_score=score,
         import_batch_id=record.import_batch_id,
         created_at=record.created_at,
     )
