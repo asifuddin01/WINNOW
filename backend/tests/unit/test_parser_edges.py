@@ -1,16 +1,25 @@
 """The awkward corners of each reader: fallbacks, caps, and files that stop early."""
 
+from collections.abc import Iterable
+
 import pytest
 
 from app.parsers import csv_parser, detect, parse
-from app.parsers.common import MAX_LIST, ParsedRecord, ParseProblem, clean_abstract, terms_from
+from app.parsers.common import (
+    MAX_LIST,
+    ParsedRecord,
+    ParseItem,
+    ParseProblem,
+    clean_abstract,
+    terms_from,
+)
 from app.parsers.nbib import parse as parse_nbib
 from app.parsers.ris import parse as parse_ris
 from app.services.search import parse_query
 
 
-def only_records(items: object) -> list[ParsedRecord]:
-    return [item for item in items if isinstance(item, ParsedRecord)]  # type: ignore[union-attr]
+def only_records(items: Iterable[ParseItem]) -> list[ParsedRecord]:
+    return [item for item in items if isinstance(item, ParsedRecord)]
 
 
 # --- MEDLINE -----------------------------------------------------------------------------

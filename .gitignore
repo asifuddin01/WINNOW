@@ -36,3 +36,6 @@ e2e/.cache/
 
 # Derived knowledge graph of this repository (rebuild with /graphify)
 graphify-out/
+
+# uv keeps its download cache here when the container runs with HOME in the project
+backend/.cache/

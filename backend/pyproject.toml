@@ -44,7 +44,9 @@ package = false
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-extend-exclude = ["alembic/versions/*.py.mako"]
+# .cache/ is uv's own download cache when the container runs with HOME here; it is not
+# ours to lint, and inside the container there is no .git for its .gitignore to apply.
+extend-exclude = ["alembic/versions/*.py.mako", ".cache"]
 
 [tool.ruff.lint]
 select = [
