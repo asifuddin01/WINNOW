@@ -438,10 +438,17 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   open overnight does not become a record that took nine hours. It counts only while the
   page is visible.
 - **Full-text maybe is pending,** not a separate status: full text has to end in include
-  or exclude, so maybe there only means "not yet". Title-and-abstract maybe follows the
-  review's `maybe_counts_as` setting, as guide 6.4 says.
+  or exclude, so maybe there only means "not yet". The review's `maybe_counts_as` setting
+  is for titles and abstracts (guide 6.4) and does not reach full text: there all maybes
+  wait, and a maybe beside an include or an exclude is a conflict for a resolver.
 - **Changing the number of reviewers or how maybe counts recomputes every status** for
   that stage, in batches of 5,000, one `UPDATE` per outcome.
+
+- **Ids made in the same millisecond keep their order.** `uuid7()` carries a 12-bit
+  counter after the timestamp (RFC 9562, method 1), so the records of one file, which
+  get their ids within a few milliseconds, sort by id in the order they were read.
+  "Import order" in the queue is that sort. Before, the bits after the timestamp were
+  random, and a file's records came back shuffled within each millisecond.
 
 ### Assignment
 - **Split assignment needs no table.** A record belongs to the N reviewers whose hash of

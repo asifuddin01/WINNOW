@@ -117,6 +117,11 @@ async def recompute(
         if stage is ScreeningStage.TITLE_ABSTRACT
         else settings.reviewers_per_record_ft
     )
+    # The review's maybe rule is for titles and abstracts. At full text a maybe is not an
+    # answer: all maybes wait (pending), and a maybe beside a decision is a conflict.
+    maybe_counts_as = (
+        settings.maybe_counts_as if stage is ScreeningStage.TITLE_ABSTRACT else "maybe"
+    )
     rows = [
         (
             record_id,
@@ -124,7 +129,7 @@ async def recompute(
                 by_record.get(record_id, []),
                 resolutions.get(record_id),
                 required=required,
-                maybe_counts_as=settings.maybe_counts_as,
+                maybe_counts_as=maybe_counts_as,
             ),
         )
         for record_id in targets

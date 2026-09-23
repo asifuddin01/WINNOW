@@ -47,6 +47,11 @@ All notable changes, one section per build phase (guide Section 17).
   desktop with the keyboard, one on a 360-pixel phone with the buttons — that ends in a
   resolved conflict.
 
+### Fixed
+- Record ids made in the same millisecond came out in random order, so "import order"
+  shuffled the records of each file. Ids now carry a counter and keep the order they were
+  made in.
+
 ### Measured
 - 100,000 records, one project: next page of the queue p50 9 ms / p95 15 ms by relevance
   and 7 / 10 ms at random; saving a decision 9 / 13 ms; progress 63 / 131 ms.
