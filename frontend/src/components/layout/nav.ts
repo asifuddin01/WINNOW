@@ -1,4 +1,5 @@
 import {
+  CopyCheckIcon,
   FileUpIcon,
   LayoutDashboardIcon,
   LibraryBigIcon,
@@ -31,6 +32,7 @@ export const workspaceNav: NavItem[] = [
 export const projectNav: NavItem[] = [
   { to: "/p/$pid", label: "Overview", icon: LayoutDashboardIcon, exact: true },
   { to: "/p/$pid/import", label: "Import", icon: FileUpIcon },
+  { to: "/p/$pid/duplicates", label: "Duplicates", icon: CopyCheckIcon },
   { to: "/p/$pid/records", label: "Records", icon: TableIcon },
   { to: "/p/$pid/settings", label: "Settings", icon: SettingsIcon },
 ];

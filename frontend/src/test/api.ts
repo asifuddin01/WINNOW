@@ -39,6 +39,8 @@ export const PROJECT: Project = {
     stopping_rule: { type: "consecutive_excludes", n: 200 },
     assignment: "all",
     highlight_keywords: true,
+    dedup_on_import: true,
+    dedup_auto_resolve: true,
   },
   owner: { id: USER.id, name: USER.name, email: USER.email },
   membership: {
@@ -94,6 +96,14 @@ export function projectRoutes(project: Project = PROJECT, members: Member[] = [O
       total: 0,
     },
     [`GET ${base}/imports`]: [],
+    [`GET ${base}/dedup/summary`]: {
+      pending: 0,
+      certain: 0,
+      resolved: 0,
+      ignored: 0,
+      duplicates: 0,
+    },
+    [`GET ${base}/dedup/clusters`]: [],
   };
 }
 

@@ -838,10 +838,14 @@ export interface paths {
         get: operations["list_imports"];
         put?: never;
         /**
-         * Upload Import
-         * @description Store an export and work out what it is. Nothing is imported until you confirm.
+         * Upload Imports
+         * @description Store a search export, or a whole set of them, and work out what each one is.
+         *
+         *     A search usually leaves a database in several files; they arrive together and each
+         *     becomes its own import, so PRISMA can count them and any one of them can be undone.
+         *     Nothing is imported until you confirm.
          */
-        post: operations["upload_import"];
+        post: operations["upload_imports"];
         delete?: never;
         options?: never;
         head?: never;
@@ -987,6 +991,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{pid}/dedup/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Dedup
+         * @description Look for duplicates across everything imported so far (guide 9.1).
+         */
+        post: operations["run_dedup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/dedup/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Dedup Summary
+         * @description How many groups are waiting, and how many duplicates have been merged.
+         */
+        get: operations["dedup_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/dedup/clusters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Clusters
+         * @description Groups of records that look like the same work, least certain first.
+         */
+        get: operations["list_clusters"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/dedup/clusters/{cid}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Merge Cluster
+         * @description Keep one record of the group; the rest become its duplicates (never deleted).
+         */
+        post: operations["merge_cluster"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/dedup/clusters/{cid}/ignore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ignore Cluster
+         * @description "Not duplicates": these are different works, and Winnow stops asking.
+         */
+        post: operations["ignore_cluster"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/dedup/auto-resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Auto Resolve
+         * @description Merge every group Winnow is sure about in one go (guide 8.4).
+         */
+        post: operations["auto_resolve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/invites/{token}": {
         parameters: {
             query?: never;
@@ -1066,13 +1190,24 @@ export interface components {
             /** Owner Two Factor Required */
             owner_two_factor_required: boolean;
         };
-        /** Body_upload_import */
-        Body_upload_import: {
+        /**
+         * AutoResolve
+         * @description Guide 8.4: merge everything at or above this score, plus the exact matches.
+         */
+        AutoResolve: {
             /**
-             * File
-             * @description A search export
+             * Min Score
+             * @default 0.98
              */
-            file: string;
+            min_score: number;
+        };
+        /** Body_upload_imports */
+        Body_upload_imports: {
+            /**
+             * Files
+             * @description Search exports, several at a time
+             */
+            files: string[];
             /** Source Name */
             source_name?: string | null;
             /**
@@ -1080,6 +1215,11 @@ export interface components {
              * @default Other
              */
             database_name: string;
+            /**
+             * Databases
+             * @description One database per file, in the same order; overrides database_name
+             */
+            databases?: string[] | null;
             /** Search Date */
             search_date?: string | null;
             /** Search String */
@@ -1097,6 +1237,81 @@ export interface components {
             /** New Password */
             new_password: string;
         };
+        /**
+         * ClusterMember
+         * @description One record in a cluster, with everything the side-by-side comparison shows.
+         */
+        ClusterMember: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Primary */
+            is_primary: boolean;
+            /** Title */
+            title: string | null;
+            /** Authors */
+            authors: string[];
+            /** Year */
+            year: number | null;
+            /** Journal */
+            journal: string | null;
+            /** Volume */
+            volume: string | null;
+            /** Issue */
+            issue: string | null;
+            /** Pages */
+            pages: string | null;
+            /** Doi */
+            doi: string | null;
+            /** Pmid */
+            pmid: string | null;
+            /** Abstract */
+            abstract: string | null;
+            /** Url */
+            url: string | null;
+            /** Keywords */
+            keywords: string[];
+            /** Publication Type */
+            publication_type: string[];
+            /** Is Duplicate */
+            is_duplicate: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Source */
+            source?: string | null;
+            /** Database Name */
+            database_name?: string | null;
+        };
+        /** ClusterOut */
+        ClusterOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            status: components["schemas"]["ClusterStatus"];
+            /** Score */
+            score: number;
+            /** Auto Resolvable */
+            auto_resolvable: boolean;
+            /** Members */
+            members: components["schemas"]["ClusterMember"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * ClusterStatus
+         * @enum {string}
+         */
+        ClusterStatus: "pending" | "resolved" | "ignored";
         /** CodeRequest */
         CodeRequest: {
             /** Code */
@@ -1162,6 +1377,27 @@ export interface components {
         CsrfOut: {
             /** Csrf Token */
             csrf_token: string;
+        };
+        /** DedupStarted */
+        DedupStarted: {
+            /** Job Id */
+            job_id: string | null;
+        };
+        /**
+         * DedupSummary
+         * @description What the duplicates screen says before you open it.
+         */
+        DedupSummary: {
+            /** Pending */
+            pending: number;
+            /** Certain */
+            certain: number;
+            /** Resolved */
+            resolved: number;
+            /** Ignored */
+            ignored: number;
+            /** Duplicates */
+            duplicates: number;
         };
         /** DisableTwoFactorRequest */
         DisableTwoFactorRequest: {
@@ -1283,6 +1519,18 @@ export interface components {
          * @enum {string}
          */
         ImportStatus: "queued" | "parsing" | "done" | "failed";
+        /**
+         * ImportUpload
+         * @description The result of one upload: the batches it made, and anything it had to refuse.
+         *
+         *     One unreadable file among twenty does not lose the other nineteen.
+         */
+        ImportUpload: {
+            /** Batches */
+            batches: components["schemas"]["ImportOut"][];
+            /** Rejected */
+            rejected?: components["schemas"]["RejectedFile"][];
+        };
         /** InviteAccepted */
         InviteAccepted: {
             /**
@@ -1573,6 +1821,28 @@ export interface components {
             /** Keep Blind */
             keep_blind: boolean;
         };
+        /** MergeCluster */
+        MergeCluster: {
+            /**
+             * Primary Id
+             * Format: uuid
+             */
+            primary_id: string;
+        };
+        /** MergeResult */
+        MergeResult: {
+            /** Cluster Id */
+            cluster_id?: string | null;
+            /** Primary Id */
+            primary_id?: string | null;
+            /** Merged */
+            merged: number;
+            /**
+             * Clusters
+             * @default 1
+             */
+            clusters: number;
+        };
         /** PersonOut */
         PersonOut: {
             /**
@@ -1721,6 +1991,16 @@ export interface components {
              */
             llm_assist_enabled: boolean;
             /**
+             * Dedup On Import
+             * @default true
+             */
+            dedup_on_import: boolean;
+            /**
+             * Dedup Auto Resolve
+             * @default true
+             */
+            dedup_auto_resolve: boolean;
+            /**
              * @default {
              *       "type": "consecutive_excludes",
              *       "n": 200
@@ -1760,6 +2040,10 @@ export interface components {
             ranking_enabled?: boolean | null;
             /** Llm Assist Enabled */
             llm_assist_enabled?: boolean | null;
+            /** Dedup On Import */
+            dedup_on_import?: boolean | null;
+            /** Dedup Auto Resolve */
+            dedup_auto_resolve?: boolean | null;
             stopping_rule?: components["schemas"]["StoppingRule"] | null;
             /** Assignment */
             assignment?: ("all" | "split") | null;
@@ -2029,6 +2313,16 @@ export interface components {
             password: string;
             /** Invite Token */
             invite_token?: string | null;
+        };
+        /**
+         * RejectedFile
+         * @description A file in a multi-file upload that Winnow could not take, and why.
+         */
+        RejectedFile: {
+            /** Filename */
+            filename: string;
+            /** Reason */
+            reason: string;
         };
         /** ResetPasswordRequest */
         ResetPasswordRequest: {
@@ -5348,7 +5642,7 @@ export interface operations {
             };
         };
     };
-    upload_import: {
+    upload_imports: {
         parameters: {
             query?: never;
             header?: never;
@@ -5360,7 +5654,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_upload_import"];
+                "multipart/form-data": components["schemas"]["Body_upload_imports"];
             };
         };
         responses: {
@@ -5370,7 +5664,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportOut"];
+                    "application/json": components["schemas"]["ImportUpload"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Unauthorized */
@@ -5854,6 +6157,390 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecordDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    run_dedup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DedupStarted"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    dedup_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DedupSummary"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    list_clusters: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["ClusterStatus"];
+            };
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClusterOut"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    merge_cluster: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cid: string;
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeCluster"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MergeResult"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    ignore_cluster: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cid: string;
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClusterOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    auto_resolve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutoResolve"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MergeResult"];
                 };
             };
             /** @description Unauthorized */
