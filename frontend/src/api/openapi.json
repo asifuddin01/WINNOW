@@ -6852,6 +6852,618 @@
         }
       }
     },
+    "/api/v1/projects/{pid}/ranking/status": {
+      "get": {
+        "tags": [
+          "ranking"
+        ],
+        "summary": "Ranking Status",
+        "description": "Whether a model exists for the stage, and what it has learnt from.",
+        "operationId": "ranking_status",
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ScreeningStage",
+              "default": "title_abstract"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankingStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/ranking/train": {
+      "post": {
+        "tags": [
+          "ranking"
+        ],
+        "summary": "Ranking Train",
+        "description": "Retrain now rather than after the next 25 decisions (guide 8.10).",
+        "operationId": "ranking_train",
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ScreeningStage",
+              "default": "title_abstract"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainStarted"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/ranking/curve": {
+      "get": {
+        "tags": [
+          "ranking"
+        ],
+        "summary": "Recall Curve",
+        "description": "Includes found against records screened: mine, and the team's if I may see it.",
+        "operationId": "recall_curve",
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ScreeningStage",
+              "default": "title_abstract"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecallCurve"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/screening/stopping": {
+      "get": {
+        "tags": [
+          "ranking"
+        ],
+        "summary": "Stopping Advice",
+        "description": "Guide 8.5: how many records in a row I have excluded, and, once that reaches the\nreview's rule, an estimate of the relevant records still unscreened. Advice only.",
+        "operationId": "stopping_advice",
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ScreeningStage",
+              "default": "title_abstract"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoppingAdvice"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/records/{rid}/llm-suggest": {
+      "get": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "My Suggestion",
+        "description": "My latest suggestion for this record, if I have asked. Sends nothing anywhere.",
+        "operationId": "my_suggestion",
+        "parameters": [
+          {
+            "name": "rid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rid"
+            }
+          },
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ScreeningStage",
+              "default": "title_abstract"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaybeSuggestion"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Suggest",
+        "description": "Ask the AI provider about this record now. Advice only: nothing is decided.",
+        "operationId": "suggest",
+        "parameters": [
+          {
+            "name": "rid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rid"
+            }
+          },
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ScreeningStage",
+              "default": "title_abstract"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestionOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/llm-suggestions.csv": {
+      "get": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Export Suggestions",
+        "description": "Every AI suggestion in the review, for reporting the use of AI in the methods.",
+        "operationId": "export_suggestions",
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/invites/{token}": {
       "get": {
         "tags": [
@@ -7054,6 +7666,21 @@
           "llm_available": {
             "type": "boolean",
             "title": "Llm Available"
+          },
+          "llm_provider": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "anthropic",
+                  "openai_compatible"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Provider"
           },
           "owner_two_factor_required": {
             "type": "boolean",
@@ -7947,6 +8574,44 @@
         "type": "object",
         "title": "CriterionUpdate"
       },
+      "CriterionVerdictOut": {
+        "properties": {
+          "criterion_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Criterion Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "inclusion",
+              "exclusion"
+            ],
+            "title": "Kind"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "met",
+              "not_met",
+              "unclear"
+            ],
+            "title": "Verdict"
+          }
+        },
+        "type": "object",
+        "required": [
+          "criterion_id",
+          "kind",
+          "text",
+          "verdict"
+        ],
+        "title": "CriterionVerdictOut"
+      },
       "CsrfOut": {
         "properties": {
           "csrf_token": {
@@ -7959,6 +8624,28 @@
           "csrf_token"
         ],
         "title": "CsrfOut"
+      },
+      "Curve": {
+        "properties": {
+          "screened": {
+            "type": "integer",
+            "title": "Screened"
+          },
+          "found_at": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Found At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "screened",
+          "found_at"
+        ],
+        "title": "Curve",
+        "description": "Where each relevant record was found, in the order of screening: the recall curve\nis a step up at each of these positions (guide 8.10)."
       },
       "DecisionIn": {
         "properties": {
@@ -8166,6 +8853,29 @@
           "email"
         ],
         "title": "EmailRequest"
+      },
+      "Estimate": {
+        "properties": {
+          "expected": {
+            "type": "number",
+            "title": "Expected"
+          },
+          "low": {
+            "type": "integer",
+            "title": "Low"
+          },
+          "high": {
+            "type": "integer",
+            "title": "High"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected",
+          "low",
+          "high"
+        ],
+        "title": "Estimate"
       },
       "FileFormat": {
         "type": "string",
@@ -9163,6 +9873,26 @@
         ],
         "title": "LoginRequest"
       },
+      "MaybeSuggestion": {
+        "properties": {
+          "suggestion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SuggestionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "suggestion"
+        ],
+        "title": "MaybeSuggestion",
+        "description": "My latest suggestion for a record, if I have asked for one."
+      },
       "MemberOut": {
         "properties": {
           "user": {
@@ -9372,6 +10102,61 @@
           "merged"
         ],
         "title": "MergeResult"
+      },
+      "ModelOut": {
+        "properties": {
+          "trained_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Trained At"
+          },
+          "n_labeled": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Labeled"
+          },
+          "n_included": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Included"
+          },
+          "auc": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auc"
+          },
+          "scored": {
+            "type": "integer",
+            "title": "Scored"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trained_at",
+          "n_labeled",
+          "n_included",
+          "auc",
+          "scored"
+        ],
+        "title": "ModelOut"
       },
       "MyDecision": {
         "properties": {
@@ -10351,6 +11136,78 @@
         "title": "QueuePage",
         "description": "The next records for me. Fewer than asked for means the queue is empty after them;\nhow many are left overall is in the progress."
       },
+      "RankingStatus": {
+        "properties": {
+          "stage": {
+            "$ref": "#/components/schemas/ScreeningStage"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "needs_each": {
+            "type": "integer",
+            "title": "Needs Each"
+          },
+          "have_included": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Have Included"
+          },
+          "have_excluded": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Have Excluded"
+          },
+          "retrain_after": {
+            "type": "integer",
+            "title": "Retrain After"
+          },
+          "training": {
+            "type": "boolean",
+            "title": "Training"
+          },
+          "explore_every": {
+            "type": "integer",
+            "title": "Explore Every"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stage",
+          "enabled",
+          "model",
+          "needs_each",
+          "have_included",
+          "have_excluded",
+          "retrain_after",
+          "training",
+          "explore_every"
+        ],
+        "title": "RankingStatus"
+      },
       "Readiness": {
         "properties": {
           "status": {
@@ -10491,6 +11348,38 @@
         },
         "type": "object",
         "title": "ReasonUpdate"
+      },
+      "RecallCurve": {
+        "properties": {
+          "stage": {
+            "$ref": "#/components/schemas/ScreeningStage"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "mine": {
+            "$ref": "#/components/schemas/Curve"
+          },
+          "team": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Curve"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "stage",
+          "total",
+          "mine",
+          "team"
+        ],
+        "title": "RecallCurve"
       },
       "RecordDetail": {
         "properties": {
@@ -11506,6 +12395,51 @@
         ],
         "title": "SignedIn"
       },
+      "StoppingAdvice": {
+        "properties": {
+          "stage": {
+            "$ref": "#/components/schemas/ScreeningStage"
+          },
+          "rule": {
+            "type": "string",
+            "const": "consecutive_excludes",
+            "title": "Rule"
+          },
+          "threshold": {
+            "type": "integer",
+            "title": "Threshold"
+          },
+          "in_a_row": {
+            "type": "integer",
+            "title": "In A Row"
+          },
+          "remaining": {
+            "type": "integer",
+            "title": "Remaining"
+          },
+          "estimate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Estimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "stage",
+          "rule",
+          "threshold",
+          "in_a_row",
+          "remaining",
+          "estimate"
+        ],
+        "title": "StoppingAdvice",
+        "description": "Guide 8.5: advice only. Winnow never stops anyone."
+      },
       "StoppingRule": {
         "properties": {
           "type": {
@@ -11528,6 +12462,68 @@
         "additionalProperties": false,
         "type": "object",
         "title": "StoppingRule"
+      },
+      "SuggestionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "record_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Record Id"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/ScreeningStage"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/DecisionValue"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          },
+          "criteria": {
+            "items": {
+              "$ref": "#/components/schemas/CriterionVerdictOut"
+            },
+            "type": "array",
+            "title": "Criteria"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "record_id",
+          "stage",
+          "decision",
+          "confidence",
+          "criteria",
+          "rationale",
+          "provider",
+          "model",
+          "created_at"
+        ],
+        "title": "SuggestionOut"
       },
       "TitleAbstractStatus": {
         "type": "string",
@@ -11554,6 +12550,19 @@
           "token"
         ],
         "title": "TokenRequest"
+      },
+      "TrainStarted": {
+        "properties": {
+          "queued": {
+            "type": "boolean",
+            "title": "Queued"
+          }
+        },
+        "type": "object",
+        "required": [
+          "queued"
+        ],
+        "title": "TrainStarted"
       },
       "TransferRequest": {
         "properties": {

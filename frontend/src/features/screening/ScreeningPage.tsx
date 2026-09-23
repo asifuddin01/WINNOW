@@ -52,6 +52,7 @@ import { useScreeningQueue } from "@/features/screening/use-queue";
 import { useShortcuts } from "@/features/screening/use-shortcuts";
 import { useVisibleTime } from "@/features/screening/use-visible-time";
 import { DECIDED_TEXT } from "@/features/screening/wording";
+import { StoppingBanner } from "@/features/ranking/StoppingBanner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -392,6 +393,13 @@ export function ScreeningPage({
         label="Order"
         value={view.sort}
         options={SORTS}
+        hint={
+          view.sort !== "relevance"
+            ? undefined
+            : settings?.ranking_enabled
+              ? "Most likely relevant first. One record in 20 is picked at random instead, so the model also learns from records it would rank low."
+              : "Ranking is off for this review, so this is random order."
+        }
         onChange={(sort) => {
           onViewChange({ ...view, sort });
         }}
@@ -538,6 +546,8 @@ export function ScreeningPage({
     </p>
   );
 
+  const stoppingBanner = settings?.ranking_enabled && <StoppingBanner pid={pid} stage={stage} />;
+
   const liveRegion = (
     <p aria-live="polite" className="sr-only">
       {announcement}
@@ -636,6 +646,7 @@ export function ScreeningPage({
       <div className="grid gap-3 px-3 pt-3 pb-40">
         {toolbar}
         {waitingBanner}
+        {stoppingBanner}
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -703,6 +714,7 @@ export function ScreeningPage({
       <div className="mx-auto grid w-full max-w-4xl gap-6 px-4 py-6 md:px-8">
         {toolbar}
         {waitingBanner}
+        {stoppingBanner}
         {record}
         {current && (
           <div className="sticky bottom-0 grid gap-3 border-t border-border bg-background/95 py-3 backdrop-blur">
@@ -731,6 +743,7 @@ export function ScreeningPage({
     <div className="grid w-full gap-4 px-4 py-6 md:px-6">
       {toolbar}
       {waitingBanner}
+      {stoppingBanner}
       <div className="grid gap-6 md:grid-cols-[1fr_18rem] lg:grid-cols-[15rem_1fr_19rem]">
         <aside aria-label="Search and filters" className="hidden lg:block">
           {filters}

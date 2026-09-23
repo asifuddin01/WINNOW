@@ -120,8 +120,36 @@ export function projectRoutes(project: Project = PROJECT, members: Member[] = [O
     },
     [`GET ${base}/my-history`]: { items: [], next_cursor: null },
     [`GET ${base}/conflicts`]: { items: [], next_cursor: null, total: 0 },
+    [`GET ${base}/ranking/status`]: RANKING_STATUS,
+    [`GET ${base}/ranking/curve`]: {
+      stage: "title_abstract",
+      total: 0,
+      mine: { screened: 0, found_at: [] },
+      team: null,
+    },
+    [`GET ${base}/screening/stopping`]: {
+      stage: "title_abstract",
+      rule: "consecutive_excludes",
+      threshold: 200,
+      in_a_row: 0,
+      remaining: 0,
+      estimate: null,
+    },
   };
 }
+
+/** A review with ranking on and no model yet. */
+export const RANKING_STATUS = {
+  stage: "title_abstract",
+  enabled: true,
+  model: null,
+  needs_each: 5,
+  have_included: 0,
+  have_excluded: 0,
+  retrain_after: 25,
+  training: false,
+  explore_every: 20,
+} as const;
 
 export function summaryOf(project: Project) {
   return {

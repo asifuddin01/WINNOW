@@ -1374,6 +1374,131 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{pid}/ranking/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ranking Status
+         * @description Whether a model exists for the stage, and what it has learnt from.
+         */
+        get: operations["ranking_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/ranking/train": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ranking Train
+         * @description Retrain now rather than after the next 25 decisions (guide 8.10).
+         */
+        post: operations["ranking_train"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/ranking/curve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recall Curve
+         * @description Includes found against records screened: mine, and the team's if I may see it.
+         */
+        get: operations["recall_curve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/screening/stopping": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stopping Advice
+         * @description Guide 8.5: how many records in a row I have excluded, and, once that reaches the
+         *     review's rule, an estimate of the relevant records still unscreened. Advice only.
+         */
+        get: operations["stopping_advice"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/records/{rid}/llm-suggest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Suggestion
+         * @description My latest suggestion for this record, if I have asked. Sends nothing anywhere.
+         */
+        get: operations["my_suggestion"];
+        put?: never;
+        /**
+         * Suggest
+         * @description Ask the AI provider about this record now. Advice only: nothing is decided.
+         */
+        post: operations["suggest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{pid}/llm-suggestions.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Suggestions
+         * @description Every AI suggestion in the review, for reporting the use of AI in the methods.
+         */
+        get: operations["export_suggestions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/invites/{token}": {
         parameters: {
             query?: never;
@@ -1450,6 +1575,8 @@ export interface components {
             google_enabled: boolean;
             /** Llm Available */
             llm_available: boolean;
+            /** Llm Provider */
+            llm_provider?: ("anthropic" | "openai_compatible") | null;
             /** Owner Two Factor Required */
             owner_two_factor_required: boolean;
         };
@@ -1719,10 +1846,41 @@ export interface components {
             /** Position */
             position?: number | null;
         };
+        /** CriterionVerdictOut */
+        CriterionVerdictOut: {
+            /**
+             * Criterion Id
+             * Format: uuid
+             */
+            criterion_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "inclusion" | "exclusion";
+            /** Text */
+            text: string;
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "met" | "not_met" | "unclear";
+        };
         /** CsrfOut */
         CsrfOut: {
             /** Csrf Token */
             csrf_token: string;
+        };
+        /**
+         * Curve
+         * @description Where each relevant record was found, in the order of screening: the recall curve
+         *     is a step up at each of these positions (guide 8.10).
+         */
+        Curve: {
+            /** Screened */
+            screened: number;
+            /** Found At */
+            found_at: number[];
         };
         /** DecisionIn */
         DecisionIn: {
@@ -1801,6 +1959,15 @@ export interface components {
              * Format: email
              */
             email: string;
+        };
+        /** Estimate */
+        Estimate: {
+            /** Expected */
+            expected: number;
+            /** Low */
+            low: number;
+            /** High */
+            high: number;
         };
         /**
          * FileFormat
@@ -2196,6 +2363,13 @@ export interface components {
             /** Totp */
             totp?: string | null;
         };
+        /**
+         * MaybeSuggestion
+         * @description My latest suggestion for a record, if I have asked for one.
+         */
+        MaybeSuggestion: {
+            suggestion: components["schemas"]["SuggestionOut"] | null;
+        };
         /** MemberOut */
         MemberOut: {
             user: components["schemas"]["PersonOut"];
@@ -2262,6 +2436,22 @@ export interface components {
              * @default 1
              */
             clusters: number;
+        };
+        /** ModelOut */
+        ModelOut: {
+            /**
+             * Trained At
+             * Format: date-time
+             */
+            trained_at: string;
+            /** N Labeled */
+            n_labeled: number | null;
+            /** N Included */
+            n_included: number | null;
+            /** Auc */
+            auc: number | null;
+            /** Scored */
+            scored: number;
         };
         /** MyDecision */
         MyDecision: {
@@ -2620,6 +2810,25 @@ export interface components {
             /** Items */
             items: components["schemas"]["ScreeningItem"][];
         };
+        /** RankingStatus */
+        RankingStatus: {
+            stage: components["schemas"]["ScreeningStage"];
+            /** Enabled */
+            enabled: boolean;
+            model: components["schemas"]["ModelOut"] | null;
+            /** Needs Each */
+            needs_each: number;
+            /** Have Included */
+            have_included: number | null;
+            /** Have Excluded */
+            have_excluded: number | null;
+            /** Retrain After */
+            retrain_after: number;
+            /** Training */
+            training: boolean;
+            /** Explore Every */
+            explore_every: number;
+        };
         /** Readiness */
         Readiness: {
             /**
@@ -2675,6 +2884,14 @@ export interface components {
             stage?: components["schemas"]["ReasonStage"] | null;
             /** Position */
             position?: number | null;
+        };
+        /** RecallCurve */
+        RecallCurve: {
+            stage: components["schemas"]["ScreeningStage"];
+            /** Total */
+            total: number;
+            mine: components["schemas"]["Curve"];
+            team: components["schemas"]["Curve"] | null;
         };
         /** RecordDetail */
         RecordDetail: {
@@ -2948,6 +3165,25 @@ export interface components {
             csrf_token: string;
             user: components["schemas"]["UserOut"];
         };
+        /**
+         * StoppingAdvice
+         * @description Guide 8.5: advice only. Winnow never stops anyone.
+         */
+        StoppingAdvice: {
+            stage: components["schemas"]["ScreeningStage"];
+            /**
+             * Rule
+             * @constant
+             */
+            rule: "consecutive_excludes";
+            /** Threshold */
+            threshold: number;
+            /** In A Row */
+            in_a_row: number;
+            /** Remaining */
+            remaining: number;
+            estimate: components["schemas"]["Estimate"] | null;
+        };
         /** StoppingRule */
         StoppingRule: {
             /**
@@ -2962,6 +3198,36 @@ export interface components {
              */
             n: number;
         };
+        /** SuggestionOut */
+        SuggestionOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Record Id
+             * Format: uuid
+             */
+            record_id: string;
+            stage: components["schemas"]["ScreeningStage"];
+            decision: components["schemas"]["DecisionValue"];
+            /** Confidence */
+            confidence: number;
+            /** Criteria */
+            criteria: components["schemas"]["CriterionVerdictOut"][];
+            /** Rationale */
+            rationale: string;
+            /** Provider */
+            provider: string;
+            /** Model */
+            model: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /**
          * TitleAbstractStatus
          * @enum {string}
@@ -2971,6 +3237,11 @@ export interface components {
         TokenRequest: {
             /** Token */
             token: string;
+        };
+        /** TrainStarted */
+        TrainStarted: {
+            /** Queued */
+            queued: boolean;
         };
         /** TransferRequest */
         TransferRequest: {
@@ -8031,6 +8302,458 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["NoteOut"];
                 };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    ranking_status: {
+        parameters: {
+            query?: {
+                stage?: components["schemas"]["ScreeningStage"];
+            };
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RankingStatus"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    ranking_train: {
+        parameters: {
+            query?: {
+                stage?: components["schemas"]["ScreeningStage"];
+            };
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainStarted"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    recall_curve: {
+        parameters: {
+            query?: {
+                stage?: components["schemas"]["ScreeningStage"];
+            };
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecallCurve"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    stopping_advice: {
+        parameters: {
+            query?: {
+                stage?: components["schemas"]["ScreeningStage"];
+            };
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoppingAdvice"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    my_suggestion: {
+        parameters: {
+            query?: {
+                stage?: components["schemas"]["ScreeningStage"];
+            };
+            header?: never;
+            path: {
+                rid: string;
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaybeSuggestion"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    suggest: {
+        parameters: {
+            query?: {
+                stage?: components["schemas"]["ScreeningStage"];
+            };
+            header?: never;
+            path: {
+                rid: string;
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuggestionOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    export_suggestions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Unauthorized */
             401: {

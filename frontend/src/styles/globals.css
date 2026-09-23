@@ -57,6 +57,11 @@
   --maybe-muted: oklch(0.915 0.035 80);
   --conflict: oklch(0.47 0.2 302);
   --conflict-muted: oklch(0.91 0.025 302);
+
+  /* The recall curve: categorical slots 1 and 2, checked for colour-blind separation
+     on the card surface in each theme (the light orange carries direct labels). */
+  --chart-mine: #2a78d6;
+  --chart-team: #eb6834;
 }
 
 .dark {
@@ -100,6 +105,9 @@
   --maybe-muted: oklch(0.31 0.04 75);
   --conflict: oklch(0.77 0.11 305);
   --conflict-muted: oklch(0.3 0.045 305);
+
+  --chart-mine: #3987e5;
+  --chart-team: #d95926;
 }
 
 @theme inline {

@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Section } from "@/features/account/Section";
 import { COLOR_DOT } from "@/features/projects/palette";
+import { RankingPanel } from "@/features/ranking/RankingPanel";
 import { CRITERION_KINDS, REVIEW_TYPES, ROLES, STATUSES } from "@/features/projects/wording";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -118,6 +119,14 @@ function Overview() {
           ))}
         </ul>
       </Section>
+
+      {records > 0 && (
+        <RankingPanel
+          pid={pid}
+          canTrain={screens}
+          canConfigure={project.permissions.includes("edit_settings")}
+        />
+      )}
 
       {(project.research_question ?? project.pico) && (
         <Section title="The question">
