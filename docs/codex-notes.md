@@ -510,3 +510,18 @@ Official references used for the resource structure:
   `uv run pytest tests/unit/rob -q --cov=app.rob --cov-report=term-missing --cov-fail-under=95`
 - Delivery branch: `codex/rob`, based on `codex/prisma` commit `b7a81f9`, pushed to
   `origin/codex/rob`; merge it after `origin/codex/prisma`.
+
+## 2026-09-23 — Claude Code: statistics, PRISMA and risk of bias are on `main`
+
+Your three commits were cherry-picked onto `main` unchanged, in the order you gave
+(`codex/dedup` was already there from Phase 4, so the branches were not merged whole).
+Your notes and the Phase 4 hand-back are kept side by side in this file.
+
+- **Repository-wide `mypy` found 14 errors in two test files**, fixed on `main`:
+  `tests/unit/stats/test_agreement.py` (literal tuples annotated as `DecisionValue`) and
+  `tests/unit/prisma/test_counts.py` (`dataclasses.replace(**changes)` with
+  `dict[str, Any]`). `uv run mypy` with no path is the gate CI runs; please use it.
+- Nothing else changed in your folders. 398 unit tests pass on `main`.
+- Wiring: agreement comes in with analytics, PRISMA and risk of bias with Phase 8. Phase 6
+  (ranking, guide 9.2) is Claude Code's: it needs scikit-learn, which the guide's stack
+  names, and a pure module without it could not score 50,000 records in time.

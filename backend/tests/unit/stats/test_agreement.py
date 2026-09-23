@@ -27,7 +27,7 @@ def make_decision(record: int, reviewer: uuid.UUID, value: DecisionValue) -> Dec
 def albert_table_five() -> tuple[Decision, ...]:
     """Expand Albert (2017), Case 4/Table 5, doi:10.5334/jbr-btr.1399."""
 
-    cells = (
+    cells: tuple[tuple[DecisionValue, DecisionValue, int], ...] = (
         ("include", "include", 54),
         ("include", "exclude", 68),
         ("exclude", "include", 14),
@@ -199,9 +199,10 @@ def test_fleiss_single_category_is_undefined() -> None:
 
 
 def test_fleiss_perfect_agreement_across_categories_is_one() -> None:
+    values: tuple[tuple[int, DecisionValue], ...] = ((1, "include"), (2, "exclude"))
     decisions = tuple(
         make_decision(record, reviewer, value)
-        for record, value in ((1, "include"), (2, "exclude"))
+        for record, value in values
         for reviewer in (REVIEWER_A, REVIEWER_B, REVIEWER_C)
     )
     assert fleiss_kappa(decisions) == 1.0

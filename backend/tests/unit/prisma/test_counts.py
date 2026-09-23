@@ -1,7 +1,7 @@
 """PRISMA arithmetic uses a hand-calculated flow and rejects incoherent inputs."""
 
 from dataclasses import replace
-from typing import cast
+from typing import Any, cast
 
 import pytest
 
@@ -85,8 +85,9 @@ def test_manual_other_removals_do_not_reduce_raw_non_duplicate_bound() -> None:
 def test_input_scalar_counts_must_be_non_negative(
     prisma_inputs: PrismaInputs, field_name: str
 ) -> None:
+    negative: dict[str, Any] = {field_name: -1}
     with pytest.raises(ValueError, match="must not be negative"):
-        replace(prisma_inputs, **{field_name: -1})
+        replace(prisma_inputs, **negative)
 
 
 @pytest.mark.parametrize("value", [True, 1.5, "1"])
@@ -189,7 +190,7 @@ def test_source_duplicates_use_unicode_normalisation(prisma_inputs: PrismaInputs
     ],
 )
 def test_inconsistent_flows_are_rejected(
-    prisma_inputs: PrismaInputs, changes: dict[str, object], message: str
+    prisma_inputs: PrismaInputs, changes: dict[str, Any], message: str
 ) -> None:
     with pytest.raises(ValueError, match=message):
         counts(replace(prisma_inputs, **changes))
@@ -206,7 +207,7 @@ def test_inconsistent_flows_are_rejected(
     ],
 )
 def test_manually_constructed_outputs_must_reconcile(
-    expected_counts: PrismaCounts, changes: dict[str, object], message: str
+    expected_counts: PrismaCounts, changes: dict[str, Any], message: str
 ) -> None:
     with pytest.raises(ValueError, match=message):
         replace(expected_counts, **changes)
@@ -226,7 +227,7 @@ def test_manually_constructed_outputs_must_reconcile(
     ],
 )
 def test_manually_constructed_outputs_must_keep_flow_bounds(
-    expected_counts: PrismaCounts, changes: dict[str, object], message: str
+    expected_counts: PrismaCounts, changes: dict[str, Any], message: str
 ) -> None:
     with pytest.raises(ValueError, match=message):
         replace(expected_counts, **changes)
