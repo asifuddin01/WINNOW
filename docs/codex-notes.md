@@ -144,3 +144,115 @@ then built on. For your next task, what changed in your folders and why:
   `is_duplicate`; the dedup tables are `dup_clusters` / `dup_cluster_members`.
 - Please run `uv run mypy` (whole project) before handing over, not `mypy app/<folder>`.
 
+## 2026-09-23 — Agreement statistics (guide 9.3)
+
+### Built
+
+- Added the pure `app.stats` package with a frozen, slotted `Decision` dataclass,
+  pairwise percent agreement, Cohen's kappa, Fleiss' kappa and Landis-Koch interpretation
+  bands.
+- Intermediate probability arithmetic uses `fractions.Fraction`, so results and undefined
+  denominator checks do not depend on input ordering or floating-point tolerances.
+- Added published worked examples plus tests for no overlap, one category, perfect and zero
+  kappa, maybe mapping, duplicate decisions, malformed panels and every interpretation
+  boundary.
+
+### Public API and adapter call
+
+- `Decision(record_id: uuid.UUID, reviewer_id: uuid.UUID, decision: DecisionValue)`
+- `percent_agreement(decisions: Sequence[Decision], reviewer_a: uuid.UUID,`
+  `reviewer_b: uuid.UUID, *, maybe_counts_as: MaybeCountsAs = "include") -> float | None`
+- `cohens_kappa(decisions: Sequence[Decision], reviewer_a: uuid.UUID,`
+  `reviewer_b: uuid.UUID, *, maybe_counts_as: MaybeCountsAs = "include") -> float | None`
+- `fleiss_kappa(decisions: Sequence[Decision], *,`
+  `maybe_counts_as: MaybeCountsAs = "include") -> float | None`
+- `landis_koch(kappa: float) -> str`
+
+Load only decisions from one already-authorised project and one screening stage. Map the
+future ORM `user_id` field to `reviewer_id`, then call the package like this:
+
+```python
+from app.stats import Decision, cohens_kappa, landis_koch, percent_agreement
+
+decisions = tuple(
+    Decision(
+        record_id=row.record_id,
+        reviewer_id=row.user_id,
+        decision=row.decision,
+    )
+    for row in rows
+)
+agreement = percent_agreement(
+    decisions,
+    reviewer_a_id,
+    reviewer_b_id,
+    maybe_counts_as=project_settings.maybe_counts_as,
+)
+kappa = cohens_kappa(
+    decisions,
+    reviewer_a_id,
+    reviewer_b_id,
+    maybe_counts_as=project_settings.maybe_counts_as,
+)
+band = landis_koch(kappa) if kappa is not None else None
+```
+
+Percent agreement is a fraction in `[0, 1]`; multiply by 100 only for display. For Fleiss'
+kappa, the adapter must supply only a complete cohort in which every record has the same
+number of unique ratings and that number is at least three. Reviewer identities may differ
+between records.
+
+### Conventions and resolved ambiguities
+
+- `maybe_counts_as="include"` collapses maybe decisions into include. The schema's other
+  value, `"maybe"`, retains a third nominal category. That deliberately generalises the
+  guide's binary Cohen wording so this module follows the committed project-setting
+  semantics.
+- Pair metrics use only records screened by both explicitly named reviewers and safely
+  ignore valid decisions by other reviewers. Every supplied decision is still checked for
+  duplicate `(record_id, reviewer_id)` keys so an adapter invariant failure cannot be hidden.
+  No overlap returns `None` rather than a misleading zero or non-JSON `NaN`.
+- Cohen's and Fleiss' kappa return `None` when expected agreement is one, because the formula
+  is then undefined. One-category percent agreement remains `1.0`. The adapter/UI should
+  render `None` as “Not calculable” and distinguish it from numeric zero.
+- Duplicate `(record_id, reviewer_id)` decisions, a same-reviewer pair, invalid maybe
+  mappings, unequal Fleiss panel sizes and panels smaller than three raise `ValueError`.
+- Landis-Koch labels are lower case and use the conventional cut-offs. The UI must retain
+  the guide's note that these bands are conventions, not statistical inference.
+
+### Reference checks and timings
+
+- Albert (2017), Table 5 (`54/68/14/51`) gives percent agreement
+  `105/187 = 0.5614973262` and Cohen's kappa `106/557 = 0.1903052065`, matching the
+  paper's rounded `.561` and `.19` results (DOI `10.5334/jbr-btr.1399`).
+- Fleiss (1971), Table 1's 30 patients × 6 psychiatrists, collapsed from its five diagnoses
+  to Neurosis versus all other diagnoses, gives `3239/6875 = 0.4711272727` (DOI
+  `10.1037/h0031619`).
+- Landis and Koch (1977) supplies the conventional interpretation bands (DOI
+  `10.2307/2529310`).
+- `34` focused tests pass with **100%** scoped branch coverage.
+- Median time per call across five three-call batches was **0.038945 s** for percent
+  agreement and **0.039570 s** for Cohen's kappa over 25,000 paired records (50,000
+  decisions), and **0.071482 s** for Fleiss' kappa over 20,000 records × 3 ratings (60,000
+  decisions) on this machine.
+
+### Requests for Claude Code
+
+- Phase 8's adapter must enforce project authorisation and stage/project filtering before
+  constructing these project-agnostic values. No committed ORM `Decision` model exists on
+  this branch yet, so the adapter contract intentionally does not import one.
+- Select a complete fixed-size cohort before calling `fleiss_kappa()`; the pure function
+  rejects ragged or undersized data instead of silently discarding incomplete records.
+- Confirm that retaining `maybe` as a third agreement category remains the intended meaning
+  of `ProjectSettings.maybe_counts_as="maybe"` when the stats UI is wired.
+
+### Verification and delivery
+
+- `uv run pytest tests/unit/stats -q`
+- `uv run ruff check app/stats tests/unit/stats`
+- `uv run ruff format --check app/stats tests/unit/stats`
+- `uv run mypy app/stats`
+- Extra coverage gate:
+  `uv run pytest tests/unit/stats -q --cov=app.stats --cov-report=term-missing --cov-fail-under=95`
+- Delivery branch: `codex/stats`, based on `codex/dedup` commit `505b5f6`, pushed to
+  `origin/codex/stats`. Merge it after `origin/codex/dedup`.
