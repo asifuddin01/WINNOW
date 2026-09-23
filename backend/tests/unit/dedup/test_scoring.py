@@ -3,13 +3,14 @@
 import uuid
 from dataclasses import replace
 from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 
 from app.dedup import RecordForDedup, score_pair
 
 
-def make_record(record_id: int, **changes: object) -> RecordForDedup:
+def make_record(record_id: int, **changes: Any) -> RecordForDedup:
     record = RecordForDedup(
         id=uuid.UUID(int=record_id),
         title="Randomised trial of exercise",

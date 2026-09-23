@@ -2,7 +2,7 @@
 
 import uuid
 from collections import defaultdict
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from itertools import combinations, pairwise
 from math import isclose
@@ -106,7 +106,11 @@ def _exact_pairs(
     return pairs, ambiguous_ids
 
 
-def _candidate_pairs(records: Sequence[RecordForDedup]) -> Iterator[tuple[uuid.UUID, uuid.UUID]]:
+def _candidate_pairs(
+    records: Sequence[RecordForDedup],
+    extra_pairs: Iterable[tuple[uuid.UUID, uuid.UUID]] = (),
+) -> Iterator[tuple[uuid.UUID, uuid.UUID]]:
+    known = {record.id for record in records}
     grouped = blocks(records)
     title_block_by_id: dict[uuid.UUID, str] = {}
     for key, member_ids in grouped.items():
@@ -122,6 +126,13 @@ def _candidate_pairs(records: Sequence[RecordForDedup]) -> Iterator[tuple[uuid.U
         for left_id, right_id in combinations(member_ids, 2):
             if title_block_by_id[left_id] != title_block_by_id[right_id]:
                 yield _ordered_pair(left_id, right_id)
+
+    # Block C (guide 9.1): pairs the database found by trigram similarity, which catches
+    # titles whose first words differ. Scoring and the DOI guards below treat them exactly
+    # like a block A or B candidate; ids the caller does not also pass in are ignored.
+    for left_id, right_id in extra_pairs:
+        if left_id != right_id and left_id in known and right_id in known:
+            yield _ordered_pair(left_id, right_id)
 
 
 def _shares_exact_key(left: RecordForDedup, right: RecordForDedup) -> bool:
@@ -168,11 +179,17 @@ def _choose_primary(records: Sequence[RecordForDedup]) -> RecordForDedup:
     )
 
 
-def cluster(records: Sequence[RecordForDedup], threshold: float = 0.90) -> list[Cluster]:
+def cluster(
+    records: Sequence[RecordForDedup],
+    threshold: float = 0.90,
+    *,
+    extra_pairs: Iterable[tuple[uuid.UUID, uuid.UUID]] = (),
+) -> list[Cluster]:
     """Return non-singleton duplicate clusters for a sequence of records.
 
     Exact nonblank DOI/PMID keys create confidence-1 edges; remaining candidates come
-    from :func:`blocks` and must meet ``threshold`` under :func:`score_pair`. The output
+    from :func:`blocks`, plus any ``extra_pairs`` the caller found another way — the
+    database's trigram block C — and must meet ``threshold`` under :func:`score_pair`. The output
     contains deterministically ordered member IDs, the weakest union edge as cluster
     confidence, the most complete primary, and auto-resolution eligibility. Runtime is
     O(n + sum(b^2) + e log e), where b are block sizes and e are qualifying edges; memory
@@ -195,7 +212,7 @@ def cluster(records: Sequence[RecordForDedup], threshold: float = 0.90) -> list[
     evidence = [
         _Evidence(left=left, right=right, score=1.0, exact=True) for left, right in exact_pairs
     ]
-    for left_id, right_id in _candidate_pairs(records):
+    for left_id, right_id in _candidate_pairs(records, extra_pairs):
         left = by_id[left_id]
         right = by_id[right_id]
         if _conflicting_dois(left, right) or _shares_exact_key(left, right):

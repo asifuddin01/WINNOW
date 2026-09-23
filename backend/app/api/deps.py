@@ -27,6 +27,7 @@ from app.security.rate_limit import API_PER_USER, Limit, RateLimiter
 from app.security.sessions import SESSION_COOKIE, Session, SessionStore, session_key
 from app.services.accounts import AccountService
 from app.services.audit import Actor
+from app.services.dedup import DedupService
 from app.services.errors import NotAuthenticatedError
 from app.services.imports import ImportService
 from app.services.members import MemberService
@@ -190,6 +191,14 @@ def get_records(db: SessionDep, redis: RedisDep) -> RecordService:
 
 
 RecordsDep = Annotated[RecordService, Depends(get_records)]
+
+
+def get_dedup(request: Request, db: SessionDep) -> DedupService:
+    queue: ArqRedis = request.app.state.queue
+    return DedupService(db, queue)
+
+
+DedupDep = Annotated[DedupService, Depends(get_dedup)]
 
 
 def _origin(url: str) -> str | None:

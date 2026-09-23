@@ -12,13 +12,16 @@ from datetime import UTC, datetime
 from typing import Any
 
 import structlog
+from arq.connections import ArqRedis
 from redis.asyncio import Redis
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.models import COPY_COLUMNS, ImportBatch, ImportStatus
+from app.models import COPY_COLUMNS, ImportBatch, ImportStatus, Project
 from app.models.base import uuid7
 from app.parsers import ParsedRecord, ParseProblem, parse
 from app.parsers.xml_reader import MalformedXMLError
+from app.schemas.projects import ProjectSettings
 from app.services import events
 from app.storage import Storage
 
@@ -99,6 +102,7 @@ async def run_import(
     redis: Redis,
     storage: Storage,
     batch_id: uuid.UUID,
+    queue: ArqRedis | None = None,
 ) -> dict[str, int]:
     """Parse the batch's file and load it. Returns what it read and what it could not.
 
@@ -152,6 +156,8 @@ async def run_import(
                 kept = [{"at": 0, "unit": "file", "reason": failure}, *kept]
             batch.errors = kept
             await session.commit()
+    if not failure and imported and queue is not None:
+        await _dedup_if_wanted(sessionmaker, queue, project_id)
     await events.publish(
         redis,
         project_id,
@@ -164,6 +170,20 @@ async def run_import(
         },
     )
     return {"imported": imported, "problems": len(problems)}
+
+
+async def _dedup_if_wanted(
+    sessionmaker: async_sessionmaker[AsyncSession],
+    queue: ArqRedis,
+    project_id: uuid.UUID,
+) -> None:
+    """Guide 8.4: look for duplicates as soon as an import lands, if the review wants it."""
+    from app.workers.settings import DEDUP_JOB
+
+    async with sessionmaker() as session:
+        raw = await session.scalar(select(Project.settings).where(Project.id == project_id))
+    if ProjectSettings.model_validate(raw or {}).dedup_on_import:
+        await queue.enqueue_job(DEDUP_JOB, str(project_id))
 
 
 async def _progress(

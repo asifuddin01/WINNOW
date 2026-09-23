@@ -1,6 +1,7 @@
 """Union-find clustering is deterministic, conservative and fixture-measured."""
 
 import uuid
+from collections.abc import Iterable
 from dataclasses import replace
 from datetime import UTC, datetime
 from itertools import combinations
@@ -11,7 +12,7 @@ from app.dedup import Cluster, RecordForDedup, cluster, score_pair
 from tests.unit.dedup.conftest import KnownCorpus
 
 
-def _pairs(groups: object) -> set[frozenset[uuid.UUID]]:
+def _pairs(groups: Iterable[Iterable[uuid.UUID]]) -> set[frozenset[uuid.UUID]]:
     return {frozenset(pair) for group in groups for pair in combinations(group, 2)}
 
 

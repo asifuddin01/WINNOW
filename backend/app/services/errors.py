@@ -139,3 +139,9 @@ class InvalidCursorError(DomainError):
 class InvalidPatternError(DomainError):
     status = 422
     code = "invalid_pattern"
+
+
+class NotInClusterError(DomainError):
+    status = 422
+    code = "not_in_cluster"
+    message = "That record is not in this group of duplicates."

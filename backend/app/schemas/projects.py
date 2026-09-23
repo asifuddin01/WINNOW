@@ -34,6 +34,10 @@ class ProjectSettings(BaseModel):
     require_reason_on_exclude_ft: bool = True
     ranking_enabled: bool = True
     llm_assist_enabled: bool = False
+    # Guide 8.4: look for duplicates as soon as an import finishes, and merge the ones
+    # the algorithm is certain about (exact identifiers, or a score of 0.98 and above).
+    dedup_on_import: bool = True
+    dedup_auto_resolve: bool = True
     stopping_rule: StoppingRule = StoppingRule()
     # "all": every reviewer screens every record. "split": records are shared out so each
     # gets the required number of reviewers.
@@ -54,6 +58,8 @@ class ProjectSettingsPatch(BaseModel):
     require_reason_on_exclude_ft: bool | None = None
     ranking_enabled: bool | None = None
     llm_assist_enabled: bool | None = None
+    dedup_on_import: bool | None = None
+    dedup_auto_resolve: bool | None = None
     stopping_rule: StoppingRule | None = None
     assignment: Literal["all", "split"] | None = None
     highlight_keywords: bool | None = None

@@ -48,6 +48,8 @@ async def test_a_new_review_starts_ready_to_use(db_app: FastAPI, mailer: MemoryM
             "require_reason_on_exclude_ft": True,
             "ranking_enabled": True,
             "llm_assist_enabled": False,
+            "dedup_on_import": True,
+            "dedup_auto_resolve": True,
             "stopping_rule": {"type": "consecutive_excludes", "n": 200},
             "assignment": "all",
             "highlight_keywords": True,
