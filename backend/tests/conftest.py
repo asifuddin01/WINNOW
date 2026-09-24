@@ -7,9 +7,11 @@ Redis database 15 (or TEST_REDIS_URL), flushed around each test.
 """
 
 import asyncio
+import atexit
 import base64
 import os
 import re
+import shutil
 import tempfile
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -50,6 +52,8 @@ TEST_ORIGIN = "https://testserver"
 # Uploads belong in a temporary directory: the suite must never write into a real
 # instance's storage, and a CI runner cannot create the default /data at all.
 TEST_STORAGE = tempfile.mkdtemp(prefix="winnow-test-uploads-")
+# ...and removed again when the run ends: uploads and PDFs add up over many runs.
+atexit.register(shutil.rmtree, TEST_STORAGE, ignore_errors=True)
 # Fast Argon2 (production parameters have their own test), no network, HTTPS origin.
 FAST_AUTH: dict[str, Any] = {
     "argon2_memory_kib": 1024,

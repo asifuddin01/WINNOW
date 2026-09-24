@@ -5,16 +5,19 @@ import { dirname } from "node:path";
 import { request, type FullConfig } from "@playwright/test";
 
 import { createSignedInUser } from "./support/api";
+import { removeTestData } from "./support/cleanup";
 import { uniqueEmail } from "./support/mail";
 
 export const SIGNED_IN_STATE = ".auth/signed-in.json";
 
 /**
  * Runs once before the suite, against the running `make up` stack:
+ * - removes what an earlier run left behind (support/cleanup.ts);
  * - clears the Redis rate-limit counters, so reruns within an hour are not refused;
  * - creates one verified, signed-in account whose cookies most tests reuse.
  */
 export default async function globalSetup(config: FullConfig): Promise<void> {
+  removeTestData();
   execSync(
     `docker compose exec -T redis sh -c "redis-cli --scan --pattern 'rl:*' | xargs -r redis-cli del"`,
     { stdio: "ignore", cwd: ".." },

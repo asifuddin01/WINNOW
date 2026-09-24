@@ -55,9 +55,11 @@ function stream(content: Buffer, extra = ""): Buffer {
 /** A PDF with the given lines of text on each page; readable by pypdf and pdf.js. */
 export function tinyPdf(pages: string[][], attachment?: { name: string; data: Buffer }): Buffer {
   // 1 catalog, 2 page tree, 3 font, then per page a content stream and the page itself.
-  const objects: Buffer[] = [Buffer.alloc(0), Buffer.alloc(0), Buffer.from(
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-  )];
+  const objects: Buffer[] = [
+    Buffer.alloc(0),
+    Buffer.alloc(0),
+    Buffer.from("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"),
+  ];
   const kids: number[] = [];
   for (const lines of pages) {
     const text = lines

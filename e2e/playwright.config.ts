@@ -8,6 +8,7 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./tests",
   globalSetup: "./global-setup.ts",
+  globalTeardown: "./global-teardown.ts",
   fullyParallel: true,
   // Two browsers at a time: the stack itself runs in Docker on the same machine.
   workers: 2,

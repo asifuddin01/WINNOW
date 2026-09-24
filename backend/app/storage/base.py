@@ -6,6 +6,7 @@ never decide a path on disk. The original name is kept in the database instead.
 
 import secrets
 from collections.abc import AsyncIterator
+from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
 KEY_BYTES = 16
@@ -43,6 +44,16 @@ class Storage(Protocol):
 
     async def move(self, source: str, target: str) -> None:
         """Give the file a new key (into quarantine, or from a ZIP into place)."""
+
+    async def stored(self) -> list["StoredFile"]:
+        """Every file held, for finding the ones nothing refers to any more."""
+
+
+@dataclass(frozen=True)
+class StoredFile:
+    key: str
+    size: int
+    modified: float  # seconds since the epoch
 
 
 class TooLargeError(Exception):

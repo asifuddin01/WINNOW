@@ -1,4 +1,4 @@
-"""Operator commands: `create-admin` (guide 16.3) and `seed` (make seed)."""
+"""Operator commands: `create-admin` (guide 16.3), `seed` (make seed) and `sweep-files`."""
 
 import argparse
 import asyncio
@@ -6,7 +6,7 @@ import getpass
 import sys
 import time
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -220,6 +220,22 @@ async def seed(email: str) -> None:
         await engine.dispose()
 
 
+async def sweep_files(*, apply: bool, older_than: timedelta) -> None:
+    """Report, or remove, stored files that no row refers to any more."""
+    from app.storage import create_storage
+    from app.storage.sweep import sweep
+
+    settings = get_settings()
+    engine = create_engine(settings)
+    try:
+        async with create_sessionmaker(engine)() as db:
+            found = await sweep(db, create_storage(settings), older_than=older_than, apply=apply)
+    finally:
+        await engine.dispose()
+    verb = "Removed" if apply else "Would remove (run with --apply)"
+    print(f"{verb}: {len(found.files)} files, {found.size / 1_000_000:.1f} MB.")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -232,7 +248,23 @@ def main(argv: list[str] | None = None) -> int:
     large = commands.add_parser("seed-large", help="a project with many generated records")
     large.add_argument("--email", required=True)
     large.add_argument("--records", type=int, default=100_000)
+    files = commands.add_parser(
+        "sweep-files", help="report or remove stored files no row refers to any more"
+    )
+    files.add_argument("--apply", action="store_true", help="remove them (default: report)")
+    files.add_argument(
+        "--older-than-minutes",
+        type=int,
+        default=24 * 60,
+        help="leave newer files alone (default: a day)",
+    )
     args = parser.parse_args(argv)
+
+    if args.command == "sweep-files":
+        asyncio.run(
+            sweep_files(apply=args.apply, older_than=timedelta(minutes=args.older_than_minutes))
+        )
+        return 0
 
     if args.command in {"seed", "seed-large"}:
         try:

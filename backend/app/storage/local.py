@@ -4,7 +4,7 @@ import asyncio
 from collections.abc import AsyncIterator
 from pathlib import Path
 
-from app.storage.base import TooLargeError
+from app.storage.base import StoredFile, TooLargeError
 
 # Search exports are text; these are the encodings databases actually write.
 ENCODINGS = ("utf-8-sig", "utf-8", "cp1252", "latin-1")
@@ -72,6 +72,25 @@ class LocalStorage:
 
     async def size(self, key: str) -> int:
         return (await asyncio.to_thread(self._path(key).stat)).st_size
+
+    async def stored(self) -> list[StoredFile]:
+        return await asyncio.to_thread(self._stored)
+
+    def _stored(self) -> list[StoredFile]:
+        if not self._root.is_dir():
+            return []
+        found = []
+        for path in self._root.rglob("*"):
+            if path.is_file():
+                info = path.stat()
+                found.append(
+                    StoredFile(
+                        key=path.relative_to(self._root).as_posix(),
+                        size=info.st_size,
+                        modified=info.st_mtime,
+                    )
+                )
+        return found
 
     async def move(self, source: str, target: str) -> None:
         destination = self._path(target)

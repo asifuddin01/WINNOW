@@ -43,10 +43,16 @@ async function reviewAtFullText(
   const ids: Record<string, string> = {};
   for (const record of records.items) {
     ids[record.title] = record.id;
-    await apiSend(request, baseURL, "PUT", `/api/v1/projects/${pid}/records/${record.id}/decision`, {
-      stage: "title_abstract",
-      decision: "include",
-    });
+    await apiSend(
+      request,
+      baseURL,
+      "PUT",
+      `/api/v1/projects/${pid}/records/${record.id}/decision`,
+      {
+        stage: "title_abstract",
+        decision: "include",
+      },
+    );
   }
   return { pid, ids };
 }
@@ -213,9 +219,7 @@ test("the PDF viewer works on a 360-pixel phone", async ({ browser, baseURL }) =
       ["Results", "Sensitivity for kidney stones was 0.94"],
     ]),
   );
-  await expect
-    .poll(() => scanStatus(context.request, pid, rid), { timeout: 60_000 })
-    .toBe("clean");
+  await expect.poll(() => scanStatus(context.request, pid, rid), { timeout: 60_000 }).toBe("clean");
 
   await page.goto(`/p/${pid}/screen/ft?view=pdfs`);
   await page.getByRole("button", { name: new RegExp(`^${PAPERS[0]!.title}`) }).click();
