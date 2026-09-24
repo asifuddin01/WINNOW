@@ -18,8 +18,11 @@ from sklearn.model_selection import StratifiedKFold
 
 from app.ranking.features import Corpus
 
-# Guide 8.10: a model is trained once a stage has this many of each.
-MIN_EACH = 5
+# The first model is trained once a stage has this many relevant and irrelevant records.
+# Guide 8.10 says 5 of each; the owner chose 1 (2026-09-25) on the benchmark's evidence:
+# on sparse reviews the random warm-up before five includes was most of the work, and
+# starting from the first of each saved a median 63% of screening instead of 55%.
+MIN_EACH = 1
 FOLDS = 5
 # Guide 9.2: the cross-validated AUC is reported from this many labelled records.
 AUC_FROM = 50
@@ -63,8 +66,11 @@ def rank[K: Hashable](
 
     scores: dict[K, float] = {}
     out_of_fold: np.ndarray | None = None
-    if also_labeled or (with_auc and len(labeled) >= AUC_FROM):
-        out_of_fold = _cross_fit(x, y)
+    folds = min(FOLDS, int(y.sum()), int(len(y) - y.sum()))
+    # Cross-fitting needs two of each. Until then a labelled record that is still waiting
+    # is left unscored (it comes in random order) rather than scored by its own label.
+    if folds >= 2 and (also_labeled or (with_auc and len(labeled) >= AUC_FROM)):
+        out_of_fold = _cross_fit(x, y, folds)
         for key in also_labeled:
             scores[key] = float(out_of_fold[position[key]])
     if fresh:
@@ -84,8 +90,7 @@ def _fit(x: csr_matrix, y: np.ndarray) -> LogisticRegression:
     return model
 
 
-def _cross_fit(x: csr_matrix, y: np.ndarray) -> np.ndarray:
-    folds = min(FOLDS, int(y.sum()), int(len(y) - y.sum()))
+def _cross_fit(x: csr_matrix, y: np.ndarray, folds: int) -> np.ndarray:
     out = np.empty(len(y), dtype=np.float64)
     splitter = StratifiedKFold(n_splits=folds, shuffle=True, random_state=0)
     for train, test in splitter.split(np.zeros(len(y)), y):

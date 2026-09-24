@@ -143,7 +143,7 @@ export const RANKING_STATUS = {
   stage: "title_abstract",
   enabled: true,
   model: null,
-  needs_each: 5,
+  needs_each: 1,
   have_included: 0,
   have_excluded: 0,
   retrain_after: 25,

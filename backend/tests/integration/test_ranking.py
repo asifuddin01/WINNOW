@@ -49,27 +49,26 @@ async def me(client: AsyncClient) -> uuid.UUID:
     return uuid.UUID((await get(client, "/auth/me")).json()["id"])
 
 
-async def test_the_first_model_waits_for_five_of_each_then_ranks_what_is_left(
+async def test_the_first_model_comes_with_the_first_include_and_ranks_what_is_left(
     db_app: FastAPI, db: AsyncSession, mailer: MemoryMailer
 ) -> None:
     async with team(db_app, db, mailer, records=0) as t:
         await settings(t.owner, t.pid, reviewers_per_record_ta=1)
         kidney = await add_records(db, t.pid, 15, **KIDNEY)
         heart = await add_records(db, t.pid, 15, **HEART)
-        for record in kidney[:4]:
-            await decide(t.owner, t.pid, record, "include")
         for record in heart[:5]:
             await decide(t.owner, t.pid, record, "exclude")
 
+        # Excludes alone teach nothing about what is relevant.
         assert (await train(db_app, t.pid)).trained is False
         status = (await get(t.owner, f"/projects/{t.pid}/ranking/status")).json()
         assert status["model"] is None
-        assert (status["have_included"], status["have_excluded"]) == (4, 5)
+        assert (status["needs_each"], status["have_included"], status["have_excluded"]) == (1, 0, 5)
 
-        await decide(t.owner, t.pid, kidney[4], "include")
+        await decide(t.owner, t.pid, kidney[0], "include")
         result = await train(db_app, t.pid)
         assert result.trained is True
-        assert (result.labeled, result.scored) == (10, 20)
+        assert (result.labeled, result.scored) == (6, 24)
         scores = dict(
             (
                 await db.execute(
@@ -79,15 +78,15 @@ async def test_the_first_model_waits_for_five_of_each_then_ranks_what_is_left(
             .tuples()
             .all()
         )
-        assert set(scores) == set(kidney[5:] + heart[5:])
-        assert min(scores[r] for r in kidney[5:]) > max(scores[r] for r in heart[5:])
+        assert set(scores) == set(kidney[1:] + heart[5:])
+        assert min(scores[r] for r in kidney[1:]) > max(scores[r] for r in heart[5:])
         model = await db.scalar(select(RankingModel).where(RankingModel.is_active.is_(True)))
         assert model is not None
-        assert (model.n_labeled, model.n_included) == (10, 5)
+        assert (model.n_labeled, model.n_included) == (6, 1)
 
         # The owner sees what the model learnt from; a reviewer screening blind does not.
         status = (await get(t.owner, f"/projects/{t.pid}/ranking/status")).json()
-        assert status["model"]["n_labeled"] == 10
+        assert status["model"]["n_labeled"] == 6
         blind = (await get(t.reviewer, f"/projects/{t.pid}/ranking/status")).json()
         assert blind["model"]["n_labeled"] is None
         assert blind["model"]["auc"] is None

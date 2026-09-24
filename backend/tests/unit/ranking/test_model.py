@@ -34,13 +34,20 @@ def test_a_tiny_review_still_gets_a_corpus() -> None:
         build(["a"], [])
 
 
-def test_a_model_needs_five_of_each() -> None:
-    assert not can_train({"a": 1, "b": 0})
-    assert can_train({f"i{n}": 1 for n in range(MIN_EACH)} | {f"e{n}": 0 for n in range(MIN_EACH)})
+def test_a_model_needs_both_a_relevant_and_an_irrelevant_record() -> None:
+    assert MIN_EACH == 1
+    assert can_train({"a": 1, "b": 0})
+    assert not can_train({"a": 1, "b": 1})
+    assert not can_train({"a": 1, "b": 0}, min_each=5)
     keys, texts = corpus_of(10, 10)
     corpus = build(keys, texts)
-    with pytest.raises(ValueError, match="at least 5"):
-        rank(corpus, {"k0": 1, "h0": 0}, keys)
+    with pytest.raises(ValueError, match="at least 1"):
+        rank(corpus, {"k0": 1, "k1": 1}, keys)
+    first = rank(corpus, {"k0": 1, "h0": 0}, keys)
+    assert first.scores["k5"] > first.scores["h5"]
+    # One include, still waiting for a second reviewer: there is no model without its own
+    # label to score it by, so it is left out rather than scored by that label.
+    assert "k0" not in first.scores
 
 
 def test_records_like_the_included_ones_rank_first() -> None:

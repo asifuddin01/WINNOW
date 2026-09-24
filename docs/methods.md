@@ -17,8 +17,8 @@ learning from the review team's own decisions on the Winnow server; no record le
 - **Labels.** A record's final title-and-abstract status: included or maybe count as
   relevant, excluded as not. A record not yet final takes the majority of the individual
   decisions on it; a tie is left out.
-- **When it trains.** The first model once the review has 5 relevant and 5 excluded
-  records; before that the queue is in random order. It retrains after every 25 new
+- **When it trains.** The first model as soon as the review has one relevant and one
+  excluded record; before that the queue is in random order. It retrains after every 25 new
   decisions, at most once a minute, and on request.
 - **Scores.** Every record still waiting at the stage is scored with the model's
   probability of relevance. A record that has already been decided by someone but is still
@@ -31,7 +31,7 @@ learning from the review team's own decisions on the Winnow server; no record le
   low.
 
 On 21 labelled reviews from the SYNERGY collection, this ordering found 95% of the
-includes after a median of 55% fewer records than random order (range 13–85%); see
+includes after a median of 63% fewer records than random order (range 14–91%); see
 [the benchmark](ranking-benchmark.md).
 
 ## The stopping helper
@@ -48,8 +48,8 @@ first model are left out. It is fitted twice, to those decisions and to their mo
 half (at least 200); each fit's 90% range comes from a parametric bootstrap (200
 resamples), the reported range spans both and its top is widened by two Poisson standard
 deviations, and the headline is the larger of the two point estimates. On the benchmark
-runs the range contained the true number left 96% of the time and fell short of it 4% of
-the time; the headline was off by 0.8 records at the median.
+runs the range contained the true number left 99% of the time and fell short of it 1% of
+the time; the headline was off by 0.9 records at the median.
 
 It assumes relevant records keep getting rarer as screening goes on. It is less reliable
 when the search or the criteria changed during screening, and early on, when the model has

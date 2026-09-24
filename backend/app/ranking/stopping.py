@@ -12,8 +12,8 @@ random order, where finds come at a steady rate, and fitting those made a review
 found everything read "about 25 left". The decay is fitted to the ranked part and to its
 recent half; each has a 90% parametric-bootstrap range, the answer spans both, and the top
 is widened by two Poisson standard deviations. On 21 labelled SYNERGY reviews that range
-held the true number left 96% of the time (4% above it), and the headline number was off
-by 0.8 records at the median (`benchmarks/stopping.py`). See docs/methods.md.
+held the true number left 99% of the time (1% above it), and the headline number was off
+by 0.9 records at the median (`benchmarks/stopping.py`). See docs/methods.md.
 """
 
 import math

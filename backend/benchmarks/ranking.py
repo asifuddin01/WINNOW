@@ -3,7 +3,8 @@
 Replays each labelled SYNERGY review (fetched by `benchmarks/synergy.py`) as one reviewer
 screening it in Winnow, using the ranking code the product runs:
 
-- random order until there are 5 includes and 5 excludes (guide 8.10), then
+- random order until there is one include and one exclude (the owner's choice; guide
+  8.10 said five of each), then
 - relevance order, retrained after every 25 decisions, with one record in twenty taken
   from random order instead (the 5% exploration of guide 9.2).
 
@@ -185,8 +186,8 @@ def main() -> None:
         variants["no exploration"] = lambda corpus, truth, seed: simulate(
             corpus, truth, seed=seed, explore=False
         )
-        variants["train from 1+1"] = lambda corpus, truth, seed: simulate(
-            corpus, truth, seed=seed, explore=True, min_each=1
+        variants["wait for 5 + 5"] = lambda corpus, truth, seed: simulate(
+            corpus, truth, seed=seed, explore=True, min_each=5
         )
 
     everything: list[Result] = []

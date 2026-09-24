@@ -518,14 +518,16 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   after an import; the queue is usable meanwhile.
 
 ### When it trains
-- **Guide 8.10's rules as written:** the first model once there are 5 includes and 5
-  excludes; then after every 25 new decisions, at most once a minute per review and stage,
+- **Guide 8.10's schedule:** the first model (see below for when); then after every 25 new
+  decisions, at most once a minute per review and stage,
   and on demand. A Redis counter per review and stage counts decisions; the job takes off
   what it covered, so decisions made during a run still count towards the next.
-- **The 5 + 5 threshold is kept although the benchmark shows its cost.** On sparse reviews
-  the random warm-up is most of the work (Bos 2018: 2,291 records to 95% recall, against
-  699 training from the first include and exclude). Changing a rule the guide states is
-  the owner's decision; it is one constant (`MIN_EACH`).
+- **The first model now comes with the first include and exclude, not 5 of each**
+  (owner's decision, 2026-09-25, departing from guide 8.10). On sparse reviews the random
+  warm-up before five includes was most of the work (Bos 2018: 2,291 records to 95% recall
+  against 699); across 21 reviews the median saving rose from 55% to 63%. With one include,
+  a record that is labelled but still waiting for another reviewer cannot be cross-fitted,
+  so it is left unscored until there are two of each rather than scored by its own label.
 - **Imports queue a run,** so new records are ranked in. Anyone who screens may ask for a
   retrain; it is debounced like the rest.
 

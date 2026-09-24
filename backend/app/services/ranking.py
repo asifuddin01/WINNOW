@@ -1,7 +1,7 @@
 """Relevance ranking in the app: when to retrain, and what people are shown (guide 8.10).
 
 Training runs in the worker (`app.workers.ranking`). Here: nudging it after decisions —
-the first model as soon as a stage has 5 includes and 5 excludes, then after every 25 new
+the first model as soon as a stage has one include and one exclude, then after every 25 new
 decisions, never more than once a minute per review and stage — plus the model's status,
 the recall curve and the stopping-rule helper.
 """

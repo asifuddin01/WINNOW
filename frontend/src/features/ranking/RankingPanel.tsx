@@ -132,7 +132,8 @@ function StatusLine({ status }: { status: RankingStatus }) {
   return (
     <>
       The first model is trained once the team has decided {status.needs_each} relevant and{" "}
-      {status.needs_each} excluded records; until then the queue is in random order.{counts}
+      {status.needs_each} excluded {status.needs_each === 1 ? "record" : "records"}; until then the
+      queue is in random order.{counts}
     </>
   );
 }

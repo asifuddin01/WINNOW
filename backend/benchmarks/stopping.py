@@ -17,6 +17,16 @@ from app.ranking.stopping import estimate_remaining
 RESULTS = Path(__file__).parent / "data" / "results.json"
 
 
+def _first_model(history: list[bool]) -> int:
+    """How many decisions it took to have one relevant and one irrelevant record."""
+    seen: set[bool] = set()
+    for count, found in enumerate(history, start=1):
+        seen.add(found)
+        if len(seen) == 2:
+            return count
+    return 0
+
+
 def main(path: Path) -> None:
     runs = [
         (result["dataset"], result["records"], run)
@@ -33,8 +43,8 @@ def main(path: Path) -> None:
         screened = run["stop_fired_at"]
         found = set(run["curve"])
         history = [position in found for position in range(1, screened + 1)]
-        # Ranking began after the fifth include (guide 8.10's first model).
-        ranked_from = run["curve"][4] if len(run["curve"]) >= 5 else 0
+        # Ranking began once there was one include and one exclude.
+        ranked_from = _first_model(history)
         estimate = estimate_remaining(history, records - screened, ranked_from=ranked_from)
         truth = run["remaining_at_stop"]
         inside += estimate.low <= truth <= estimate.high

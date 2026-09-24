@@ -38,12 +38,12 @@ describe("the ranking panel", () => {
       ...signedIn,
       ...projectRoutes(),
       ...withRecords,
-      [`GET ${base}/ranking/status`]: { ...RANKING_STATUS, have_included: 3, have_excluded: 9 },
+      [`GET ${base}/ranking/status`]: { ...RANKING_STATUS, have_included: 0, have_excluded: 9 },
     });
     renderApp(`/p/${PROJECT.id}`);
-    expect(await screen.findByText(/first model is trained once the team has decided 5/)).toBe(
-      screen.getByText(/So far: 3 of 5 relevant, 5 of 5 excluded/),
-    );
+    const waiting = await screen.findByText(/first model is trained once the team has decided 1/);
+    expect(waiting).toHaveTextContent("1 relevant and 1 excluded record;");
+    expect(waiting).toHaveTextContent("So far: 0 of 1 relevant, 1 of 1 excluded.");
     expect(screen.getByText("The recall curve starts with the first decision.")).toBeVisible();
   });
 

@@ -46,7 +46,7 @@ export function StoppingBanner({ pid, stage }: { pid: string; stage: Stage }) {
           rate at which your decisions in relevance order have found them as a decaying curve and
           carries it on over the records you have not screened; the range comes from refitting to
           many simulated histories like yours. Tested on 21 published reviews, it held the true
-          number left 96% of the time. It assumes relevant records keep getting rarer, so treat it
+          number left 99% of the time. It assumes relevant records keep getting rarer, so treat it
           with caution if the search or the criteria changed.
         </p>
       </details>
