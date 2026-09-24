@@ -17,6 +17,7 @@ PMC_LISTING = b"""<?xml version="1.0" encoding="UTF-8"?>
   <Contents><Key>PMC7012345.1/PMC7012345.1.pdf</Key></Contents>
   <Contents><Key>PMC7012345.1/PMC7012345.1.xml</Key></Contents>
   <Contents><Key>PMC7012345.2/PMC7012345.2.pdf</Key></Contents>
+  <Contents><Key>PMC7012345.10/330_2026_12322_MOESM1_ESM.pdf</Key></Contents>
   <Contents><Key>PMC7012345.10/PMC7012345.10.pdf</Key></Contents>
 </ListBucketResult>"""
 
@@ -61,6 +62,16 @@ async def test_pmc_then_unpaywall() -> None:
     assert found[0].host == "pmc-oa-opendata.s3.amazonaws.com"
     assert len({c.id for c in found}) == 2
     assert "10.1000/x%20y" in asked[1]
+
+
+async def test_a_supplement_alone_is_not_the_article() -> None:
+    """Seen on a real review: the only PDF besides the article was its ESM supplement."""
+    listing = b"""<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+      <Contents><Key>PMC1.1/330_2026_1_MOESM1_ESM.pdf</Key></Contents>
+      <Contents><Key>PMC1.1/PMC1.1.xml</Key></Contents>
+    </ListBucketResult>"""
+    async with client(lambda request: httpx.Response(200, content=listing)) as http:
+        assert await openaccess.find(http, doi=None, pmcid="PMC1", email=None) == []
 
 
 async def test_without_an_email_unpaywall_is_not_asked() -> None:

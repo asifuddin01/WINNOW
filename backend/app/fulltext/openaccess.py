@@ -112,7 +112,8 @@ async def _unpaywall(http: httpx.AsyncClient, doi: str, email: str) -> list[Cand
 
 async def _pmc(http: httpx.AsyncClient, pmcid: str) -> list[Candidate]:
     """PMC publishes each open-access article as `PMCnnn.v/PMCnnn.v.pdf` in a public bucket;
-    the latest version is the one to fetch."""
+    the latest version is the one to fetch. Supplementary PDFs share the folder under the
+    publisher's names (`…_MOESM1_ESM.pdf`) and are never the article."""
     number = re.fullmatch(r"(?i)pmc(\d{1,10})", pmcid.strip())
     if not number:
         return []
@@ -132,7 +133,12 @@ async def _pmc(http: httpx.AsyncClient, pmcid: str) -> list[Candidate]:
     except ElementTree.ParseError:
         return []
     keys = [node.text or "" for node in root.iter(f"{S3}Key")]
-    pdfs = [key for key in keys if re.fullmatch(rf"{re.escape(prefix)}\d+/.+\.pdf", key)]
+    pdfs = [
+        key
+        for key in keys
+        if (found := re.fullmatch(rf"{re.escape(prefix)}(\d+)/{re.escape(prefix)}(\d+)\.pdf", key))
+        and found.group(1) == found.group(2)
+    ]
     if not pdfs:
         return []
     latest = max(pdfs, key=lambda key: int(key[len(prefix) :].split("/", 1)[0]))
