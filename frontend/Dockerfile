@@ -29,6 +29,12 @@ RUN pnpm run build
 # nginx, not Caddy: a static file server needs no Go runtime to keep patched, and this
 # image runs as a non-root user out of the box.
 FROM nginxinc/nginx-unprivileged:1.31-alpine AS prod
+# Take the base image's packages up to Alpine's latest fixes: the tag lags behind them, and
+# the image scan fails on any fixable high or critical vulnerability (CVE-2026-93990 in
+# libexpat, 2026-09-24). Then drop back to the image's unprivileged user.
+USER root
+RUN apk upgrade --no-cache
+USER 101
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 8080
