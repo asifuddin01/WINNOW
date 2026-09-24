@@ -22,6 +22,7 @@ from app.models import (
     Decision,
     DecisionValue,
     ExclusionReason,
+    Fulltext,
     Label,
     Note,
     NoteVisibility,
@@ -34,6 +35,7 @@ from app.models import (
     ResolutionSource,
     ScreeningStage,
     TitleAbstractStatus,
+    UnretrievableRecord,
     User,
 )
 from app.models.base import uuid7
@@ -64,6 +66,7 @@ from app.services.errors import (
     ForbiddenError,
     NotFoundError,
 )
+from app.services.fulltext import fulltext_out
 from app.services.pagination import decode_cursor, encode_cursor
 from app.services.ranking import EXPLORE_EVERY, nudge
 from app.services.records import apply_search
@@ -175,6 +178,12 @@ class ScreeningService:
         ]
         if stage is ScreeningStage.FULL_TEXT:
             conditions.append(Record.ta_final == TitleAbstractStatus.INCLUDED)
+            # A report nobody could get is counted in PRISMA, not screened (guide 8.8).
+            conditions.append(
+                ~select(UnretrievableRecord.record_id)
+                .where(UnretrievableRecord.record_id == Record.id)
+                .exists()
+            )
         if settings_of(access).assignment == "split":
             conditions.append(assigned_to(access, stage, access.user.id))
         return conditions
@@ -366,11 +375,13 @@ class ScreeningService:
         stage = body.stage
         self._require_screening(access, stage)
         record = await self._record(access, record_id)
-        if (
-            stage is ScreeningStage.FULL_TEXT
-            and record.ta_final is not TitleAbstractStatus.INCLUDED
-        ):
-            raise ConflictError("This record has not reached full-text screening.")
+        if stage is ScreeningStage.FULL_TEXT:
+            if record.ta_final is not TitleAbstractStatus.INCLUDED:
+                raise ConflictError("This record has not reached full-text screening.")
+            if await self._db.get(UnretrievableRecord, record.id) is not None:
+                raise ConflictError(
+                    "This record's full text is marked not retrievable. Undo that to screen it."
+                )
         settings = settings_of(access)
         reasons = body.reason_ids if body.decision is DecisionValue.EXCLUDE else []
         await check_reasons(self._db, access, stage, reasons)
@@ -770,6 +781,23 @@ class ScreeningService:
                 )
             )
 
+        pdfs: dict[uuid.UUID, Fulltext] = {}
+        unretrievable: set[uuid.UUID] = set()
+        if stage is ScreeningStage.FULL_TEXT:
+            pdfs = {
+                row.record_id: row
+                for row in await self._db.scalars(
+                    select(Fulltext).where(Fulltext.record_id.in_(ids))
+                )
+            }
+            unretrievable = set(
+                await self._db.scalars(
+                    select(UnretrievableRecord.record_id).where(
+                        UnretrievableRecord.record_id.in_(ids)
+                    )
+                )
+            )
+
         items: list[ScreeningItem] = []
         for record in records:
             own = next((d for d, _ in decisions[record.id] if d.user_id == me), None)
@@ -801,11 +829,14 @@ class ScreeningService:
                     pages=record.pages,
                     doi=record.doi,
                     pmid=record.pmid,
+                    pmcid=record.pmcid,
                     url=record.url,
                     abstract=record.abstract,
                     keywords=record.keywords,
                     publication_type=record.publication_type,
                     relevance_score=scores.get(record.id),
+                    fulltext=fulltext_out(pdfs[record.id]) if record.id in pdfs else None,
+                    not_retrievable=record.id in unretrievable,
                     my_decision=MyDecision(
                         decision=own.decision,
                         reason_ids=list(own.reason_ids),

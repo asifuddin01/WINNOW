@@ -50,6 +50,16 @@ REVIEWER_WRITES = VIEWER_WRITES | {
     ("POST", "/api/v1/projects/{pid}/ranking/train"),
     # Asking the AI provider about a record (guide 8.11) is advice, not a decision.
     ("POST", "/api/v1/projects/{pid}/records/{rid}/llm-suggest"),
+    # Getting the full text is part of screening it (guide 8.8); a ZIP of many is not.
+    ("POST", "/api/v1/projects/{pid}/records/{rid}/fulltext"),
+    ("DELETE", "/api/v1/projects/{pid}/records/{rid}/fulltext"),
+    ("POST", "/api/v1/projects/{pid}/records/{rid}/fulltext/find-oa"),
+    ("POST", "/api/v1/projects/{pid}/records/{rid}/fulltext/fetch-oa"),
+    ("POST", "/api/v1/projects/{pid}/records/{rid}/fulltext/not-retrievable"),
+    ("DELETE", "/api/v1/projects/{pid}/records/{rid}/fulltext/not-retrievable"),
+    ("POST", "/api/v1/projects/{pid}/fulltext/{fid}/annotations"),
+    ("PATCH", "/api/v1/projects/{pid}/fulltext/{fid}/annotations/{aid}"),
+    ("DELETE", "/api/v1/projects/{pid}/fulltext/{fid}/annotations/{aid}"),
 }
 
 

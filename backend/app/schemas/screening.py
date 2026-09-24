@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.models import DecisionValue, FinalDecision, NoteVisibility, ScreeningStage
 from app.schemas.common import LongText, OptionalLongText
+from app.schemas.fulltext import FulltextOut
 
 QueueSort = Literal["relevance", "random", "year", "title", "added"]
 # Thirty minutes: longer than anyone reads one abstract, short enough that a laptop left
@@ -55,11 +56,15 @@ class ScreeningItem(BaseModel):
     pages: str | None
     doi: str | None
     pmid: str | None
+    pmcid: str | None = None
     url: str | None
     abstract: str | None
     keywords: list[str]
     publication_type: list[str]
     relevance_score: float | None
+    # At full text: the record's PDF, whatever its scan says (guide 8.8).
+    fulltext: FulltextOut | None = None
+    not_retrievable: bool = False
     my_decision: MyDecision | None
     labels: list[uuid.UUID]
     notes: list[NoteOut]

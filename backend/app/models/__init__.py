@@ -3,6 +3,15 @@
 from app.models.audit import AuditLog
 from app.models.base import Base
 from app.models.dedup import ClusterStatus, DupCluster, DupClusterMember
+from app.models.fulltext import (
+    BatchStatus,
+    Fulltext,
+    FulltextBatch,
+    FulltextSource,
+    PdfAnnotation,
+    ScanStatus,
+    UnretrievableRecord,
+)
 from app.models.llm import LlmSuggestion
 from app.models.project import (
     ALL_STAGES,
@@ -52,6 +61,7 @@ __all__ = [
     "NO_PASSWORD",
     "AuditLog",
     "Base",
+    "BatchStatus",
     "ClusterStatus",
     "ConflictResolution",
     "Criterion",
@@ -66,6 +76,9 @@ __all__ = [
     "FileFormat",
     "FinalDecision",
     "FullTextStatus",
+    "Fulltext",
+    "FulltextBatch",
+    "FulltextSource",
     "ImportBatch",
     "ImportStatus",
     "Keyword",
@@ -75,6 +88,7 @@ __all__ = [
     "LlmSuggestion",
     "Note",
     "NoteVisibility",
+    "PdfAnnotation",
     "Project",
     "ProjectInvite",
     "ProjectMember",
@@ -87,8 +101,10 @@ __all__ = [
     "RecordScore",
     "ResolutionSource",
     "ReviewType",
+    "ScanStatus",
     "ScreeningStage",
     "TitleAbstractStatus",
+    "UnretrievableRecord",
     "User",
     "UserIdentity",
 ]

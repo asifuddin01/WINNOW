@@ -32,6 +32,7 @@ from app.services.audit import Actor
 from app.services.conflicts import ConflictService
 from app.services.dedup import DedupService
 from app.services.errors import NotAuthenticatedError
+from app.services.fulltext import FulltextService
 from app.services.imports import ImportService
 from app.services.llm import LlmService
 from app.services.members import MemberService
@@ -233,6 +234,11 @@ def get_ranking(request: Request, db: SessionDep) -> RankingService:
     return RankingService(db, queue, redis)
 
 
+def get_fulltext(request: Request, db: SessionDep, settings: SettingsDep) -> FulltextService:
+    state = request.app.state
+    return FulltextService(db, settings, state.storage, state.queue, state.redis, state.http)
+
+
 def get_mailer(request: Request) -> Mailer:
     mailer: Mailer = request.app.state.mailer
     return mailer
@@ -243,6 +249,7 @@ RankingDep = Annotated[RankingService, Depends(get_ranking)]
 LlmDep = Annotated[LlmService, Depends(get_llm)]
 ConflictsDep = Annotated[ConflictService, Depends(get_conflicts)]
 MailerDep = Annotated[Mailer, Depends(get_mailer)]
+FulltextDep = Annotated[FulltextService, Depends(get_fulltext)]
 
 
 def _origin(url: str) -> str | None:

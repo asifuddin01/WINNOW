@@ -102,3 +102,16 @@ def discussion_requested(to: str, *, asker: str, project_title: str, link: str) 
         f"“{project_title}” on Winnow, where the reviewers' decisions differ. They left a note "
         f"on it.\n\nOpen it here:\n\n{link}" + SIGNATURE,
     )
+
+
+def pdf_quarantined(to: str, *, project_title: str, signature: str, link: str) -> Email:
+    """Guide 12.4: a PDF the scanner flagged is quarantined and the review's owners and
+    admins are told. The file's name stays out of the email; names are typed by people."""
+    return Email(
+        to,
+        "A PDF in your review was quarantined",
+        f"Hi,\n\nA PDF uploaded to the review “{project_title}” on Winnow was flagged by the "
+        f"virus scanner ({signature}). It has been moved to quarantine: nobody can open or "
+        "download it, and the record shows that its PDF was quarantined.\n\nIf you expected "
+        f"this file to be safe, get a fresh copy from the publisher.\n\n{link}" + SIGNATURE,
+    )

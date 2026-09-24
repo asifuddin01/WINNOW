@@ -27,6 +27,7 @@ from app.models import (
     Record,
     ScreeningStage,
     TitleAbstractStatus,
+    UnretrievableRecord,
 )
 from app.schemas.projects import ProjectSettings
 
@@ -45,6 +46,8 @@ _FT = {
     # A full-text "maybe" is not a final answer; the record waits for someone to decide.
     "maybe": FullTextStatus.PENDING,
     "conflict": FullTextStatus.CONFLICT,
+    # Guide 8.8: nobody could get the full text. It is not screened, and PRISMA counts it.
+    "not_retrievable": FullTextStatus.NOT_RETRIEVABLE,
 }
 # Enough rows per UPDATE to recompute a 100,000-record review in a few round trips.
 BATCH = 5_000
@@ -108,6 +111,15 @@ async def recompute(
     for record_id, final in resolved:
         resolutions[record_id] = final
 
+    unretrievable: set[uuid.UUID] = set()
+    if stage is ScreeningStage.FULL_TEXT:
+        marked = select(UnretrievableRecord.record_id).where(
+            UnretrievableRecord.project_id == project_id
+        )
+        if wanted is not None:
+            marked = marked.where(UnretrievableRecord.record_id.in_(wanted))
+        unretrievable = set(await db.scalars(marked))
+
     if stage is ScreeningStage.FULL_TEXT:
         # Only records included at title and abstract have a full-text status to work out;
         # the rest stay "not eligible", whatever asked for the recompute.
@@ -135,7 +147,11 @@ async def recompute(
     rows = [
         (
             record_id,
-            outcome(
+            # A resolution still decides; short of one, a full text nobody could get is
+            # "not retrievable", whatever was decided without it.
+            "not_retrievable"
+            if record_id in unretrievable and record_id not in resolutions
+            else outcome(
                 by_record.get(record_id, []),
                 resolutions.get(record_id),
                 required=required,

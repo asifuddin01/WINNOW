@@ -56,6 +56,8 @@ class FullTextStatus(enum.StrEnum):
     INCLUDED = "included"
     EXCLUDED = "excluded"
     CONFLICT = "conflict"
+    # Guide 8.8: the full text could not be found. PRISMA counts it as not retrieved.
+    NOT_RETRIEVABLE = "not_retrievable"
 
 
 # Guide 6.1: title weighted above abstract, keywords last. The work happens in an

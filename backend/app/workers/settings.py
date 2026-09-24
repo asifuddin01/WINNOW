@@ -9,6 +9,7 @@ from typing import Any, ClassVar
 
 import structlog
 from arq.connections import RedisSettings
+from arq.cron import CronJob, cron
 from arq.typing import WorkerCoroutine
 from arq.worker import Function, func
 
@@ -19,8 +20,10 @@ from app.email.messages import Email
 from app.logging_config import configure_logging
 from app.models import ScreeningStage
 from app.redis_client import create_redis
+from app.services.fulltext import BATCH_JOB, SCAN_JOB
 from app.storage import create_storage
 from app.workers.dedup import run_dedup
+from app.workers.fulltext import SCAN_TRIES, discard_stale_batches, run_batch, run_scan
 from app.workers.imports import run_import
 from app.workers.ranking import run_ranking
 
@@ -79,6 +82,35 @@ async def rank_project(ctx: dict[str, Any], project_id: str, stage: str) -> dict
     return {"trained": result.trained, "labeled": result.labeled, "scored": result.scored}
 
 
+async def scan_fulltext(ctx: dict[str, Any], fulltext_id: str) -> str | None:
+    """Scan one PDF, quarantine it if it is infected, read its text if not (guide 12.4)."""
+    outcome = await run_scan(
+        sessionmaker=ctx["sessionmaker"],
+        redis=ctx["events"],
+        queue=ctx["redis"],
+        storage=ctx["storage"],
+        settings=get_settings(),
+        fulltext_id=uuid.UUID(fulltext_id),
+        attempt=ctx["job_try"],
+    )
+    return None if outcome is None else outcome.status.value
+
+
+async def match_fulltext_batch(ctx: dict[str, Any], batch_id: str) -> int:
+    """Unpack a ZIP of PDFs and match each to a record (guide 8.8)."""
+    return await run_batch(
+        sessionmaker=ctx["sessionmaker"],
+        redis=ctx["events"],
+        storage=ctx["storage"],
+        settings=get_settings(),
+        batch_id=uuid.UUID(batch_id),
+    )
+
+
+async def tidy_fulltext_batches(ctx: dict[str, Any]) -> int:
+    return await discard_stale_batches(sessionmaker=ctx["sessionmaker"], storage=ctx["storage"])
+
+
 async def startup(ctx: dict[str, Any]) -> None:
     settings = get_settings()
     configure_logging(settings)
@@ -113,6 +145,13 @@ class WorkerSettings:
         # One run per review and stage at a time (app.services.ranking.ranking_job_id);
         # keep_result=0 frees the id for the next run the moment this one ends.
         func(rank_project, name=RANK_JOB, max_tries=1, timeout=600, keep_result=0),
+        # Retried while the scanner is starting or reloading its signatures; each try waits
+        # longer. The file stays unavailable until a scan says it is clean.
+        func(scan_fulltext, name=SCAN_JOB, max_tries=SCAN_TRIES, timeout=600, keep_result=0),
+        func(match_fulltext_batch, name=BATCH_JOB, max_tries=1, timeout=1800, keep_result=0),
+    ]
+    cron_jobs: ClassVar[list[CronJob]] = [
+        cron(tidy_fulltext_batches, minute={17}, run_at_startup=False, keep_result=0),
     ]
     on_startup = startup
     on_shutdown = shutdown

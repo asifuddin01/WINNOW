@@ -30,6 +30,11 @@ INVITES_PER_USER = Limit("invite-user", 100, 3600)  # each one sends an email
 INVITE_LINK_PER_IP = Limit("invite-link-ip", 60, 3600)  # opening or accepting a link
 UPLOADS_PER_USER = Limit("upload-user", 30, 3600)  # guide 12.6
 LLM_SUGGEST_PER_USER = Limit("llm-suggest-user", 60, 3600)  # guide 12.6
+# One PDF per record: a full-text stage of a few hundred records is attached in an hour.
+# Search exports and ZIPs of PDFs count against UPLOADS_PER_USER (docs/decisions.md).
+PDF_UPLOADS_PER_USER = Limit("pdf-upload-user", 300, 3600)
+# Looking up and fetching open-access copies asks Unpaywall, PMC and publishers' servers.
+OPEN_ACCESS_PER_USER = Limit("open-access-user", 120, 3600)
 
 # Atomically: drop hits older than the window, then either record this hit or report how
 # long until the oldest one expires. Returns {allowed, retry_after_ms}.

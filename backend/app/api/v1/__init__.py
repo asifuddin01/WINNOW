@@ -7,6 +7,7 @@ from app.api.v1 import (
     auth,
     conflicts,
     dedup,
+    fulltext,
     google,
     health,
     imports,
@@ -33,4 +34,6 @@ api_router.include_router(screening.router)
 api_router.include_router(conflicts.router)
 api_router.include_router(ranking.router)
 api_router.include_router(llm.router)
+api_router.include_router(fulltext.router)
+api_router.include_router(fulltext.files)
 api_router.include_router(invites.router)
