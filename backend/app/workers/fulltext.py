@@ -272,6 +272,8 @@ async def _matcher(db: AsyncSession, project_id: uuid.UUID) -> Callable[[str], O
             Record.pmcid,
             Record.authors,
             Record.year,
+            Record.url,
+            Record.journal,
             Record.ta_final,
         ).where(Record.project_id == project_id, Record.is_duplicate.is_(False))
     )
@@ -286,6 +288,8 @@ async def _matcher(db: AsyncSession, project_id: uuid.UUID) -> Callable[[str], O
             pmcid=row.pmcid,
             first_author=row.authors[0] if row.authors else None,
             year=row.year,
+            url=row.url,
+            journal=row.journal,
         )
         everyone.append(keys)
         if row.ta_final is TitleAbstractStatus.INCLUDED:

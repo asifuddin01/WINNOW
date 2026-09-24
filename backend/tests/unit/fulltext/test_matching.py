@@ -3,7 +3,7 @@ year, then title."""
 
 import uuid
 
-from app.fulltext.matching import Matcher, RecordKeys, fold, surname
+from app.fulltext.matching import Matcher, RecordKeys, arxiv_id, fold, surname
 
 A, B, C, D, E = (uuid.UUID(int=n) for n in range(1, 6))
 RECORDS = [
@@ -91,3 +91,24 @@ def test_helpers() -> None:
     assert fold("Müller\u2013Lüdenscheidt, J.") == "muller ludenscheidt j"
     assert surname("Müller, Jörg") == "muller"
     assert surname("Jane A Smith") == "smith"
+
+
+def test_arxiv_records_without_a_doi_match_by_the_id_in_their_link() -> None:
+    """arXiv's BibTeX export has no DOI; arxiv.org names downloads by id and version."""
+    preprint = RecordKeys(
+        uuid.UUID(int=9),
+        "3D Kidneys and Kidney Tumor Semantic Segmentation using Boundary-Aware Networks",
+        None,
+        None,
+        None,
+        "Andriy Myronenko",
+        2019,
+        url="http://arxiv.org/abs/1909.06684v1",
+        journal="arXiv preprint arXiv:1909.06684",
+    )
+    outcome = Matcher([*RECORDS, preprint]).match("1909.06684v1.pdf")
+    assert outcome.match is not None
+    assert (outcome.match.record_id, outcome.match.by) == (preprint.id, "arxiv")
+    assert arxiv_id(None, "https://arxiv.org/pdf/2301.00001") == "2301.00001"
+    assert arxiv_id("arXiv preprint arXiv:1909.06684") == "1909.06684"
+    assert arxiv_id("10.1016/j.kint.2020.01.001", None) is None

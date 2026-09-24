@@ -36,6 +36,24 @@ class RecordKeys:
     pmcid: str | None
     first_author: str | None
     year: int | None
+    # arXiv's own exports carry no DOI: the id is in the link or the journal field.
+    url: str | None = None
+    journal: str | None = None
+
+
+ARXIV_IN_RECORD = re.compile(
+    r"(?:arxiv[.:]\s*|arxiv\.org/(?:abs|pdf)/)(\d{4}\.\d{4,5})", re.IGNORECASE
+)
+
+
+def arxiv_id(*fields: str | None) -> str | None:
+    """ "10.48550/arXiv.2105.01234", "http://arxiv.org/abs/2105.01234v1" or "arXiv preprint
+    arXiv:2105.01234" → "2105.01234"."""
+    for text in fields:
+        found = ARXIV_IN_RECORD.search(text or "")
+        if found:
+            return found.group(1)
+    return None
 
 
 @dataclass(frozen=True)
@@ -81,11 +99,10 @@ class Matcher:
         self._titles: dict[uuid.UUID, str] = {}
         for record in self._records.values():
             if record.doi:
-                key = alnum(record.doi)
-                self._dois[key] = record.id
-                arxiv = re.search(r"arxiv\.(\d{4}\.\d{4,5})", record.doi.lower())
-                if arxiv:
-                    self._arxiv[arxiv.group(1)] = record.id
+                self._dois[alnum(record.doi)] = record.id
+            arxiv = arxiv_id(record.doi, record.url, record.journal)
+            if arxiv:
+                self._arxiv[arxiv] = record.id
             if record.pmid:
                 self._pmids[record.pmid.strip()] = record.id
             if record.pmcid:
