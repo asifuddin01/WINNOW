@@ -523,16 +523,7 @@ class FulltextService:
         batch = await self._batch(access, batch_id)
         if batch.status is not BatchStatus.READY:
             raise ConflictError("This ZIP is not ready to confirm.")
-        chosen_records = {
-            record.id: record
-            for record in await self._db.scalars(
-                select(Record).where(
-                    Record.id.in_(set(choices.values())),
-                    Record.project_id == access.project_id,
-                    Record.is_duplicate.is_(False),
-                )
-            )
-        }
+        chosen_records = await self._kept_records(access, set(choices.values()))
         attached: list[uuid.UUID] = []
         skipped = 0
         used: set[uuid.UUID] = set()
@@ -782,6 +773,36 @@ class FulltextService:
         if full_text and record.ta_final is not TitleAbstractStatus.INCLUDED:
             raise ConflictError("This record has not reached full-text screening.")
         return record
+
+    async def _kept_records(
+        self, access: ProjectAccess, record_ids: set[uuid.UUID]
+    ) -> dict[uuid.UUID, Record]:
+        """The records chosen, by id; one merged into another since it was chosen stands
+        for the record it was merged into."""
+        rows = list(
+            await self._db.scalars(
+                select(Record).where(
+                    Record.id.in_(record_ids), Record.project_id == access.project_id
+                )
+            )
+        )
+        kept_ids = {row.duplicate_of for row in rows if row.is_duplicate and row.duplicate_of}
+        kept = {
+            row.id: row
+            for row in await self._db.scalars(
+                select(Record).where(
+                    Record.id.in_(kept_ids),
+                    Record.project_id == access.project_id,
+                    Record.is_duplicate.is_(False),
+                )
+            )
+        }
+        chosen: dict[uuid.UUID, Record] = {}
+        for row in rows:
+            target = kept.get(row.duplicate_of) if row.is_duplicate and row.duplicate_of else row
+            if target is not None and not target.is_duplicate:
+                chosen[row.id] = target
+        return chosen
 
     async def _current(self, record_id: uuid.UUID) -> Fulltext | None:
         row: Fulltext | None = await self._db.scalar(

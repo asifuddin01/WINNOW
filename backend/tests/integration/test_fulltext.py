@@ -38,18 +38,23 @@ VIEWER = "linus@example.org"
 
 
 class FakeQueue:
-    """Stands in for arq: records what would have been enqueued."""
+    """Stands in for arq: records what would have been enqueued, and passes anything else
+    (the ranking nudge's counters) to the real Redis."""
 
-    def __init__(self) -> None:
+    def __init__(self, real: Any = None) -> None:
         self.jobs: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = []
+        self._real = real
 
     async def enqueue_job(self, name: str, *args: Any, **kwargs: Any) -> None:
         self.jobs.append((name, args, kwargs))
 
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._real, name)
+
 
 @pytest.fixture
 def queue(db_app: FastAPI) -> FakeQueue:
-    fake = FakeQueue()
+    fake = FakeQueue(db_app.state.queue)
     db_app.state.queue = fake
     return fake
 
@@ -720,3 +725,112 @@ async def test_viewers_read_but_do_not_change(
         assert (await get(viewer, path)).status_code == 200
         body = {"page": 1, "rects": [[0, 0, 1, 1]]}
         assert (await api(viewer, "POST", path, body)).status_code == 403
+
+
+async def merge(db: AsyncSession, pid: str, kept: uuid.UUID, copies: list[uuid.UUID]) -> None:
+    from app.models import DupCluster, DupClusterMember
+    from app.services.dedup import merge_cluster
+
+    cluster = DupCluster(project_id=uuid.UUID(pid), score=0.95)
+    db.add(cluster)
+    await db.flush()
+    db.add_all(
+        [DupClusterMember(cluster_id=cluster.id, record_id=kept, is_primary=True)]
+        + [DupClusterMember(cluster_id=cluster.id, record_id=copy) for copy in copies]
+    )
+    await db.flush()
+    await merge_cluster(db, cluster, kept, resolved_by=None)
+    await db.commit()
+
+
+async def test_a_pdf_follows_its_record_when_duplicates_are_merged(
+    db_app: FastAPI, db: AsyncSession, mailer: MemoryMailer, queue: FakeQueue, scanner: list[bytes]
+) -> None:
+    """Merging moves decisions, labels and notes to the record kept (guide 8.4); the PDF
+    and its highlights come too, unless the kept record has its own."""
+    async with team(db_app, db, mailer, records=4) as t:
+        kept, copy, other_kept, other_copy = t.records
+        await to_full_text(db, t.records)
+        pdf = (await upload(t.reviewer, t.pid, copy, tiny_pdf("the copy's"))).json()
+        await scan(db_app, pdf["id"], queue)
+        note = {"page": 1, "rects": [[0.1, 0.1, 0.5, 0.02]], "comment": "Primary outcome"}
+        await post(t.reviewer, f"/projects/{t.pid}/fulltext/{pdf['id']}/annotations", note)
+        await merge(db, t.pid, kept, [copy])
+
+        moved = (await get(t.reviewer, f"/projects/{t.pid}/records/{kept}/fulltext")).json()
+        assert moved["fulltext"]["id"] == pdf["id"]
+        path = f"/projects/{t.pid}/fulltext/{pdf['id']}/annotations"
+        assert [a["comment"] for a in (await get(t.reviewer, path)).json()] == ["Primary outcome"]
+        assert (await open_pdf(t.reviewer, t.pid, kept)).content == tiny_pdf("the copy's")
+
+        # The kept record's own PDF stands; a "not retrievable" mark on it gives way to
+        # a PDF from the copy.
+        own = (await upload(t.reviewer, t.pid, other_kept, tiny_pdf("its own"))).json()
+        theirs = (await upload(t.reviewer, t.pid, other_copy, tiny_pdf("the copy's"))).json()
+        await merge(db, t.pid, other_kept, [other_copy])
+        state = (await get(t.owner, f"/projects/{t.pid}/records/{other_kept}/fulltext")).json()
+        assert state["fulltext"]["id"] == own["id"]
+        left = await db.get(Fulltext, uuid.UUID(theirs["id"]))
+        assert left is not None
+        await db.refresh(left)
+        assert left.record_id == other_copy
+
+
+async def test_a_mark_and_a_pdf_meet_in_a_merge(
+    db_app: FastAPI, db: AsyncSession, mailer: MemoryMailer, queue: FakeQueue, scanner: list[bytes]
+) -> None:
+    async with team(db_app, db, mailer, records=4) as t:
+        kept, copy, bare, marked = t.records
+        # Through decisions, as records really reach full text: a merge recomputes both
+        # stages from them.
+        await settings(t.owner, t.pid, reviewers_per_record_ta=1)
+        for record_id in t.records:
+            assert (await decide(t.reviewer, t.pid, record_id, "include")).status_code == 200
+        await post(t.reviewer, f"/projects/{t.pid}/records/{kept}/fulltext/not-retrievable", {})
+        pdf = (await upload(t.reviewer, t.pid, copy, tiny_pdf())).json()
+        await merge(db, t.pid, kept, [copy])
+        state = (await get(t.owner, f"/projects/{t.pid}/records/{kept}/fulltext")).json()
+        assert state["fulltext"]["id"] == pdf["id"]
+        assert state["not_retrievable"] is False
+
+        await post(t.reviewer, f"/projects/{t.pid}/records/{marked}/fulltext/not-retrievable", {})
+        await merge(db, t.pid, bare, [marked])
+        state = (await get(t.owner, f"/projects/{t.pid}/records/{bare}/fulltext")).json()
+        assert state == {"fulltext": None, "not_retrievable": True, "not_retrievable_note": None}
+        record = await db.get(Record, bare)
+        assert record is not None
+        await db.refresh(record)
+        assert str(record.ft_final) == FullTextStatus.NOT_RETRIEVABLE
+
+
+async def test_a_zip_entry_for_a_record_merged_since_goes_to_the_record_kept(
+    db_app: FastAPI, db: AsyncSession, mailer: MemoryMailer, queue: FakeQueue, scanner: list[bytes]
+) -> None:
+    """Deduplication can finish between matching a ZIP and confirming it."""
+    async with team(db_app, db, mailer, records=2) as t:
+        kept, copy = t.records
+        await db.execute(update(Record).where(Record.id == copy).values(doi="10.1000/copy"))
+        await db.commit()
+        await to_full_text(db, t.records)
+        batch = (
+            await upload_zip(t.owner, t.pid, make_zip({"10.1000_copy.pdf": tiny_pdf()}))
+        ).json()
+        await run_batch(
+            sessionmaker=db_app.state.sessionmaker,
+            redis=db_app.state.redis,
+            storage=db_app.state.storage,
+            settings=db_app.state.settings,
+            batch_id=uuid.UUID(batch["id"]),
+        )
+        ready = (await get(t.owner, f"/projects/{t.pid}/fulltext/bulk/{batch['id']}")).json()
+        assert ready["entries"][0]["match"]["record_id"] == str(copy)
+        await merge(db, t.pid, kept, [copy])
+
+        confirmed = await post(
+            t.owner,
+            f"/projects/{t.pid}/fulltext/bulk/{batch['id']}/confirm",
+            {"choices": {"0": str(copy)}},
+        )
+        assert confirmed.json() == {"attached": 1, "skipped": 0}
+        state = (await get(t.owner, f"/projects/{t.pid}/records/{kept}/fulltext")).json()
+        assert state["fulltext"]["source"] == "zip"

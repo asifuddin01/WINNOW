@@ -20,12 +20,15 @@ from app.models import (
     Decision,
     DupCluster,
     DupClusterMember,
+    Fulltext,
     ImportBatch,
     Note,
     Project,
     Record,
     RecordLabel,
+    ScanStatus,
     ScreeningStage,
+    UnretrievableRecord,
 )
 from app.schemas.dedup import (
     ClusterMember,
@@ -194,9 +197,10 @@ async def merge_clusters(
 async def migrate_work(session: AsyncSession, merged: list[tuple[uuid.UUID, uuid.UUID]]) -> None:
     """Move what people did to the merged copies onto the record that was kept (guide 8.4).
 
-    `merged` is (the copy, the record kept). Decisions, labels, notes and resolutions all
-    follow; where the kept record already has a person's decision (or a resolution) for a
-    stage, it stands and the copy's is left behind on the copy. Then the kept records'
+    `merged` is (the copy, the record kept). Decisions, labels, notes, resolutions and the
+    full text (a PDF with its highlights, or a "not retrievable" mark) all follow; where
+    the kept record already has a person's decision (or a resolution) for a stage, or a
+    PDF, it stands and the copy's is left behind on the copy. Then the kept records'
     statuses are recomputed. Right after an import there is nothing to move, and one query
     says so.
     """
@@ -209,6 +213,10 @@ async def migrate_work(session: AsyncSession, merged: list[tuple[uuid.UUID, uuid
             | select(Note.id).where(Note.record_id.in_(copies)).exists()
             | select(RecordLabel.record_id).where(RecordLabel.record_id.in_(copies)).exists()
             | select(ConflictResolution.id).where(ConflictResolution.record_id.in_(copies)).exists()
+            | select(Fulltext.id).where(Fulltext.record_id.in_(copies)).exists()
+            | select(UnretrievableRecord.record_id)
+            .where(UnretrievableRecord.record_id.in_(copies))
+            .exists()
         )
     )
     if not touched:
@@ -220,6 +228,7 @@ async def migrate_work(session: AsyncSession, merged: list[tuple[uuid.UUID, uuid
     for kept, sources in by_kept.items():
         await _move_decisions(session, sources, kept)
         await _move_resolutions(session, sources, kept)
+        await _move_fulltext(session, sources, kept)
         await session.execute(
             update(Note)
             .where(Note.record_id.in_(sources))
@@ -272,6 +281,50 @@ async def _move_decisions(session: AsyncSession, sources: list[uuid.UUID], kept:
         .values(record_id=kept)
         .execution_options(synchronize_session=None)
     )
+
+
+async def _move_fulltext(session: AsyncSession, sources: list[uuid.UUID], kept: uuid.UUID) -> None:
+    """A copy's PDF (a readable one first, then the newest), where the kept record has
+    none; failing that, a copy's "not retrievable" mark."""
+    if await session.scalar(select(Fulltext.id).where(Fulltext.record_id == kept)):
+        return
+    best = await session.scalar(
+        select(Fulltext.id)
+        .where(Fulltext.record_id.in_(sources))
+        .order_by(
+            Fulltext.scan_status.in_([ScanStatus.CLEAN, ScanStatus.SKIPPED]).desc(),
+            Fulltext.created_at.desc(),
+        )
+        .limit(1)
+    )
+    if best is not None:
+        await session.execute(
+            update(Fulltext)
+            .where(Fulltext.id == best)
+            .values(record_id=kept)
+            .execution_options(synchronize_session=None)
+        )
+        # A PDF found after all outweighs "not retrievable".
+        await session.execute(
+            delete(UnretrievableRecord).where(UnretrievableRecord.record_id == kept)
+        )
+        return
+    if await session.scalar(
+        select(UnretrievableRecord.record_id).where(UnretrievableRecord.record_id == kept)
+    ):
+        return
+    mark = await session.scalar(
+        select(UnretrievableRecord.record_id)
+        .where(UnretrievableRecord.record_id.in_(sources))
+        .limit(1)
+    )
+    if mark is not None:
+        await session.execute(
+            update(UnretrievableRecord)
+            .where(UnretrievableRecord.record_id == mark)
+            .values(record_id=kept)
+            .execution_options(synchronize_session=None)
+        )
 
 
 async def _move_resolutions(
