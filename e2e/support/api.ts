@@ -26,6 +26,27 @@ export async function apiPost(
   return response.status() === 204 ? null : await response.json();
 }
 
+/** Any other write (PATCH, PUT, DELETE), the same way. */
+export async function apiSend(
+  request: APIRequestContext,
+  baseURL: string,
+  method: "PATCH" | "PUT" | "DELETE",
+  path: string,
+  data?: unknown,
+): Promise<unknown> {
+  const { csrf_token } = (await (await request.get("/api/v1/auth/csrf")).json()) as {
+    csrf_token: string;
+  };
+  const response = await request.fetch(path, {
+    method,
+    data,
+    headers: { "X-CSRF-Token": csrf_token, Origin: baseURL },
+  });
+  if (!response.ok())
+    throw new Error(`${method} ${path} answered ${response.status()}: ${await response.text()}`);
+  return response.status() === 204 ? null : await response.json();
+}
+
 /** A review owned by whoever `request` is signed in as; returns its id. */
 export async function createProject(
   request: APIRequestContext,
