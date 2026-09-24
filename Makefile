@@ -4,6 +4,10 @@
 COMPOSE ?= docker compose
 # The full stack scans uploads with ClamAV; `make local` leaves it out (guide 16.2).
 SCAN := --profile scan
+# The web container keeps the image's node_modules in an anonymous volume. Removing the
+# container with that volume before each start refreshes node_modules after a dependency
+# change; --renew-anon-volumes did the same but left every old volume behind (~200 MB each).
+FRESH_WEB = $(COMPOSE) rm --force --stop --volumes web
 # The pnpm pinned in e2e/package.json, run through npx (works without corepack).
 PNPM ?= npx --yes $(shell node -p "require('./e2e/package.json').packageManager" 2>/dev/null || echo pnpm)
 API := $(COMPOSE) run --rm api
@@ -27,15 +31,18 @@ env: .env ## Create .env from .env.example with fresh random keys (never overwri
 	@echo "Created .env with a random SECRET_KEY and ENCRYPTION_KEY."
 
 dev: .env ## Start the whole stack in the foreground (http://localhost:8080)
-	$(COMPOSE) $(SCAN) up --build --renew-anon-volumes
+	$(FRESH_WEB)
+	$(COMPOSE) $(SCAN) up --build
 
 up: .env ## Start the stack in the background and wait until it is healthy
-	$(COMPOSE) $(SCAN) up --build --renew-anon-volumes --detach --wait
+	$(FRESH_WEB)
+	$(COMPOSE) $(SCAN) up --build --detach --wait
 	@echo "Winnow is running at http://localhost:$${WINNOW_PORT:-8080}"
 
 local: .env ## Lightweight stack without ClamAV, for low-memory laptops: uploads stay unscanned
 	@echo "Starting without ClamAV: uploaded PDFs will not be scanned for viruses."
-	CLAMAV_HOST= $(COMPOSE) up --build --renew-anon-volumes --detach --wait
+	$(FRESH_WEB)
+	CLAMAV_HOST= $(COMPOSE) up --build --detach --wait
 	@echo "Winnow is running at http://localhost:$${WINNOW_PORT:-8080} (no virus scanning)"
 
 down: ## Stop the stack (data volumes are kept)
