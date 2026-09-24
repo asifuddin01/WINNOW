@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 
@@ -258,6 +258,198 @@ describe("full-text screening", () => {
   });
 });
 
+describe("a record's PDF, read and worked on", () => {
+  function readable(extra: Record<string, unknown> = {}) {
+    return routes({
+      [`GET ${base}/screening/queue`]: {
+        items: [item("r1", "Kidney stones on CT", { fulltext: pdf("r1", "clean") })],
+      },
+      [`GET ${base}/records/r1/fulltext`]: { fulltext: pdf("r1", "clean"), not_retrievable: false },
+      [`GET ${base}/records/r1/fulltext/url`]: (request: Request) => ({
+        url: new URL(request.url).searchParams.get("download")
+          ? "/api/v1/files/download"
+          : "/api/v1/files/tok123",
+        expires_in: 300,
+      }),
+      "GET /api/v1/files/tok123": () => new Response(new Uint8Array([37, 80, 68, 70, 45])),
+      [`GET ${base}/fulltext/f-r1/annotations`]: [
+        {
+          id: "a1",
+          page: 2,
+          rects: [[0.1, 0.2, 0.5, 0.02]],
+          color: "green",
+          quote: "sensitivity 0.94",
+          comment: null,
+          author: USER.name,
+          mine: true,
+          created_at: "2026-09-24T10:00:00Z",
+        },
+        {
+          id: "a2",
+          page: 3,
+          rects: [[0.1, 0.2, 0.5, 0.02]],
+          color: "pink",
+          quote: "specificity",
+          comment: "Check the reference standard",
+          author: "Grace Hopper",
+          mine: false,
+          created_at: "2026-09-24T10:00:00Z",
+        },
+      ],
+      [`PATCH ${base}/fulltext/f-r1/annotations/a1`]: async (request: Request) => ({
+        id: "a1",
+        page: 2,
+        rects: [[0.1, 0.2, 0.5, 0.02]],
+        color: "green",
+        quote: "sensitivity 0.94",
+        comment: ((await request.clone().json()) as { comment: string }).comment,
+        author: USER.name,
+        mine: true,
+        created_at: "2026-09-24T10:00:00Z",
+      }),
+      [`DELETE ${base}/fulltext/f-r1/annotations/a1`]: () => new Response(null, { status: 204 }),
+      ...extra,
+    });
+  }
+
+  test("highlights are listed; my comments can be written and my highlights deleted", async () => {
+    const server = mockApi(readable());
+    const user = userEvent.setup();
+    renderApp(page);
+
+    const viewer = await screen.findByRole("document", { name: /Kidney stones on CT/ });
+    await user.click(within(viewer).getByRole("button", { name: /Highlights.*\(2\)/ }));
+    const sheet = await screen.findByRole("dialog", { name: "Highlights" });
+    expect(within(sheet).getByText("Grace Hopper", { exact: false })).toBeVisible();
+    expect(within(sheet).getByText("Check the reference standard")).toBeVisible();
+
+    await user.type(within(sheet).getByLabelText("Comment"), "Primary outcome");
+    await user.click(within(sheet).getByRole("button", { name: "Save comment" }));
+    await waitFor(() => {
+      expect(server.calls(`PATCH ${base}/fulltext/f-r1/annotations/a1`)).toHaveLength(1);
+    });
+    const [saved] = server.calls(`PATCH ${base}/fulltext/f-r1/annotations/a1`);
+    expect(await saved?.json()).toEqual({ comment: "Primary outcome" });
+
+    await user.click(within(sheet).getByRole("button", { name: /page 2/ }));
+    await user.click(within(sheet).getByRole("button", { name: "Delete" }));
+    await waitFor(() => {
+      expect(within(sheet).queryByText("sensitivity 0.94")).not.toBeInTheDocument();
+    });
+  });
+
+  test("download follows a link that answers as an attachment; replace uploads anew", async () => {
+    const clicked: string[] = [];
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      clicked.push(this.href);
+    });
+    const server = mockApi(
+      readable({ [`POST ${base}/records/r1/fulltext`]: pdf("r1", "pending") }),
+    );
+    const user = userEvent.setup();
+    renderApp(page);
+
+    const viewer = await screen.findByRole("document", { name: /Kidney stones on CT/ });
+    await user.click(within(viewer).getByRole("button", { name: "Download the PDF" }));
+    await waitFor(() => {
+      expect(clicked).toEqual([`${window.location.origin}/api/v1/files/download`]);
+    });
+    click.mockRestore();
+
+    const input = viewer.querySelector<HTMLInputElement>('input[type="file"]');
+    if (!input) throw new Error("no replace input");
+    await user.upload(input, new File(["%PDF-1.4"], "better.pdf", { type: "application/pdf" }));
+    await waitFor(() => {
+      expect(server.calls(`POST ${base}/records/r1/fulltext`)).toHaveLength(1);
+    });
+  });
+
+  test("a record marked not retrievable can be put back", async () => {
+    let marked = true;
+    mockApi(
+      routes({
+        [`GET ${base}/fulltext/records`]: [{ ...RECORD_ROW, not_retrievable: true }],
+        [`GET ${base}/records/r3/fulltext`]: () => ({
+          fulltext: null,
+          not_retrievable: marked,
+          not_retrievable_note: marked ? "Library has no access" : null,
+        }),
+        [`DELETE ${base}/records/r3/fulltext/not-retrievable`]: () => {
+          marked = false;
+          return { fulltext: null, not_retrievable: false, not_retrievable_note: null };
+        },
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp(`${page}?view=pdfs`);
+
+    await user.click(await screen.findByRole("button", { name: /^Ureteric calculi/ }));
+    const sheet = await screen.findByRole("dialog", { name: "Ureteric calculi" });
+    expect(within(sheet).getByText("Library has no access")).toBeVisible();
+    await user.click(within(sheet).getByRole("button", { name: "It was found after all" }));
+    expect(await within(sheet).findByText(/Drop the PDF here/)).toBeVisible();
+  });
+
+  test("a scan that could not run says so; a viewer sees that no PDF was added", async () => {
+    mockApi(
+      routes({
+        [`GET ${base}/fulltext/records`]: [RECORD_ROW],
+        [`GET ${base}/records/r3/fulltext`]: {
+          fulltext: pdf("r3", "error"),
+          not_retrievable: false,
+        },
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp(`${page}?view=pdfs`);
+    await user.click(await screen.findByRole("button", { name: /^Ureteric calculi/ }));
+    expect(await screen.findByText(/could not check Okafor 2020.pdf/)).toBeVisible();
+  });
+
+  test("a PDF dropped onto its record in the list is uploaded to that record", async () => {
+    const server = mockApi(
+      routes({
+        [`GET ${base}/fulltext/records`]: [RECORD_ROW],
+        [`POST ${base}/records/r3/fulltext`]: pdf("r3", "pending"),
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp(`${page}?view=pdfs`);
+    const list = await screen.findByRole("region", { name: "List of records at full text" });
+    await user.upload(
+      within(list).getByLabelText(/Add the PDF for Ureteric calculi/),
+      new File(["%PDF-1.4"], "calculi.pdf", { type: "application/pdf" }),
+    );
+    await waitFor(() => {
+      expect(server.calls(`POST ${base}/records/r3/fulltext`)).toHaveLength(1);
+    });
+
+    const row = within(list).getByRole("button", { name: /^Ureteric calculi/ }).parentElement;
+    if (!row) throw new Error("no row");
+    const file = new File(["%PDF-1.4"], "again.pdf", { type: "application/pdf" });
+    fireEvent.dragOver(row, { dataTransfer: { files: [file] } });
+    fireEvent.drop(row, { dataTransfer: { files: [file] } });
+    await waitFor(() => {
+      expect(server.calls(`POST ${base}/records/r3/fulltext`)).toHaveLength(2);
+    });
+  });
+});
+
+const RECORD_ROW = {
+  id: "r3",
+  title: "Ureteric calculi",
+  first_author: "Kowalski, Jan",
+  year: 2022,
+  journal: null,
+  doi: null,
+  pmid: null,
+  pmcid: null,
+  fulltext: null,
+  not_retrievable: false,
+};
+
 const RECORDS = [
   {
     id: "r1",
@@ -406,6 +598,47 @@ describe("the PDFs view", () => {
     });
     const [sent] = server.calls(`POST ${base}/fulltext/bulk/b1/confirm`);
     expect(await sent?.json()).toEqual({ choices: { "0": "r3" }, replace: false });
+  });
+
+  test("a ZIP the worker refused says why; a matched one can be discarded", async () => {
+    const batch = (id: string, status: string) => ({
+      id,
+      filename: "papers.zip",
+      size_bytes: 100,
+      status,
+      problem: status === "rejected" ? "paper.pdf unpacks to more than it says it does" : null,
+      created_at: "2026-09-24T10:00:00Z",
+      entries:
+        status === "rejected"
+          ? []
+          : [{ index: 0, name: "x.pdf", size: 10, skip: null, match: null, candidates: [] }],
+    });
+    const uploads = ["b2", "b3"];
+    const server = mockApi(
+      routes({
+        [`GET ${base}/fulltext/records`]: RECORDS,
+        [`POST ${base}/fulltext/bulk`]: () => batch(uploads.shift() ?? "b9", "checking"),
+        [`GET ${base}/fulltext/bulk/b2`]: batch("b2", "rejected"),
+        [`GET ${base}/fulltext/bulk/b3`]: batch("b3", "ready"),
+        [`DELETE ${base}/fulltext/bulk/b3`]: () => new Response(null, { status: 204 }),
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp(`${page}?view=pdfs`);
+
+    const zip = () => new File(["PK"], "papers.zip", { type: "application/zip" });
+    await user.upload(await screen.findByLabelText("choose one"), zip());
+    expect(await screen.findByText(/unpacks to more than it says/)).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Upload another" }));
+
+    await user.upload(await screen.findByLabelText("choose one"), zip());
+    expect(await screen.findByText("No match from its name")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Attach 0 PDFs" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Discard the ZIP" }));
+    await waitFor(() => {
+      expect(server.calls(`DELETE ${base}/fulltext/bulk/b3`)).toHaveLength(1);
+    });
+    expect(await screen.findByLabelText("choose one")).toBeInTheDocument();
   });
 
   test("a viewer sees the PDFs, not the screen, and cannot add any", async () => {
