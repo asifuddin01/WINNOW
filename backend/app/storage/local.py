@@ -58,3 +58,22 @@ class LocalStorage:
 
     async def delete(self, key: str) -> None:
         await asyncio.to_thread(self._path(key).unlink, True)
+
+    async def read_bytes(self, key: str) -> bytes:
+        return await asyncio.to_thread(self._path(key).read_bytes)
+
+    async def iter_bytes(self, key: str) -> AsyncIterator[bytes]:
+        handle = await asyncio.to_thread(self._path(key).open, "rb")
+        try:
+            while chunk := await asyncio.to_thread(handle.read, CHUNK):
+                yield chunk
+        finally:
+            await asyncio.to_thread(handle.close)
+
+    async def size(self, key: str) -> int:
+        return (await asyncio.to_thread(self._path(key).stat)).st_size
+
+    async def move(self, source: str, target: str) -> None:
+        destination = self._path(target)
+        await asyncio.to_thread(destination.parent.mkdir, parents=True, exist_ok=True)
+        await asyncio.to_thread(self._path(source).replace, destination)

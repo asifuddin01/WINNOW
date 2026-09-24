@@ -32,6 +32,18 @@ class Storage(Protocol):
     async def delete(self, key: str) -> None:
         """Remove the file; missing files are not an error."""
 
+    async def read_bytes(self, key: str) -> bytes:
+        """The whole file, for files small enough to hold (a PDF, a ZIP's entry)."""
+
+    def iter_bytes(self, key: str) -> AsyncIterator[bytes]:
+        """The file in chunks, for streaming it to a scanner or a browser."""
+
+    async def size(self, key: str) -> int:
+        """The file's size in bytes."""
+
+    async def move(self, source: str, target: str) -> None:
+        """Give the file a new key (into quarantine, or from a ZIP into place)."""
+
 
 class TooLargeError(Exception):
     """The upload went past the size the instance allows."""
