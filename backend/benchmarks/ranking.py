@@ -105,6 +105,7 @@ def simulate(
     random_cursor = 0
     reached: int | None = None
     stop: tuple[int, float, int, tuple[float, int, int]] | None = None
+    ranked_from: int | None = None
     found = 0
 
     def take_random() -> str:
@@ -135,8 +136,10 @@ def simulate(
         since_training += 1
         if reached is None and found >= target:
             reached = len(order)
+        if ranked_from is None and trained:
+            ranked_from = len(order) - 1
         if stop is None and trained and excluded_in_a_row(order) >= STOP_AFTER:
-            estimate = estimate_remaining(order, len(unseen))
+            estimate = estimate_remaining(order, len(unseen), ranked_from=ranked_from or 0)
             stop = (
                 len(order),
                 found / includes,

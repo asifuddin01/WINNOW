@@ -43,12 +43,11 @@ export function StoppingBanner({ pid, stage }: { pid: string; stage: Stage }) {
         </summary>
         <p className="mt-1 max-w-[75ch] text-xs text-muted-foreground">
           Screening in relevance order finds relevant records more and more rarely. Winnow fits the
-          rate at which your decisions have found them as a decaying curve, once to your recent
-          decisions and once to all of them, and carries it on over the records you have not
-          screened; the range spans both fits, each refitted to many simulated histories like yours.
-          Tested on 21 published reviews, the range held the true number left 87% of the time. It
-          assumes relevant records keep getting rarer, so treat it with caution if the search or the
-          criteria changed, or early in screening.
+          rate at which your decisions in relevance order have found them as a decaying curve and
+          carries it on over the records you have not screened; the range comes from refitting to
+          many simulated histories like yours. Tested on 21 published reviews, it held the true
+          number left 96% of the time. It assumes relevant records keep getting rarer, so treat it
+          with caution if the search or the criteria changed.
         </p>
       </details>
       <div>

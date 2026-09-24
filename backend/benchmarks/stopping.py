@@ -27,16 +27,20 @@ def main(path: Path) -> None:
     fired = [(name, records, run) for name, records, run in runs if run["stop_fired_at"]]
     inside = short = 0
     widths = []
+    errors = []
     recalls = []
     for _, records, run in fired:
         screened = run["stop_fired_at"]
         found = set(run["curve"])
         history = [position in found for position in range(1, screened + 1)]
-        estimate = estimate_remaining(history, records - screened)
+        # Ranking began after the fifth include (guide 8.10's first model).
+        ranked_from = run["curve"][4] if len(run["curve"]) >= 5 else 0
+        estimate = estimate_remaining(history, records - screened, ranked_from=ranked_from)
         truth = run["remaining_at_stop"]
         inside += estimate.low <= truth <= estimate.high
         short += truth > estimate.high
         widths.append(estimate.high - estimate.low)
+        errors.append(abs(estimate.expected - truth))
         recalls.append(run["recall_at_stop"])
     print(f"stopping rule spoke up in {len(fired)} of {len(runs)} runs")
     print(
@@ -47,6 +51,7 @@ def main(path: Path) -> None:
         f"true number left inside the range: {inside} ({inside / len(fired):.0%}); "
         f"above it: {short} ({short / len(fired):.0%}); median width {statistics.median(widths)}"
     )
+    print(f"headline number off by {statistics.median(errors):.1f} at the median")
 
 
 if __name__ == "__main__":

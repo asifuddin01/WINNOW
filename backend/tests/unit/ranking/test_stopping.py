@@ -35,3 +35,14 @@ def test_a_steady_rate_carries_on_over_what_is_left() -> None:
 def test_the_same_history_gives_the_same_answer() -> None:
     history = [index % 7 == 0 for index in range(400)] + [False] * 200
     assert estimate_remaining(history, 1_000) == estimate_remaining(history, 1_000)
+
+
+def test_the_random_warm_up_before_the_first_model_is_left_out() -> None:
+    """Finds at a steady rate in random order, then ranking finds the rest and dries up:
+    counting the warm-up would read as many still to find."""
+    warm_up = [index % 25 == 0 for index in range(250)]
+    ranked = [index % 3 == 0 for index in range(60)] + [False] * 200
+    everything = estimate_remaining(warm_up + ranked, 400)
+    after = estimate_remaining(warm_up + ranked, 400, ranked_from=250)
+    assert after.expected < 2 < everything.expected
+    assert after.low <= after.expected <= after.high

@@ -206,7 +206,10 @@ class RankingService:
         if cached is not None:
             estimate = Estimate.model_validate_json(cached)
         else:
-            found = await asyncio.to_thread(estimate_remaining, mine, remaining)
+            ranked_from = await self._before_ranking(access, stage)
+            found = await asyncio.to_thread(
+                estimate_remaining, mine, remaining, ranked_from=ranked_from
+            )
             estimate = Estimate(expected=round(found.expected, 1), low=found.low, high=found.high)
             await self._redis.set(key, estimate.model_dump_json(), ex=ESTIMATE_TTL_SECONDS)
         return advice.model_copy(update={"estimate": estimate})
@@ -265,6 +268,30 @@ class RankingService:
             .order_by(Decision.created_at, Decision.id)
         )
         return [bool(found) for found in rows]
+
+    async def _before_ranking(self, access: ProjectAccess, stage: ScreeningStage) -> int:
+        """How many of my decisions came before the stage's first model: those records
+        were served in random order, so they say nothing about the ranking's decay."""
+        first = await self._db.scalar(
+            select(func.min(RankingModel.trained_at)).where(
+                RankingModel.project_id == access.project_id, RankingModel.stage == stage
+            )
+        )
+        if first is None:
+            return 0
+        count = await self._db.scalar(
+            select(func.count())
+            .select_from(Decision)
+            .join(Record, Record.id == Decision.record_id)
+            .where(
+                Decision.project_id == access.project_id,
+                Decision.user_id == access.user.id,
+                Decision.stage == stage,
+                Decision.created_at < first,
+                Record.is_duplicate.is_(False),
+            )
+        )
+        return int(count or 0)
 
     async def _team_sequence(self, project_id: uuid.UUID, stage: ScreeningStage) -> list[bool]:
         """Every record anyone has decided at `stage`, in the order of its first decision,
