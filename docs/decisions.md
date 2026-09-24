@@ -490,3 +490,103 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   setting for later; they would need to be stored per user and checked for clashes.
 - **Swiping works only with touch,** and "maybe" only from the card's handle, so scrolling
   a long abstract cannot decide it. The buttons under the card always do the same thing.
+
+## Phase 6 — Relevance ranking and AI suggestions
+
+### Dependencies
+- **scikit-learn (with NumPy and SciPy) joins the backend,** as the guide's stack names it
+  for 9.2. Codex's modules stay dependency-free; ranking is not one of them, and a
+  pure-Python logistic regression could not score 50,000 records in the budget.
+- **The Anthropic Python SDK joins the backend** for the `anthropic` provider (guide 8.11).
+  The `openai_compatible` provider (a local model, such as Ollama) is plain HTTP through
+  httpx; no OpenAI package is added.
+
+### The model
+- **As guide 9.2 specifies** (TF-IDF title ×2 + abstract + keywords, 1–2 grams, sublinear,
+  min_df 2, 100k features; logistic regression, balanced, C = 1, liblinear). English stop
+  words were tried and did not help on the benchmark; they are not used.
+- **No record is scored by a model that saw its own label.** Records that are labelled
+  but still waiting for someone (a second reviewer, or a third in "all" mode after two
+  agreed) are scored by 5-fold cross-fitting. Otherwise a blinded reviewer would see a
+  record pushed to the top because another reviewer included it — a leak of blind mode
+  through the order (guide 8.6). The out-of-fold scores also give the cross-validated AUC.
+- **The fitted model is not stored.** Every run refits from the decisions; `artifact_key`
+  stays empty, so nothing is ever unpickled.
+- **The TF-IDF corpus is cached in the worker's memory** (two reviews), keyed by the
+  number of records and the newest id, so it is rebuilt when an import lands or is undone.
+  Building it is the slow part (27–50 s at 50,000 records) and happens in the background
+  after an import; the queue is usable meanwhile.
+
+### When it trains
+- **Guide 8.10's rules as written:** the first model once there are 5 includes and 5
+  excludes; then after every 25 new decisions, at most once a minute per review and stage,
+  and on demand. A Redis counter per review and stage counts decisions; the job takes off
+  what it covered, so decisions made during a run still count towards the next.
+- **The 5 + 5 threshold is kept although the benchmark shows its cost.** On sparse reviews
+  the random warm-up is most of the work (Bos 2018: 2,291 records to 95% recall, against
+  699 training from the first include and exclude). Changing a rule the guide states is
+  the owner's decision; it is one constant (`MIN_EACH`).
+- **Imports queue a run,** so new records are ranked in. Anyone who screens may ask for a
+  retrain; it is debounced like the rest.
+
+### Scores live in their own table
+- **`record_scores (record_id, stage, project_id, score)`, not `records.relevance_score`.**
+  Each run rewrites every score in the review; on `records`, each write also rewrote the
+  row's ten indexes (three GIN), 13–17 s of a 19 s run at 50,000 records. The narrow table
+  is replaced in one DELETE and one COPY (under 2 s), then ANALYZEd: with no statistics the
+  planner answered "best first" by sorting the whole review (214 ms instead of 17 ms).
+- It also keeps title/abstract and full-text scores apart, where one column mixed them.
+
+### Relevance order in the queue
+- **One in 20 served records comes from the reviewer's random order** (guide 9.2), counted
+  across everything the reviewer has been served (their decisions plus the records held on
+  screen), so the share is exact and the order stable across refills. The order control's
+  hint says so, which is the disclosure the guide asks for.
+- **With ranking off, "relevance" is the random order.**
+
+### What people are shown
+- **A blinded reviewer sees that a model exists and when it was trained, not the team's
+  counts or AUC,** which are aggregates of other people's decisions (guide 8.6).
+- **The recall curve** shows the viewer's own screening, and the team's (records in order
+  of their first decision) to those allowed to see others. A dashed line shows the same
+  finds at an even pace — what random order gives on average.
+- **The stopping helper** speaks only with ranking on, a model trained and the rule
+  reached, and says it is advice. Its estimate is computed at most once per 25 decisions
+  and cached.
+
+### The stopping estimate
+- **Only the decisions made in relevance order count.** Decisions before the stage's first
+  model were served in random order, at a steady rate of finds; fitting them made a
+  reviewer who had found all 37 includes of a review read "about 25 left" (seen in the
+  headless demo, not in the range-only check). They are left out.
+- **Fitted twice and spanned.** A decaying Poisson rate fitted to the ranked decisions and
+  to their recent half; the range spans both 90% bootstrap ranges, its top widened by two
+  Poisson standard deviations, and the headline is the larger estimate, kept inside the
+  range. Measured on the benchmark: 96% of ranges held the true number left (4% fell
+  short), headline off by 0.8 at the median. Earlier versions: recent half only, 72%
+  (20% short); recent plus whole history, 87% with headlines off by 6 at the median.
+  Methods in `docs/methods.md`; replay with `benchmarks/stopping.py`.
+- **The fit is closed-form plus bisection,** not a general optimiser: the first version
+  took 24–66 s per estimate with its bootstrap; this takes under 0.2 s.
+
+### AI suggestions
+- **The provider is set in the environment** (guide 16.1's `LLM_*`), never stored in the
+  database, and is available only when it has what it needs (a key for Anthropic, a URL
+  and a model for a local one).
+- **Only the owner can turn it on for a review** (guide 8.11); anyone who may change the
+  settings can turn it off, the safer direction.
+- **Claude Opus 5 by default** (`LLM_MODEL` overrides), structured JSON output held to a
+  schema and validated again on the way in, low effort (a short judgement; the reviewer is
+  waiting), and the API's refusal fallback. Out-of-range numbers are clamped and unknown
+  criteria dropped rather than trusted.
+- **Asking is limited to 60 an hour per person** (guide 12.6) and only counts when the
+  provider is actually asked; seeing a stored answer asks nobody.
+- **Suggestions are private to the asker while screening**; owners and admins can export
+  them all (CSV, formula-safe), with each reviewer's own decision beside them.
+- **Only the fact of asking is audited**, not the answer.
+
+### Found along the way
+- **`records.duplicate_of` had no index.** Deleting a record makes PostgreSQL look for the
+  records merged into it, so deleting a 50,000-record review (or undoing a large import)
+  scanned the table once per record: over ten minutes. A partial index on the duplicates
+  makes it 5 s.

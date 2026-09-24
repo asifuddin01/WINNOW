@@ -2,6 +2,53 @@
 
 All notable changes, one section per build phase (guide Section 17).
 
+## Phase 6: Relevance ranking and AI suggestions (2026-09-23)
+
+### Added
+- Relevance ranking (guide 9.2): TF-IDF and logistic regression trained on the review's
+  own decisions, on the server. The first model once the team has 5 includes and 5
+  excludes; after that it retrains in the worker after every 25 decisions (at most once a
+  minute), after imports, and on demand.
+- The queue's relevance order, with one record in twenty taken from random order so the
+  model keeps learning; the order control says so. Scores are cross-fitted, so a record
+  another reviewer has already decided never jumps up because of that decision.
+- On the review's overview: whether a model exists, what it learnt from and its
+  cross-validated AUC (to those allowed to see the team's numbers), "Retrain now", and the
+  recall curve — relevant records found against records screened, yours and the team's,
+  with an even-pace line, a keyboard-readable crosshair and a table view.
+- The stopping-rule helper (guide 8.5): after the review's number of excludes in a row, an
+  estimate of the relevant records still unscreened, with a range and a note on how it is
+  worked out. Advice only.
+- AI suggestions (guide 8.11), off by default: with a provider set up in the environment
+  (Anthropic, or a local OpenAI-compatible model) and the owner's opt-in, a reviewer can
+  ask about one record and see a suggested decision, a verdict on each criterion, a
+  confidence and a rationale. It never decides. Every suggestion is kept with its provider,
+  model and prompt version, and owners and admins can export them for the methods section.
+- A benchmark on 21 public SYNERGY reviews (`backend/benchmarks/`), a speed benchmark at
+  50,000 records, and `docs/methods.md` describing ranking, the stopping estimate and AI
+  suggestions for a review's methods.
+
+### Measured
+- To find 95% of the includes, relevance order needed a median 55% fewer records than
+  random order (range 13–85%; pooled 62% fewer: 21,296 records instead of 55,658). Details
+  in `docs/ranking-benchmark.md`.
+- 50,000 records: a retrain takes 3.9–5.1 s with the review's vocabulary cached (budget
+  10 s); building the vocabulary after an import takes 27–50 s in the background. The next
+  ten records in relevance order: 17 ms median, 24 ms p95.
+- The stopping helper's range held the true number of relevant records left in 96% of the
+  benchmark runs, and its headline number was off by 0.8 records at the median.
+
+### Changed
+- Relevance scores moved from `records.relevance_score` to a `record_scores` table, one
+  row per record and stage: writing them on `records` rewrote ten indexes per record and
+  took 13–17 s at 50,000 records.
+
+### Fixed
+- Deleting a large review, or undoing a large import, scanned the records table once per
+  record (`records.duplicate_of` had no index): over ten minutes at 50,000 records, now 5 s.
+- Codex's agreement statistics, PRISMA counts and risk-of-bias modules are on `main`, with
+  the test annotations the repository-wide `mypy` needed.
+
 ## Phase 5: Title and abstract screening, blind mode, conflicts (2026-09-23)
 
 ### Added

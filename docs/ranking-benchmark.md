@@ -90,9 +90,13 @@ on the same runs:
 
 - the rule spoke up in 90 of 105 runs; recall at that moment was 98.8% at the median and
   at least 95% in 73 of them, but as low as 70.8% (in one run on van Dis 2020);
-- the true number left was inside the helper's range in 78 of 90 cases (87%), above it in
-  5 (6%), below it in 7. Fitting only the recent half of the history, as a first version
-  did, held it in 72% and fell short in 20%; the helper now fits both and spans both.
+- the true number left was inside the helper's range in 86 of 90 cases (96%) and above it
+  in 4; the headline number was off by 0.8 records at the median. Two earlier versions
+  were measured and replaced: fitting only the recent half of the history held the truth in
+  72% of cases and fell short in 20%; adding the whole history raised that to 87%, but the
+  random warm-up before the first model made the headline far too high (a reviewer who had
+  found every include was told "about 25 left"). The helper now fits only the decisions
+  made in relevance order, twice, and widens the top of the range.
 
 It is advice: a long run of excludes is common evidence for stopping, not proof, and the
 screen says so.
