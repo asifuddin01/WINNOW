@@ -525,3 +525,61 @@ Your notes and the Phase 4 hand-back are kept side by side in this file.
 - Wiring: agreement comes in with analytics, PRISMA and risk of bias with Phase 8. Phase 6
   (ranking, guide 9.2) is Claude Code's: it needs scikit-learn, which the guide's stack
   names, and a pure module without it could not score 50,000 records in time.
+
+## 2026-09-25 — Codex: Records relevance display (Phase 6 follow-up)
+
+### What changed
+
+- The Records page Order control now offers **Relevance, highest first**, using the
+  existing `sort=relevance` URL and API support.
+- Each scored record appends `Relevance N%` to its existing authors/year/journal metadata
+  line. The line clamp, row structure and virtualiser height are unchanged.
+- The detail panel shows the rounded score and the muted note: "The ranking model's
+  estimate from this review's decisions." A null score displays neither; zero displays
+  `Relevance 0%`.
+- Added `features/records/relevance.test.tsx` using the existing `mockApi`, `projectRoutes`
+  and `renderApp` helpers. Its 10 tests cover selecting relevance in the URL and GET
+  request, opening a shared relevance URL, inline metadata order, null values, zero, and
+  rounding in both rows and the detail panel.
+
+### Integration and decisions
+
+- No adapter or API change is needed. Both views use the existing title/abstract
+  `relevance_score: number | null` field. No dependencies, generated API types, shared
+  test helpers, backend files or coverage thresholds were changed.
+- Records sorting is strictly descending relevance, with nulls last, in
+  `backend/app/services/records.py`. Guide 9.2's one-in-20 exploration applies to the
+  screening queue and is already explained by its Order control. No exploration claim
+  was added to Records.
+- Worktree: `/Users/mdasifuddin/Web/winnow-records-relevance`; branch:
+  `codex/records-relevance`, based on `origin/main` at `c499c64` when created. Later main
+  changes were not merged or rebased into this branch.
+- The change is limited to the five files authorised for this task. There are no open
+  implementation questions.
+
+### Verification and delivery
+
+Run from the worktree's `frontend/` directory:
+
+- `./node_modules/.bin/eslint src` — passed.
+- `./node_modules/.bin/prettier --check src` — passed.
+- `./node_modules/.bin/tsc -b` — passed.
+- `./node_modules/.bin/vitest run src/features/records/relevance.test.tsx` — 10 passed.
+- `./node_modules/.bin/vitest run --coverage --maxWorkers=1` — all 189 tests in 25 files
+  passed in 123.84 seconds, with the unchanged coverage thresholds satisfied:
+  statements 87.84%, branches 79.76%, functions 85.80%, lines 90.30%.
+
+The requested `./node_modules/.bin/vitest run --coverage` command was run twice with the
+configured four workers. The first run passed 188 tests and timed out waiting for the
+existing project-copy heading; that test passed unchanged in isolation. The second run
+had nine UI wait timeouts across six files, including existing conflicts, settings,
+deduplication, invitation and records tests. Running the same complete suite with one
+worker eliminated those failures. This changes execution concurrency only: no test,
+assertion, wait timeout, coverage threshold or configuration file was relaxed or edited.
+The router also emitted existing warnings about three test files under `src/routes/`
+not exporting `Route`; these did not prevent the successful run.
+
+Feature commit `60aa2c0` (`codex: show relevance scores and sorting on Records`) was pushed
+to `origin/codex/records-relevance`. This dated hand-over follows in a documentation-only
+commit on the same branch. Claude Code can review and integrate the branch; no merge was
+performed here.
