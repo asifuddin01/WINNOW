@@ -108,7 +108,17 @@ async def recompute(
     for record_id, final in resolved:
         resolutions[record_id] = final
 
-    if wanted is None:
+    if stage is ScreeningStage.FULL_TEXT:
+        # Only records included at title and abstract have a full-text status to work out;
+        # the rest stay "not eligible", whatever asked for the recompute.
+        eligible = select(Record.id).where(
+            Record.project_id == project_id,
+            Record.ta_final == TitleAbstractStatus.INCLUDED,
+        )
+        if wanted is not None:
+            eligible = eligible.where(Record.id.in_(wanted))
+        targets = list(await db.scalars(eligible))
+    elif wanted is None:
         targets = list(await db.scalars(select(Record.id).where(Record.project_id == project_id)))
     else:
         targets = wanted

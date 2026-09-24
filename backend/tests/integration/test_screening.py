@@ -356,3 +356,20 @@ async def test_merging_a_duplicate_brings_its_screening_with_it(
         moved = (await get(t.reviewer, f"/projects/{t.pid}/screening/records/{kept}")).json()
         assert moved["my_decision"]["decision"] == "include"
         assert [note["body"] for note in moved["notes"]] == ["Keep this."]
+
+
+async def test_changing_the_full_text_rules_leaves_records_out_of_full_text_alone(
+    db_app: FastAPI, db: AsyncSession, mailer: MemoryMailer
+) -> None:
+    """Recomputing full text touches only records included at title and abstract; the
+    others stay "not eligible" (they used to become "pending")."""
+    async with team(db_app, db, mailer) as t:
+        await settings(t.owner, t.pid, reviewers_per_record_ta=1)
+        included, left_out = t.records[:2]
+        await decide(t.reviewer, t.pid, included, "include")
+        await settings(t.owner, t.pid, reviewers_per_record_ft=1)
+        statuses = {
+            record: (await get(t.owner, f"/projects/{t.pid}/records/{record}")).json()["ft_final"]
+            for record in (included, left_out)
+        }
+        assert statuses == {included: "pending", left_out: "not_eligible"}
