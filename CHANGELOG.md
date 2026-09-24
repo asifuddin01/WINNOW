@@ -2,6 +2,62 @@
 
 All notable changes, one section per build phase (guide Section 17).
 
+## Phase 7: Full texts (2026-09-25)
+
+### Added
+- PDFs for records at full text (guide 8.8): upload one onto its record (drag and drop,
+  or choose a file), or a ZIP of many. Each is stored under a random name and stays
+  closed until ClamAV has scanned it; a PDF the scanner flags is moved to quarantine,
+  the record says so, and the review's owners and admins get an email.
+- PDFs open through five-minute links that belong to whoever asked for them, streamed by
+  the API with `nosniff` and `no-store`: inline for the viewer, as an attachment for
+  downloads.
+- The PDF viewer (pdf.js, loaded only when a PDF opens): search inside the PDF, zoom and
+  fit to width, the review's keywords coloured as in the record, and highlights made by
+  selecting text, with comments. Highlights are blinded like decisions. It works on a
+  360-pixel phone.
+- "Find free full text": Unpaywall by DOI and PubMed Central's open-access bucket by
+  PMCID. The server fetches the copy chosen, https only, to public addresses checked
+  before and after connecting and on every redirect, under a size cap. Off with
+  `OPEN_ACCESS_LOOKUP=false` for offline installs.
+- ZIPs of PDFs: refused before anything is unpacked when they look like a bomb, hold too
+  many files, or name paths outside the folder; then each PDF is matched to a record by
+  its file name (DOI, PMID, PMCID, arXiv id, first author and year, title) for a person to
+  confirm or change.
+- Full-text screening at `/p/:pid/screen/ft`, the record's PDF beside the decision, an
+  exclusion reason required by default, and the next record's PDF fetched ahead. The
+  PDFs view (`?view=pdfs`) counts the stage and lists every record with its PDF's state.
+- "Not retrievable": the record leaves the full-text queue and counts in PRISMA's
+  reports not retrieved; a PDF turning up later undoes it.
+- ClamAV runs in the stack (`clamav/clamav-debian`, which has arm64 images) and in CI;
+  `make local` starts without it, and PDFs are then marked unscanned, never clean.
+
+### Measured
+- On 20 open-access PDFs fetched for records in a real kidney-imaging review (3,613
+  records from its PubMed and arXiv exports; the PDFs were deleted afterwards): every
+  PubMed PDF matched the right record (8 by DOI or PMCID, 8 by first author and year),
+  and the arXiv PDFs once the fix below was in. A 78 MB ZIP of them was uploaded and
+  matched in 8–13 s (50 s while the worker was still deduplicating the import) and
+  scanned in 40–52 s; the API answered its health check in a median 40–85 ms meanwhile.
+- The initial bundle stays at 154 KB gzipped (budget 200 KB); pdf.js is ~180 KB more,
+  only when a PDF is opened.
+
+### Changed
+- The first ranking model trains from the first include and exclude, not five of each
+  (the owner's decision on the benchmark: median saving over random order 63%, up from
+  55%; `docs/ranking-benchmark.md`).
+- `make up`, `make dev` and `make local` no longer leave the web container's old
+  `node_modules` volume behind on every start (they had piled up to 3 GB).
+
+### Fixed
+- Recomputing full text made records excluded at title and abstract "pending" instead of
+  "not eligible".
+- Found on the real review: arXiv's own exports carry no DOI, so arXiv PDFs matched
+  nothing (the id is now read from the link and journal fields); and the PMC finder could
+  fetch an article's supplementary PDF instead of the article.
+- nginx served pdf.js's `.mjs` worker as `application/octet-stream`, which browsers refuse
+  for a module worker: the viewer would have worked in development only.
+
 ## Phase 6: Relevance ranking and AI suggestions (2026-09-23)
 
 ### Added

@@ -592,3 +592,125 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   records merged into it, so deleting a 50,000-record review (or undoing a large import)
   scanned the table once per record: over ten minutes. A partial index on the duplicates
   makes it 5 s.
+
+## Phase 7 — Full texts
+
+### Scanning
+- **ClamAV runs as `clamav/clamav-debian:1.4`** (the Alpine image has no arm64 build),
+  under a compose profile the Makefile always enables. `make local` leaves it out for
+  low-memory laptops; PDFs are then stored with scan status `skipped` and the app says
+  they were not scanned. "Unscanned" is never shown as "clean".
+- **The client speaks clamd's INSTREAM protocol directly** (a command, length-prefixed
+  chunks, one answer): no client library, and anything but `OK` or `… FOUND` counts as the
+  scanner being unavailable, never as clean. The scan job retries six times, waiting
+  longer each time (clamd reloads its signatures on start); after that the PDF is marked
+  `error` and stays closed.
+- **A flagged PDF is moved to `quarantine/`, not deleted**, so what happened can be shown;
+  the row keeps its signature, the owners and admins are emailed (without the file's
+  name, which people type), and the event is audited. Anyone screening may replace it.
+- **The EICAR test.** ClamAV flags EICAR only when it is the whole file: a PDF that merely
+  starts with the string passes. The bare EICAR file is not a PDF and is refused at upload
+  (magic bytes) before it is stored; the acceptance test is guide 12.10's "malicious PDF",
+  a real PDF carrying EICAR as an attachment, which ClamAV unpacks and flags. CI runs the
+  real clamd for it (`WINNOW_REQUIRE_CLAMAV=1`); elsewhere that one test skips when clamd
+  is absent, and a stand-in scanner covers the flow.
+
+### Reading and serving PDFs
+- **Links last five minutes, are bound to the person who asked, and may be reused within
+  that time** (pdf.js and downloads may fetch twice). They live in Redis; the file is
+  streamed by the API, `inline` for the viewer and `attachment` for downloads, with
+  `nosniff` and `no-store`. Another member, or someone signed out, gets 404 or 401.
+- **Text and page count are read with pypdf in the worker** after a clean scan, capped at
+  500 pages and 2 million characters, NUL characters removed (PostgreSQL text cannot hold
+  them). A PDF pypdf cannot read is still kept and shown.
+
+### Who may do what
+- Reading PDFs and highlights: everyone in the review. Adding a PDF, looking for a free
+  copy, highlighting and "not retrievable": anyone who screens (it is part of screening
+  the full text). ZIPs of many PDFs: owners and admins, like search exports.
+- **A PDF someone may be reading or has highlighted is replaced or removed only by whoever
+  added it, or an owner or admin.** A quarantined or unscanned one anyone screening may
+  replace.
+- **Highlights are blinded like decisions** (a comment can carry a judgement): under blind
+  mode a reviewer sees only their own.
+- **Upload limits.** Guide 12.6 allows 30 uploads an hour. That stays for search exports
+  and ZIPs; single PDFs have their own 300 an hour, because a full-text stage of a few
+  hundred records is attached one PDF at a time. Looking up and fetching free copies is
+  limited to 120 an hour (it asks outside services).
+
+### Not retrievable
+- **A mark of its own** (`unretrievable_records`), not a decision: the record leaves the
+  full-text queue, its status becomes `not_retrievable` (PRISMA's "reports not
+  retrieved"), and deciding on it is refused until the mark is undone. A conflict
+  resolution still wins over the mark, and a PDF added later clears it.
+- **The default exclusion reason "Full text unavailable"** overlaps with this mark; left
+  as it is for now (existing reviews use it), and raised with the owner.
+
+### ZIPs of PDFs
+- **Checked before anything is unpacked:** at most 1,000 files and 2 GB in all, no entry
+  over 100 times its packed size (checked on entries over 1 MB, so a tiny repetitive file
+  is not mistaken for a bomb), no absolute paths, drive letters, `..`, NUL or symlinks.
+  Refused with `zip_rejected` and an audit row. Extraction then counts the bytes it really
+  gets, since sizes in a ZIP's headers can lie. Mac Finder's `__MACOSX/`, `._` and
+  `.DS_Store` are skipped.
+- **Matching by file name**, first against records at full text, then any record: DOI,
+  PMCID, PMID or arXiv id ("sure"), then first author and year, with title words deciding
+  between an author's papers that year, then title ("likely"). **A person confirms every
+  match**; nothing is attached before that, and each PDF is scanned once attached. The
+  arXiv id is read from the DOI, the abs link or the journal field: arXiv's own exports
+  carry no DOI (found on the owner's review).
+- **Unconfirmed ZIPs are discarded after a day** (hourly job), and can be discarded at
+  once. Attached PDFs keep the storage key they were unpacked to.
+
+### Free copies
+- **Unpaywall by DOI (it needs `UNPAYWALL_EMAIL`) and PubMed Central by PMCID.** PMC's
+  PDFs come from its public open-access bucket (`PMCnnn.v/PMCnnn.v.pdf`, latest
+  version): Europe PMC's PDF render answered 403 and NCBI's `oa.fcgi` 404 when tried.
+  Only the article's own file is taken — the folder also holds supplements under the
+  publisher's names, and an early version fetched one of those on the owner's review.
+- **The browser never sends a URL.** It picks one of the candidates the server just found
+  (kept 10 minutes, per person and record) by id; the server fetches it: https only, every
+  address the name resolves to must be public, the address actually connected to is
+  checked again (DNS rebinding), redirects are followed by hand (at most five, each
+  checked), a size cap, and the PDF's magic bytes after. Publishers that refuse servers
+  (Wiley answered 403) are reported as such.
+
+### The viewer
+- **pdf.js's own viewer component**, not a hand-built renderer: text layer, search,
+  lazy page rendering and zoom come with it. It is its own chunk (~180 KB gzipped), loaded
+  only when a PDF is opened; the initial bundle stays at 154 KB.
+- **No PDF JavaScript, no forms**: no scripting manager, annotation mode `ENABLE` (links
+  only, opening in a new tab with `noopener`). **WebAssembly is off**: the CSP does not
+  allow it, so pdf.js decodes JPEG 2000 and JBIG2 images without it, slowly or not at all.
+  CMaps are not shipped; a PDF with non-embedded CJK fonts may show boxes.
+- **Keywords and highlights are drawn in an overlay of their own** under the text layer,
+  positioned as fractions of the page, so zooming never moves them and selection and
+  search keep working. A highlight is made by selecting text and choosing a colour.
+- **nginx now serves `.mjs` as JavaScript.** pdf.js's worker is an ES module; nginx's MIME
+  list maps only `.js`, and browsers refuse a module worker served as
+  `application/octet-stream`. Development (Vite) never showed it; checked on the
+  production image.
+
+### Pages
+- **Full-text screening is `/p/:pid/screen/ft`** (guide 11's route map), the record's PDF
+  beside the decision; the stage's PDFs, the list of records with their PDF's state and
+  the ZIP flow are the same route's `?view=pdfs`, since the route map has no page of its
+  own for them. Viewers get only that view. On a phone there is no swipe at full text
+  (the PDF scrolls); the decision bar stays below it.
+- **The next record's PDF is fetched while this one is read**, and PDFs are held a minute
+  in memory for going back.
+
+### Found along the way
+- **Recomputing full text made records excluded at title and abstract "pending"** instead
+  of "not eligible" (Phase 5). Only records included at title and abstract are
+  recomputed now.
+- **Merging duplicates left a copy's PDF behind**, out of view. It now follows to the
+  record kept (with its highlights), unless that record has its own; so does a "not
+  retrievable" mark. A ZIP entry matched to a record that was merged before the ZIP was
+  confirmed goes to the record kept.
+- **`make up` left a `node_modules` volume behind on every start** (`--renew-anon-volumes`
+  renews them without removing the old ones): 14 of them, 3.1 GB, on the development
+  machine. The web container is now removed together with its volume before each start.
+- **The development machine's disk was 98% full** during the real-corpus run; macOS purged
+  its caches and the API stalled for ~30 s. With space freed, the same run kept the
+  health check at a median 40–85 ms.
