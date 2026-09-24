@@ -129,7 +129,12 @@ function RecordRow({
   active: boolean;
   onSelect: () => void;
 }) {
-  const meta = [record.authors.slice(0, 3).join("; "), record.year, record.journal]
+  const meta = [
+    record.authors.slice(0, 3).join("; "),
+    record.year,
+    record.journal,
+    record.relevance_score !== null && `Relevance ${Math.round(record.relevance_score * 100)}%`,
+  ]
     .filter(Boolean)
     .join(" · ");
   return (

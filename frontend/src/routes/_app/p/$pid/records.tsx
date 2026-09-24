@@ -27,6 +27,7 @@ const SORTS: { value: Sort; label: string }[] = [
   { value: "year", label: "Year, newest" },
   { value: "year_asc", label: "Year, oldest" },
   { value: "title", label: "Title A–Z" },
+  { value: "relevance", label: "Relevance, highest first" },
 ];
 
 const SYNTAX =

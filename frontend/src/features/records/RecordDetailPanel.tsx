@@ -32,6 +32,15 @@ export function RecordDetailPanel({ pid, rid }: { pid: string; rid: string }) {
         <p className="mt-1 text-sm text-muted-foreground">{citation}</p>
       </div>
 
+      {record.relevance_score !== null && (
+        <div>
+          <p className="text-sm">Relevance {Math.round(record.relevance_score * 100)}%</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            The ranking model's estimate from this review's decisions.
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2 text-xs">
         {record.doi && (
           <a
