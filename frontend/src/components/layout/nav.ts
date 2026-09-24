@@ -2,6 +2,7 @@ import {
   CopyCheckIcon,
   ListChecksIcon,
   ScaleIcon,
+  FileTextIcon,
   FileUpIcon,
   LayoutDashboardIcon,
   LibraryBigIcon,
@@ -33,14 +34,15 @@ export const workspaceNav: NavItem[] = [
 ];
 
 /**
- * Inside a review, in workflow order (guide 11.2). Import, Duplicates, Screen, Full text,
- * Conflicts, Extraction, Risk of bias and Report join this list as their phases land.
+ * Inside a review, in workflow order (guide 11.2). Extraction, Risk of bias and Report
+ * join this list as their phases land.
  */
 export const projectNav: NavItem[] = [
   { to: "/p/$pid", label: "Overview", icon: LayoutDashboardIcon, exact: true },
   { to: "/p/$pid/import", label: "Import", icon: FileUpIcon },
   { to: "/p/$pid/duplicates", label: "Duplicates", icon: CopyCheckIcon },
   { to: "/p/$pid/screen/ta", label: "Screen", icon: ListChecksIcon, requires: "screen" },
+  { to: "/p/$pid/screen/ft", label: "Full text", icon: FileTextIcon },
   {
     to: "/p/$pid/conflicts",
     label: "Conflicts",

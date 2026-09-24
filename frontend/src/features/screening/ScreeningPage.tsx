@@ -17,6 +17,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { toast } from "sonner";
 
 import { errorMessage } from "@/api/client";
+import { fulltextSummaryQuery, pdfQuery, readable } from "@/api/fulltext";
 import { keywordGroupsQuery, labelsQuery, projectQuery, reasonsQuery } from "@/api/projects";
 import {
   postNote,
@@ -45,6 +46,7 @@ import {
   OthersDecisions,
   ReasonChips,
 } from "@/features/screening/DecisionPanel";
+import { FullTextPanel } from "@/features/fulltext/FullTextPanel";
 import { buildMatchers } from "@/features/screening/highlight";
 import { HistoryPanel, KeywordLegend, ShortcutList } from "@/features/screening/Panels";
 import { RecordView } from "@/features/screening/RecordView";
@@ -72,8 +74,9 @@ export interface ScreeningView {
 }
 
 /**
- * Title/abstract screening (guide 8.5). The next record is always already held, so it
- * appears the moment a decision is made; the decision goes to the server behind it.
+ * Screening (guide 8.5, 8.8). The next record is always already held, so it appears the
+ * moment a decision is made; the decision goes to the server behind it. At full text the
+ * record's PDF is shown beside the decision, and the next record's PDF is fetched ahead.
  */
 export function ScreeningPage({
   pid,
@@ -94,6 +97,11 @@ export function ScreeningPage({
   const { data: labels = [] } = useQuery(labelsQuery(pid));
   const { data: progress } = useQuery(progressQuery(pid, stage));
   const { data: options } = useQuery(authOptionsQuery);
+  const fullText = stage === "full_text";
+  const { data: fulltextSummary } = useQuery({
+    ...fulltextSummaryQuery(pid),
+    enabled: fullText,
+  });
 
   const [focus, setFocus] = useState(false);
   const [highlightOn, setHighlightOn] = useState(true);
@@ -126,6 +134,15 @@ export function ScreeningPage({
   const queue = useScreeningQueue(pid, stage, view.sort, view.q);
   const current = queue.current;
   const takeTime = useVisibleTime(current?.id);
+
+  // The next record's PDF, fetched while this one is read.
+  const upcoming = queue.upcoming;
+  useEffect(() => {
+    const next = upcoming?.fulltext;
+    if (!fullText || !upcoming || !next || !readable(next.scan_status)) return;
+    // Only a head start: a failure here is met again, and shown, when the record opens.
+    queryClient.query(pdfQuery(pid, upcoming.id, next.id)).catch(() => undefined);
+  }, [fullText, upcoming, pid, queryClient]);
 
   const matchers = useMemo(
     () =>
@@ -518,6 +535,31 @@ export function ScreeningPage({
       <Skeleton className="h-4 w-1/2" />
       <Skeleton className="h-48 w-full" />
     </div>
+  ) : current && fullText ? (
+    <div className="grid gap-4">
+      <RecordView
+        item={current}
+        matchers={matchers}
+        showScore={Boolean(settings?.ranking_enabled)}
+        compact
+      />
+      <FullTextPanel
+        key={current.id}
+        pid={pid}
+        record={current}
+        matchers={matchers}
+        canScreen
+        openAccess={Boolean(fulltextSummary?.open_access)}
+        onChange={(fulltext) => {
+          queue.update(current.id, { fulltext });
+        }}
+        onNotRetrievable={() => {
+          setAnnouncement("Marked not retrievable. Next record.");
+          queue.drop(current.id);
+          refreshProgress();
+        }}
+      />
+    </div>
   ) : current ? (
     <RecordView
       item={current}
@@ -569,7 +611,9 @@ export function ScreeningPage({
   const toolbar = (
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div className="min-w-0">
-        <h1 className="text-lg font-semibold tracking-tight">Title and abstract screening</h1>
+        <h1 className="text-lg font-semibold tracking-tight">
+          {fullText ? "Full-text screening" : "Title and abstract screening"}
+        </h1>
         {progressLine}
       </div>
       <div className="flex items-center gap-1">
@@ -670,7 +714,7 @@ export function ScreeningPage({
             <SlidersHorizontalIcon aria-hidden="true" /> Search and order
           </Button>
         </div>
-        {current ? (
+        {current && !fullText ? (
           <SwipeCard
             onSwipe={(d) => void decide(d)}
             header={
@@ -756,12 +800,19 @@ export function ScreeningPage({
       {toolbar}
       {waitingBanner}
       {stoppingBanner}
-      <div className="grid gap-6 md:grid-cols-[1fr_18rem] lg:grid-cols-[15rem_1fr_19rem]">
-        <aside aria-label="Search and filters" className="hidden lg:block">
-          {filters}
-        </aside>
+      <div
+        className={cn(
+          "grid gap-6 md:grid-cols-[1fr_18rem]",
+          fullText ? "lg:grid-cols-[1fr_19rem]" : "lg:grid-cols-[15rem_1fr_19rem]",
+        )}
+      >
+        {!fullText && (
+          <aside aria-label="Search and filters" className="hidden lg:block">
+            {filters}
+          </aside>
+        )}
         <div className="grid min-w-0 content-start gap-4">
-          <div className="lg:hidden">
+          <div className={cn(!fullText && "lg:hidden")}>
             <Button
               variant="outline"
               size="sm"

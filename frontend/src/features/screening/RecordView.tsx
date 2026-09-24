@@ -37,11 +37,14 @@ export function RecordView({
   matchers,
   focus = false,
   showScore = false,
+  compact = false,
 }: {
   item: ScreeningItem;
   matchers: Matcher[];
   focus?: boolean;
   showScore?: boolean;
+  /** At full text the PDF is what is read: the abstract folds away. */
+  compact?: boolean;
 }) {
   const citation = [
     item.journal,
@@ -98,7 +101,16 @@ export function RecordView({
         </div>
       </header>
 
-      {item.abstract ? (
+      {item.abstract && compact ? (
+        <details className="group max-w-[75ch]">
+          <summary className="cursor-pointer text-sm font-medium text-muted-foreground select-none">
+            Abstract
+          </summary>
+          <div className="mt-2 leading-relaxed whitespace-pre-line">
+            <Highlighted text={item.abstract} matchers={matchers} />
+          </div>
+        </details>
+      ) : item.abstract ? (
         <div
           className={cn(
             "max-w-[75ch] leading-relaxed whitespace-pre-line",
@@ -107,11 +119,11 @@ export function RecordView({
         >
           <Highlighted text={item.abstract} matchers={matchers} />
         </div>
-      ) : (
+      ) : compact ? null : (
         <p className="text-sm text-muted-foreground">This record came in without an abstract.</p>
       )}
 
-      {(item.keywords.length > 0 || item.publication_type.length > 0) && (
+      {!compact && (item.keywords.length > 0 || item.publication_type.length > 0) && (
         <dl className="grid gap-1 text-sm">
           {item.keywords.length > 0 && (
             <div className="flex flex-wrap gap-x-2">

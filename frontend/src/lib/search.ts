@@ -72,3 +72,10 @@ export function screenSearch(search: Record<string, unknown>): {
     ...(typeof search.q === "string" && search.q ? { q: search.q.slice(0, 500) } : {}),
   };
 }
+
+/** Full-text screening adds `?view=pdfs`: the stage's PDFs rather than the next record. */
+export function fullTextSearch(
+  search: Record<string, unknown>,
+): ReturnType<typeof screenSearch> & { view?: "pdfs" } {
+  return { ...screenSearch(search), ...(search.view === "pdfs" && { view: "pdfs" as const }) };
+}

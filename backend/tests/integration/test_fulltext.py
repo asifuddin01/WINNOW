@@ -227,6 +227,7 @@ async def assert_quarantined(
     assert [to for to, *_ in emails] == ["ada@example.org"]  # the owner; not the reviewer
     assert "quarantined" in emails[0][1]
     assert "innocent.pdf" not in emails[0][2]
+    assert f"/p/{t.pid}/screen/ft?view=pdfs" in emails[0][2]
 
     summary = (await get(t.owner, f"/projects/{t.pid}/fulltext/summary")).json()
     assert summary["quarantined"] == 0  # the record has not reached full text

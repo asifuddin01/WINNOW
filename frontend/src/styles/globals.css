@@ -188,3 +188,25 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* The PDF viewer (features/fulltext): pages on a grey desk, and an overlay for keywords and
+   highlights under pdf.js's text layer, so selecting and searching still work. */
+.winnow-pdf .pdfViewer .page {
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+}
+.winnow-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.winnow-overlay > div {
+  position: absolute;
+  border-radius: 2px;
+  mix-blend-mode: multiply;
+}
+.winnow-overlay > .winnow-keyword {
+  opacity: 0.3;
+}
+.winnow-overlay > .winnow-annotation {
+  opacity: 0.5;
+}

@@ -44,6 +44,8 @@ export interface Queue {
   previous: () => void;
   open: (recordId: string) => Promise<void>;
   update: (recordId: string, change: Partial<ScreeningItem>) => void;
+  /** Take a record out of the queue without a decision (full text not retrievable). */
+  drop: (recordId: string) => void;
   canUndo: boolean;
 }
 
@@ -214,6 +216,15 @@ export function useScreeningQueue(
     return record;
   }, [decided, pid, stage, update]);
 
+  const drop = useCallback((recordId: string) => {
+    const at = itemsRef.current.findIndex((item) => item.id === recordId);
+    if (at < 0) return;
+    setItems((current) => current.filter((item) => item.id !== recordId));
+    setDecided((stack) => stack.filter((id) => id !== recordId));
+    // The next record slides into its place; one before the current moves it up by one.
+    setIndex((position) => (at < position ? position - 1 : position));
+  }, []);
+
   const next = useCallback(() => {
     setIndex((position) => Math.min(position + 1, itemsRef.current.length));
   }, []);
@@ -246,6 +257,7 @@ export function useScreeningQueue(
     previous,
     open,
     update,
+    drop,
     canUndo: decided.length > 0,
   };
 }

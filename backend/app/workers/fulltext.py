@@ -139,7 +139,7 @@ async def _quarantine(
             User.deleted_at.is_(None),
         )
     )
-    link = f"{settings.public_origin}/p/{row.project_id}/fulltext"
+    link = f"{settings.public_origin}/p/{row.project_id}/screen/ft?view=pdfs"
     for email in managers:
         message = pdf_quarantined(
             email, project_title=project.title, signature=row.scan_signature, link=link

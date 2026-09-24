@@ -27,6 +27,7 @@ import { Route as AppPPidDuplicatesRouteImport } from './routes/_app/p/$pid/dupl
 import { Route as AppPPidImportRouteImport } from './routes/_app/p/$pid/import'
 import { Route as AppPPidRecordsRouteImport } from './routes/_app/p/$pid/records'
 import { Route as AppPPidSettingsRouteImport } from './routes/_app/p/$pid/settings'
+import { Route as AppPPidScreenFtRouteImport } from './routes/_app/p/$pid/screen/ft'
 import { Route as AppPPidScreenTaRouteImport } from './routes/_app/p/$pid/screen/ta'
 import { Route as AppPPidSettingsIndexRouteImport } from './routes/_app/p/$pid/settings/index'
 import { Route as AppPPidSettingsCriteriaRouteImport } from './routes/_app/p/$pid/settings/criteria'
@@ -125,6 +126,11 @@ const AppPPidSettingsRoute = AppPPidSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppPPidRoute,
 } as any)
+const AppPPidScreenFtRoute = AppPPidScreenFtRouteImport.update({
+  id: '/screen/ft',
+  path: '/screen/ft',
+  getParentRoute: () => AppPPidRoute,
+} as any)
 const AppPPidScreenTaRoute = AppPPidScreenTaRouteImport.update({
   id: '/screen/ta',
   path: '/screen/ta',
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/p/$pid/records': typeof AppPPidRecordsRoute
   '/p/$pid/settings': typeof AppPPidSettingsRouteWithChildren
   '/p/$pid/': typeof AppPPidIndexRoute
+  '/p/$pid/screen/ft': typeof AppPPidScreenFtRoute
   '/p/$pid/screen/ta': typeof AppPPidScreenTaRoute
   '/p/$pid/settings/criteria': typeof AppPPidSettingsCriteriaRoute
   '/p/$pid/settings/keywords': typeof AppPPidSettingsKeywordsRoute
@@ -210,6 +217,7 @@ export interface FileRoutesByTo {
   '/p/$pid/import': typeof AppPPidImportRoute
   '/p/$pid/records': typeof AppPPidRecordsRoute
   '/p/$pid': typeof AppPPidIndexRoute
+  '/p/$pid/screen/ft': typeof AppPPidScreenFtRoute
   '/p/$pid/screen/ta': typeof AppPPidScreenTaRoute
   '/p/$pid/settings/criteria': typeof AppPPidSettingsCriteriaRoute
   '/p/$pid/settings/keywords': typeof AppPPidSettingsKeywordsRoute
@@ -239,6 +247,7 @@ export interface FileRoutesById {
   '/_app/p/$pid/records': typeof AppPPidRecordsRoute
   '/_app/p/$pid/settings': typeof AppPPidSettingsRouteWithChildren
   '/_app/p/$pid/': typeof AppPPidIndexRoute
+  '/_app/p/$pid/screen/ft': typeof AppPPidScreenFtRoute
   '/_app/p/$pid/screen/ta': typeof AppPPidScreenTaRoute
   '/_app/p/$pid/settings/criteria': typeof AppPPidSettingsCriteriaRoute
   '/_app/p/$pid/settings/keywords': typeof AppPPidSettingsKeywordsRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/p/$pid/records'
     | '/p/$pid/settings'
     | '/p/$pid/'
+    | '/p/$pid/screen/ft'
     | '/p/$pid/screen/ta'
     | '/p/$pid/settings/criteria'
     | '/p/$pid/settings/keywords'
@@ -293,6 +303,7 @@ export interface FileRouteTypes {
     | '/p/$pid/import'
     | '/p/$pid/records'
     | '/p/$pid'
+    | '/p/$pid/screen/ft'
     | '/p/$pid/screen/ta'
     | '/p/$pid/settings/criteria'
     | '/p/$pid/settings/keywords'
@@ -321,6 +332,7 @@ export interface FileRouteTypes {
     | '/_app/p/$pid/records'
     | '/_app/p/$pid/settings'
     | '/_app/p/$pid/'
+    | '/_app/p/$pid/screen/ft'
     | '/_app/p/$pid/screen/ta'
     | '/_app/p/$pid/settings/criteria'
     | '/_app/p/$pid/settings/keywords'
@@ -470,6 +482,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPPidSettingsRouteImport
       parentRoute: typeof AppPPidRoute
     }
+    '/_app/p/$pid/screen/ft': {
+      id: '/_app/p/$pid/screen/ft'
+      path: '/screen/ft'
+      fullPath: '/p/$pid/screen/ft'
+      preLoaderRoute: typeof AppPPidScreenFtRouteImport
+      parentRoute: typeof AppPPidRoute
+    }
     '/_app/p/$pid/screen/ta': {
       id: '/_app/p/$pid/screen/ta'
       path: '/screen/ta'
@@ -560,6 +579,7 @@ interface AppPPidRouteChildren {
   AppPPidRecordsRoute: typeof AppPPidRecordsRoute
   AppPPidSettingsRoute: typeof AppPPidSettingsRouteWithChildren
   AppPPidIndexRoute: typeof AppPPidIndexRoute
+  AppPPidScreenFtRoute: typeof AppPPidScreenFtRoute
   AppPPidScreenTaRoute: typeof AppPPidScreenTaRoute
 }
 
@@ -570,6 +590,7 @@ const AppPPidRouteChildren: AppPPidRouteChildren = {
   AppPPidRecordsRoute: AppPPidRecordsRoute,
   AppPPidSettingsRoute: AppPPidSettingsRouteWithChildren,
   AppPPidIndexRoute: AppPPidIndexRoute,
+  AppPPidScreenFtRoute: AppPPidScreenFtRoute,
   AppPPidScreenTaRoute: AppPPidScreenTaRoute,
 }
 
