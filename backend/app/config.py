@@ -51,8 +51,15 @@ class Settings(BaseSettings):
     smtp_from: str = "Winnow <no-reply@example.com>"
     smtp_tls: Literal["starttls", "ssl", "none"] = "starttls"
 
+    # Empty: uploads are not scanned (`make local`), and the app says so (guide 16.2).
     clamav_host: str = "clamav"
+    clamav_port: int = Field(default=3310, ge=1, le=65535)
+    # Guide 8.8's "Find free full text". Unpaywall needs a contact email; PubMed Central
+    # does not. Off entirely for offline installs.
     unpaywall_email: str | None = None
+    open_access_lookup: bool = True
+    # One PDF; clamd is configured to take streams of this size (docker-compose.yml).
+    max_pdf_mb: int = Field(default=100, ge=1, le=1_000)
 
     llm_provider: Literal["none", "anthropic", "openai_compatible"] = "none"
     llm_api_key: SecretStr | None = None

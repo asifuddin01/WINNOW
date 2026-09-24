@@ -2,6 +2,8 @@
 # clone needs only Docker and make. `make help` lists the targets.
 
 COMPOSE ?= docker compose
+# The full stack scans uploads with ClamAV; `make local` leaves it out (guide 16.2).
+SCAN := --profile scan
 # The pnpm pinned in e2e/package.json, run through npx (works without corepack).
 PNPM ?= npx --yes $(shell node -p "require('./e2e/package.json').packageManager" 2>/dev/null || echo pnpm)
 API := $(COMPOSE) run --rm api
@@ -9,7 +11,7 @@ API_NO_DEPS := $(COMPOSE) run --rm --no-deps api
 WEB := $(COMPOSE) run --rm --no-deps web
 
 .DEFAULT_GOAL := help
-.PHONY: help env dev up down logs ps build migrate revision seed seed-large \
+.PHONY: help env dev up local down logs ps build migrate revision seed seed-large \
 	test test-backend test-frontend e2e lint typecheck format check api-types size clean create-admin
 
 help: ## List the targets
@@ -25,14 +27,19 @@ env: .env ## Create .env from .env.example with fresh random keys (never overwri
 	@echo "Created .env with a random SECRET_KEY and ENCRYPTION_KEY."
 
 dev: .env ## Start the whole stack in the foreground (http://localhost:8080)
-	$(COMPOSE) up --build --renew-anon-volumes
+	$(COMPOSE) $(SCAN) up --build --renew-anon-volumes
 
 up: .env ## Start the stack in the background and wait until it is healthy
-	$(COMPOSE) up --build --renew-anon-volumes --detach --wait
+	$(COMPOSE) $(SCAN) up --build --renew-anon-volumes --detach --wait
 	@echo "Winnow is running at http://localhost:$${WINNOW_PORT:-8080}"
 
+local: .env ## Lightweight stack without ClamAV, for low-memory laptops: uploads stay unscanned
+	@echo "Starting without ClamAV: uploaded PDFs will not be scanned for viruses."
+	CLAMAV_HOST= $(COMPOSE) up --build --renew-anon-volumes --detach --wait
+	@echo "Winnow is running at http://localhost:$${WINNOW_PORT:-8080} (no virus scanning)"
+
 down: ## Stop the stack (data volumes are kept)
-	$(COMPOSE) down
+	$(COMPOSE) $(SCAN) down
 
 logs: ## Follow logs from every service
 	$(COMPOSE) logs --follow
@@ -96,4 +103,4 @@ size: .env ## Production build plus the initial-bundle budget check
 	$(WEB) sh -c "pnpm build && pnpm size"
 
 clean: ## Stop the stack and delete its data volumes
-	$(COMPOSE) down --volumes --remove-orphans
+	$(COMPOSE) $(SCAN) down --volumes --remove-orphans

@@ -15,6 +15,9 @@ x-backend: &backend
     SMTP_TLS: none
     SMTP_USER: ""
     SMTP_PASSWORD: ""
+    # `make local` runs without ClamAV and sets this empty: uploads are then kept unscanned,
+    # and the app says so (guide 16.2).
+    CLAMAV_HOST: ${CLAMAV_HOST-clamav}
   volumes:
     - ./backend:/app
     - uploads:/data/uploads
@@ -59,6 +62,27 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+
+  # Scans every uploaded PDF before anyone can open it (guide 12.4). The first start
+  # downloads the signature database (a few hundred MB, a few minutes); a volume keeps it.
+  # About 1.2 GB of memory; `make local` leaves it out. The Debian image because the
+  # Alpine one is not built for arm64 (Apple silicon).
+  clamav:
+    image: clamav/clamav-debian:1.4
+    profiles: ["scan"]
+    environment:
+      # PDFs up to MAX_PDF_MB (100 by default) are streamed to clamd whole.
+      CLAMD_CONF_StreamMaxLength: 100M
+      # Reloading new signatures beside the old ones would double the memory it needs.
+      CLAMD_CONF_ConcurrentDatabaseReload: "no"
+    volumes:
+      - clamav:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 15s
+      timeout: 10s
+      retries: 40
+      start_period: 120s
 
   # One-shot: brings the database to the latest migration before the API starts.
   migrate:
@@ -135,6 +159,7 @@ services:
         condition: service_healthy
 
 volumes:
+  clamav:
   uploads:
   pgdata:
   redisdata:

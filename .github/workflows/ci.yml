@@ -45,9 +45,19 @@ jobs:
         options: >-
           --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s
           --health-retries 20
+      # The real scanner, so the EICAR test runs against ClamAV itself (guide 12.10).
+      # It downloads its signatures on start, which takes a minute or two.
+      clamav:
+        image: clamav/clamav-debian:1.4
+        ports: ["3310:3310"]
+        options: >-
+          --health-cmd "clamdcheck.sh" --health-interval 10s --health-timeout 5s
+          --health-retries 40 --health-start-period 60s
     env:
       DATABASE_URL: postgresql+asyncpg://winnow:winnow@localhost:5432/winnow
       REDIS_URL: redis://localhost:6379/0
+      CLAMAV_HOST: localhost
+      WINNOW_REQUIRE_CLAMAV: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
