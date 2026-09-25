@@ -19,6 +19,7 @@ import { RankingPanel } from "@/features/ranking/RankingPanel";
 import { CRITERION_KINDS, REVIEW_TYPES, ROLES, STATUSES } from "@/features/projects/wording";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { WhoIsScreening } from "@/features/presence/WhoIsScreening";
 
 export const Route = createFileRoute("/_app/p/$pid/")({
   component: Overview,
@@ -59,6 +60,9 @@ function Overview() {
             <Badge variant="outline">{STATUSES[project.status]}</Badge>
             <Badge variant="secondary">You are {ROLES[project.membership.role]}</Badge>
           </p>
+          <div className="mt-2">
+            <WhoIsScreening pid={pid} />
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           {screens && records > 0 && (

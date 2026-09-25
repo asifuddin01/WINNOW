@@ -61,6 +61,9 @@ REVIEWER_WRITES = VIEWER_WRITES | {
     ("DELETE", "/api/v1/projects/{pid}/records/{rid}/fulltext/not-retrievable"),
     # Extracting data from a study is a reviewer's own work (guide 8.12), like assessing it.
     ("PUT", "/api/v1/projects/{pid}/extraction-forms/{fid}/entries/{rid}"),
+    # Saying "I am screening" (guide 8.17) belongs to those who screen.
+    ("PUT", "/api/v1/projects/{pid}/presence"),
+    ("DELETE", "/api/v1/projects/{pid}/presence"),
     ("POST", "/api/v1/projects/{pid}/fulltext/{fid}/annotations"),
     ("PATCH", "/api/v1/projects/{pid}/fulltext/{fid}/annotations/{aid}"),
     ("DELETE", "/api/v1/projects/{pid}/fulltext/{fid}/annotations/{aid}"),

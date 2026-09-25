@@ -120,7 +120,8 @@ test("report, risk of bias, and a backup restored as a new review", async ({
   // The reviewer's decision made a conflict: the owner, who resolves them, is told.
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "My reviews" })).toBeVisible();
-  const bell = page.getByRole("button", { name: "Notifications, 1 unread" });
+  // (Their import finished too, so the count includes that notice.)
+  const bell = page.getByRole("button", { name: /Notifications, \d+ unread/ });
   await expect(bell).toBeVisible();
   await bell.click();
   const conflict = page.getByRole("menuitem", { name: /1 new conflict to resolve in Shift work/ });
@@ -129,7 +130,18 @@ test("report, risk of bias, and a backup restored as a new review", async ({
   await shot(page, "notifications");
   await conflict.click();
   await expect(page).toHaveURL(new RegExp(`/p/${pid}/conflicts$`));
-  await expect(page.getByRole("button", { name: "Notifications" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Notifications/ })).toBeVisible();
+
+  // Presence (guide 8.17): the reviewer opens screening, and the owner sees who, not what.
+  const screening = await reviewer.newPage();
+  await screening.goto(`/p/${pid}/screen/ta`);
+  await expect(screening.getByRole("heading", { name: "Title and abstract screening" })).toBeVisible();
+  await page.goto(`/p/${pid}`);
+  await expect(
+    page.getByRole("list", { name: "Screening now" }).getByText("is screening titles and abstracts"),
+  ).toBeVisible({ timeout: 45_000 });
+  await noSeriousA11yProblems(page, "Presence");
+  await screening.close();
 
   // PRISMA: the diagram, its numbers, and what Winnow cannot count.
   await page.goto(`/p/${pid}/report`);

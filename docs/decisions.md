@@ -959,3 +959,12 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   quiet days.
 - **The menu is not modal**: a modal menu hides the page from screen readers while its
   links can still take focus, which axe reports as serious.
+
+### Presence (guide 8.17)
+- **Who and which stage, never which record or what was decided**, so blind mode loses
+  nothing: "Grace is screening titles and abstracts".
+- **A heartbeat every 30 seconds from an open, visible screening page**, held in Redis for
+  a minute; a hidden tab goes quiet and a closed page says so at once. Nothing is stored
+  in the database: presence is only ever "now".
+- **Only people who screen announce themselves**; every member sees who is screening, on
+  the review's overview and on the screening pages. Nobody is shown to themselves.

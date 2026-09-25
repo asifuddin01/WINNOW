@@ -59,6 +59,8 @@ import { StoppingBanner } from "@/features/ranking/StoppingBanner";
 import { SuggestionBox } from "@/features/screening/SuggestionBox";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { WhoIsScreening } from "@/features/presence/WhoIsScreening";
+import { usePresence } from "@/hooks/use-presence";
 
 const SORTS: { value: QueueSort; label: string }[] = [
   { value: "relevance", label: "Relevance" },
@@ -98,6 +100,7 @@ export function ScreeningPage({
   const { data: progress } = useQuery(progressQuery(pid, stage));
   const { data: options } = useQuery(authOptionsQuery);
   const fullText = stage === "full_text";
+  usePresence(pid, stage, project?.permissions.includes("screen") ?? false);
   const { data: fulltextSummary } = useQuery({
     ...fulltextSummaryQuery(pid),
     enabled: fullText,
@@ -615,6 +618,7 @@ export function ScreeningPage({
           {fullText ? "Full-text screening" : "Title and abstract screening"}
         </h1>
         {progressLine}
+        <WhoIsScreening pid={pid} />
       </div>
       <div className="flex items-center gap-1">
         {!isMobile && (
