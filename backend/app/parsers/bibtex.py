@@ -50,12 +50,28 @@ _COMMAND = re.compile(r"\\[a-zA-Z]+\s*")
 _BRACES = re.compile(r"[{}]")
 
 
+# Escaped special characters (as Winnow's own writer and JabRef write them), kept aside in
+# private-use characters while commands and braces are removed, then put back.
+_ESCAPES = {
+    r"\textbackslash{}": "\\",
+    r"\textasciitilde{}": "~",
+    r"\textasciicircum{}": "^",
+    **{f"\\{character}": character for character in "&%$#_{}"},
+}
+_ESCAPED = re.compile("|".join(re.escape(escape) for escape in _ESCAPES))
+_KEPT = {character: chr(0xE000 + index) for index, character in enumerate("\\~^&%$#_{}")}
+
+
 def _clean_latex(value: str) -> str:
-    """Readable text from LaTeX: accents folded onto their letter, commands dropped."""
-    text = _ACCENT.sub(r"\1", value)
+    """Readable text from LaTeX: accents folded onto their letter, commands dropped,
+    escaped special characters kept."""
+    text = _ESCAPED.sub(lambda match: _KEPT[_ESCAPES[match.group()]], value)
+    text = _ACCENT.sub(r"\1", text)
     text = _COMMAND.sub(" ", text)
-    text = _BRACES.sub("", text)
-    return text.replace("--", "-").replace("\\&", "&").strip()
+    text = _BRACES.sub("", text).replace("--", "-")
+    for character, stand_in in _KEPT.items():
+        text = text.replace(stand_in, character)
+    return text.strip()
 
 
 def _entries(text: str) -> Iterator[tuple[int, str, str]]:
@@ -76,6 +92,10 @@ def _entries(text: str) -> Iterator[tuple[int, str, str]]:
         previous = ""
         while cursor < length and depth:
             char = text[cursor]
+            if char == "\\" and not in_quotes:  # \{ and \} are text, not structure
+                previous = char
+                cursor += 2
+                continue
             if in_quotes:
                 if char == '"' and text[cursor - 1] != "\\":
                     in_quotes = False
@@ -119,6 +139,9 @@ def _fields_of(body: str) -> dict[str, list[str]]:
             depth, start = 1, cursor + 1
             cursor += 1
             while cursor < length and depth:
+                if body[cursor] == "\\":  # an escaped character never opens or closes
+                    cursor += 2
+                    continue
                 if body[cursor] == "{":
                     depth += 1
                 elif body[cursor] == closer or (closer == '"' and body[cursor] == '"'):

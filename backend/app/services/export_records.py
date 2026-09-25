@@ -111,7 +111,8 @@ def _cut(text: str | None) -> str:
 async def record_rows(
     db: AsyncSession, redis: Redis, access: ProjectAccess, filters: RecordFilters
 ) -> AsyncIterator[list[dict[str, Any]]]:
-    """The export's rows, a batch at a time, in import order."""
+    """The export's rows, a batch at a time, in import order. Lists (authors, reasons,
+    labels) stay lists; each file format joins them its own way."""
     blind = not sees_others(access)
     records = RecordService(db, redis)
     base = records._filtered(  # the records table's own query, so the two always agree
@@ -207,12 +208,10 @@ def _row(
     databases: dict[uuid.UUID, str],
     blind: bool,
 ) -> dict[str, Any]:
-    def reason_text(stage: ScreeningStage, status: str) -> str:
+    def reason_list(stage: ScreeningStage, status: str) -> list[str]:
         if status not in ("excluded", "exclude"):
-            return ""
-        return "; ".join(
-            sorted(reasons[r] for r in work.reasons.get((record.id, stage), ()) if r in reasons)
-        )
+            return []
+        return sorted(reasons[r] for r in work.reasons.get((record.id, stage), ()) if r in reasons)
 
     if blind:
         ta = work.mine.get((record.id, ScreeningStage.TITLE_ABSTRACT), "")
@@ -222,7 +221,7 @@ def _row(
     return {
         "id": str(record.id),
         "title": _cut(record.title),
-        "authors": "; ".join(record.authors),
+        "authors": list(record.authors),
         "year": record.year if record.year is not None else "",
         "journal": record.journal or "",
         "volume": record.volume or "",
@@ -232,15 +231,15 @@ def _row(
         "pmid": record.pmid or "",
         "pmcid": record.pmcid or "",
         "url": record.url or "",
-        "keywords": "; ".join(record.keywords),
-        "publication_type": "; ".join(record.publication_type),
+        "keywords": list(record.keywords),
+        "publication_type": list(record.publication_type),
         "language": record.language or "",
         "abstract": _cut(record.abstract),
         "database": databases.get(record.import_batch_id, "") if record.import_batch_id else "",
         "ta_status": ta,
-        "ta_reasons": reason_text(ScreeningStage.TITLE_ABSTRACT, ta),
+        "ta_reasons": reason_list(ScreeningStage.TITLE_ABSTRACT, ta),
         "ft_status": ft,
-        "ft_reasons": reason_text(ScreeningStage.FULL_TEXT, ft),
-        "labels": "; ".join(sorted(work.labels.get(record.id, ()))),
+        "ft_reasons": reason_list(ScreeningStage.FULL_TEXT, ft),
+        "labels": sorted(work.labels.get(record.id, ())),
         "duplicate_of": str(record.duplicate_of) if record.duplicate_of else "",
     }

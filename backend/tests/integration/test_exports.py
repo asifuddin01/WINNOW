@@ -36,6 +36,7 @@ from app.models import (
     User,
 )
 from app.models.base import uuid7
+from app.parsers import bibtex, ris
 from app.workers.exports import run_export, run_restore
 from tests.auth_helpers import csrf
 from tests.conftest import MemoryMailer
@@ -560,13 +561,42 @@ async def test_exports_expire(db_app: FastAPI, db: AsyncSession, mailer: MemoryM
             await db_app.state.storage.size(key)
 
 
+async def test_records_export_as_ris_and_bibtex_with_their_decisions(
+    db_app: FastAPI, db: AsyncSession, mailer: MemoryMailer
+) -> None:
+    async with team(db_app, db, mailer, records=2) as t:
+        await settings(t.owner, t.pid, reviewers_per_record_ta=1)
+        reasons = (await get(t.owner, f"/projects/{t.pid}/exclusion-reasons")).json()
+        await decide(t.reviewer, t.pid, t.records[0], "include")
+        await decide(t.reviewer, t.pid, t.records[1], "exclude", reason_ids=[reasons[0]["id"]])
+
+        ris_job = await export(db_app, t.owner, t.pid, format="ris")
+        assert ris_job["filename"].endswith("-records.ris")
+        text = (await download(t.owner, t.pid, ris_job["id"])).decode()
+        assert text.count("ER  - \r\n") == 2
+        assert "N1  - Title/abstract: included\r\n" in text
+        assert f"N1  - Title/abstract: excluded ({reasons[0]['label']})\r\n" in text
+        assert f"C3  - {reasons[0]['label']}\r\n" in text
+        assert [item.title for item in ris.parse(text)] == [
+            "Night shifts and sleep, study 0",
+            "Night shifts and sleep, study 1",
+        ]
+
+        bib_job = await export(db_app, t.owner, t.pid, format="bibtex")
+        assert bib_job["filename"].endswith("-records.bib")
+        entries = (await download(t.owner, t.pid, bib_job["id"])).decode()
+        # The same first author and year: keys stay apart.
+        assert "@article{smith2015," in entries
+        assert "@article{smith2016," in entries
+        assert "note = {Title/abstract: included. Full text: pending. Winnow ID:" in entries
+        assert "Full text: not eligible" not in entries
+        assert len(list(bibtex.parse(entries))) == 2
+
+
 async def test_an_export_fails_plainly_when_it_cannot_be_made(
     db_app: FastAPI, db: AsyncSession, mailer: MemoryMailer
 ) -> None:
     async with team(db_app, db, mailer, records=1) as t:
-        ris = await export(db_app, t.owner, t.pid, format="ris")
-        assert ris["status"] == "failed"
-        assert "not available" in ris["problem"]
         # Someone who leaves the review before their export is made does not get it.
         queued = (await post(t.reviewer, f"/projects/{t.pid}/exports", {"format": "csv"})).json()
         grace = await db.scalar(select(User.id).where(User.email == REVIEWER))

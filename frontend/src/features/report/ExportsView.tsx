@@ -20,11 +20,13 @@ import { useProjectMutation } from "@/features/projects/use-project-mutation";
 import { fileSize, timeAgo } from "@/lib/format";
 
 type Kind = "records" | "backup";
-type RecordFormat = "csv" | "xlsx";
+type RecordFormat = "csv" | "xlsx" | "ris" | "bibtex";
 
 const FORMATS: { value: RecordFormat; label: string }[] = [
   { value: "csv", label: "CSV" },
   { value: "xlsx", label: "Excel (XLSX)" },
+  { value: "ris", label: "RIS (EndNote, Zotero, Mendeley)" },
+  { value: "bibtex", label: "BibTeX" },
 ];
 
 const ANY = "any";
@@ -224,6 +226,14 @@ function Choice({
   );
 }
 
+const FORMAT_NAMES: Record<ExportJob["format"], string> = {
+  csv: "CSV",
+  xlsx: "XLSX",
+  ris: "RIS",
+  bibtex: "BibTeX",
+  zip: "ZIP",
+};
+
 const STATUS_WORDS: Record<ExportJob["status"], string> = {
   queued: "Waiting",
   running: "Being made",
@@ -232,7 +242,7 @@ const STATUS_WORDS: Record<ExportJob["status"], string> = {
 };
 
 function JobRow({ pid, job }: { pid: string; job: ExportJob }) {
-  const what = job.kind === "backup" ? "Full backup" : `Records (${job.format.toUpperCase()})`;
+  const what = job.kind === "backup" ? "Full backup" : `Records (${FORMAT_NAMES[job.format]})`;
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card p-3">
       <div className="grid min-w-0 flex-1 gap-0.5">

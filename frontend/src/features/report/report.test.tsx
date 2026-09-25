@@ -311,7 +311,7 @@ describe("exports", () => {
     ).toBeVisible();
     screen.getByLabelText("Format").focus();
     await user.keyboard("{Enter}");
-    await user.click(await screen.findByRole("option", { name: "Excel (XLSX)" }));
+    await user.click(await screen.findByRole("option", { name: /^RIS/ }));
     screen.getByLabelText("Title and abstract").focus();
     await user.keyboard("{Enter}");
     await user.click(await screen.findByRole("option", { name: "Included (4)" }));
@@ -321,7 +321,7 @@ describe("exports", () => {
     const [sent] = server.calls(`POST ${base}/exports`);
     expect(await sent?.json()).toEqual({
       kind: "records",
-      format: "xlsx",
+      format: "ris",
       filters: { q: "", status: "included", full_text: null, duplicates: true },
     });
     expect(await screen.findByText("Being made")).toBeVisible();

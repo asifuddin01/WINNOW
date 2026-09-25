@@ -29,6 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.config import Settings
 from app.db import act_for
+from app.exports import BibtexWriter, ExportRecord, write_ris
 from app.models import (
     ExportFormat,
     ExportJob,
@@ -162,13 +163,75 @@ async def _write_records(
         batch=uuid.UUID(job.filters["batch"]) if job.filters.get("batch") else None,
         duplicates=bool(job.filters.get("duplicates", False)),
     )
-    columns = headers(blind=not sees_others(access), duplicates=filters.duplicates)
+    blind = not sees_others(access)
+    columns = headers(blind=blind, duplicates=filters.duplicates)
     rows = record_rows(db, redis, access, filters)
     if job.format is ExportFormat.CSV:
         return await _csv(columns, rows)
     if job.format is ExportFormat.XLSX:
         return await _xlsx(columns, rows)
-    raise ExportFailedError("RIS and BibTeX exports are not available on this instance yet.")
+    if job.format in (ExportFormat.RIS, ExportFormat.BIBTEX):
+        return await _citations(job.format, rows, mine=blind)
+    raise ExportFailedError(f"Records cannot be exported as {job.format.value}.")
+
+
+def _flat(value: object) -> object:
+    """A list in one spreadsheet cell: its items joined with semicolons."""
+    return "; ".join(str(item) for item in value) if isinstance(value, list | tuple) else value
+
+
+def _citation(row: dict[str, object], *, mine: bool) -> ExportRecord:
+    def text(name: str) -> str | None:
+        value = row.get(name)
+        return str(value) if value not in (None, "") else None
+
+    def items(name: str) -> tuple[str, ...]:
+        value = row.get(name)
+        return tuple(str(item) for item in value) if isinstance(value, list | tuple) else ()
+
+    year = row.get("year")
+    return ExportRecord(
+        id=str(row["id"]),
+        title=text("title"),
+        abstract=text("abstract"),
+        authors=items("authors"),
+        year=year if isinstance(year, int) else None,
+        journal=text("journal"),
+        volume=text("volume"),
+        issue=text("issue"),
+        pages=text("pages"),
+        doi=text("doi"),
+        pmid=text("pmid"),
+        pmcid=text("pmcid"),
+        url=text("url"),
+        keywords=items("keywords"),
+        publication_type=items("publication_type"),
+        language=text("language"),
+        database=text("database"),
+        ta_status=text("ta_status"),
+        ft_status=text("ft_status"),
+        ta_reasons=items("ta_reasons"),
+        ft_reasons=items("ft_reasons"),
+        labels=items("labels"),
+        mine=mine,
+    )
+
+
+async def _citations(
+    format_: ExportFormat, batches: AsyncIterator[list[dict[str, object]]], *, mine: bool
+) -> tuple[Path, int]:
+    """RIS or BibTeX, written a batch at a time (BibTeX keys stay unique across batches)."""
+    path = _temporary(".ris" if format_ is ExportFormat.RIS else ".bib")
+    bibtex = BibtexWriter()
+    count = 0
+    # RIS carries its own CRLF line ends: no newline translation.
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        async for batch in batches:
+            records = [_citation(row, mine=mine) for row in batch]
+            text = write_ris(records) if format_ is ExportFormat.RIS else bibtex.write(records)
+            await asyncio.to_thread(handle.write, text)
+            count += len(batch)
+    return path, count
 
 
 def _temporary(suffix: str) -> Path:
@@ -188,7 +251,7 @@ async def _csv(
         async for batch in batches:
             await asyncio.to_thread(
                 writer.writerows,
-                [[safe_cell(row[field]) for field, _ in columns] for row in batch],
+                [[safe_cell(_flat(row[field])) for field, _ in columns] for row in batch],
             )
             count += len(batch)
     return path, count
@@ -222,7 +285,7 @@ async def _xlsx(
 
     def add(batch: list[dict[str, object]]) -> None:
         for row in batch:
-            sheet.append([_text_cell(sheet, row[field]) for field, _ in columns])
+            sheet.append([_text_cell(sheet, _flat(row[field])) for field, _ in columns])
 
     async for batch in batches:
         await asyncio.to_thread(add, batch)

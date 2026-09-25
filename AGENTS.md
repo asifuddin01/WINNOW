@@ -53,12 +53,8 @@ backend/app/dedup/            # deduplication (Section 9.1)
 backend/app/stats/            # agreement: percent, Cohen's and Fleiss' kappa (9.3)
 backend/app/prisma/           # PRISMA 2020 counts and the SVG renderer (9.4, 8.14)
 backend/app/rob/              # risk-of-bias templates (RoB 2, ROBINS-I, NOS, QUADAS-2)
-backend/app/extraction/       # extraction forms: schemas, entries, differences, export rows (8.12)
-backend/app/exports/          # RIS and BibTeX writers, spreadsheet-safe cells (8.16)
-backend/app/reporting/        # the methods-text generator (8.15)
 backend/tests/unit/dedup/     backend/tests/unit/stats/
 backend/tests/unit/prisma/    backend/tests/unit/rob/
-backend/tests/unit/extraction/ backend/tests/unit/exports/ backend/tests/unit/reporting/
 backend/tests/fixtures/dedup/ # your fixtures only
 docs/codex-notes.md           # your notes, questions and hand-over reports
 docs/reviews/                 # review reports on other people's code (read-only reviews)
@@ -156,6 +152,10 @@ parses with `xml.etree.ElementTree` and contains no `<script>`.
 JSON templates for RoB 2, ROBINS-I, NOS and QUADAS-2 (domains, signalling questions, allowed
 judgements), a loader that validates them at import time, and `summary(assessments)` folding
 per-domain judgements into the traffic-light counts a plot needs. Data only — no plotting.
+
+> **Items 5–7 were taken over by Claude Code on 2026-09-25** (the owner's call: Codex was
+> busy). `app/extraction/`, `app/exports/` and `app/reporting/` are Claude Code's now; do
+> not start them. The specifications below are kept as the record of what was asked.
 
 ### 5. `app/extraction/` — extraction forms (guide 8.12), branch `codex/extraction`
 
