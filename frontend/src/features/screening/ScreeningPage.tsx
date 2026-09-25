@@ -194,6 +194,9 @@ export function ScreeningPage({
       );
       toast(DECIDED_TEXT[decision], {
         id: "decision",
+        // At the top: the usual corner is where the decision buttons are, and the next
+        // click would land on the toast instead.
+        position: "top-center",
         duration: 2500,
         action: {
           label: "Undo",
@@ -208,6 +211,7 @@ export function ScreeningPage({
         setAnnouncement(`Not saved: ${errorMessage(result.error)}`);
         toast.error(errorMessage(result.error), {
           id: "decision",
+          position: "top-center",
           action: { label: "Retry", onClick: () => void retry.current?.(decision) },
         });
         return;
