@@ -7,7 +7,7 @@ from app.redis_client import create_redis
 
 
 async def test_a_timeout_is_tried_again_before_it_fails_a_request() -> None:
-    connection = create_redis(get_settings()).connection_pool.make_connection()
+    retry = create_redis(get_settings()).connection_pool.connection_kwargs["retry"]
     attempts = 0
 
     async def flaky() -> str:
@@ -20,5 +20,5 @@ async def test_a_timeout_is_tried_again_before_it_fails_a_request() -> None:
     async def nothing(_: Exception) -> None:
         return None
 
-    assert await connection.retry.call_with_retry(flaky, nothing) == "answered"
+    assert await retry.call_with_retry(flaky, nothing) == "answered"
     assert attempts == 3
