@@ -98,6 +98,23 @@ async def test_the_first_model_comes_with_the_first_include_and_ranks_what_is_le
         assert first <= set(kidney)
 
 
+async def test_the_queue_reads_further_when_the_best_scores_are_used_up(
+    db_app: FastAPI, db: AsyncSession, mailer: MemoryMailer
+) -> None:
+    """The best scores are read 20n at a time: with all of the first 20 already held by
+    the screen, the next record is the 21st best, from a longer read."""
+    async with team(db_app, db, mailer, records=40) as t:
+        by_score = list(t.records)
+        db.add_all(
+            RecordScore(record_id=record, stage=TA, project_id=uuid.UUID(t.pid), score=1 - i / 100)
+            for i, record in enumerate(by_score)
+        )
+        await db.commit()
+        held = "&".join(f"exclude={record}" for record in by_score[:20])
+        queue = (await get(t.reviewer, f"/projects/{t.pid}/screening/queue?n=1&{held}")).json()
+        assert [uuid.UUID(item["id"]) for item in queue["items"]] == [by_score[20]]
+
+
 async def test_one_record_in_twenty_comes_from_random_order(
     db_app: FastAPI, db: AsyncSession, mailer: MemoryMailer
 ) -> None:

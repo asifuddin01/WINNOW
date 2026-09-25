@@ -248,6 +248,7 @@ class ScreeningService:
                 n,
                 position=(decided or 0) + len(exclude or []),
                 stage=stage,
+                project_id=access.project_id,
             )
         else:
             rows = await self._in_order(waiting, sort, access.user.id, n)
@@ -261,21 +262,13 @@ class ScreeningService:
         *,
         position: int,
         stage: ScreeningStage,
+        project_id: uuid.UUID,
     ) -> list[Record]:
         """Guide 9.2: most likely relevant first, by the model's score, but every
         EXPLORE_EVERY-th record from the random order, so the model also learns from
         records it would rank low. Records the model has not scored yet (none, before the
         first model) come in random order."""
-        scored = list(
-            await self._db.scalars(
-                waiting.join(
-                    RecordScore,
-                    and_(RecordScore.record_id == Record.id, RecordScore.stage == stage),
-                )
-                .order_by(RecordScore.score.desc(), Record.id)
-                .limit(n)
-            )
-        )
+        scored = await self._best_scored(waiting, project_id, stage, n)
         shuffled = await self._in_order(waiting, "random", user_id, n)
         rows: list[Record] = []
         seen: set[uuid.UUID] = set()
@@ -290,6 +283,36 @@ class ScreeningService:
             seen.add(pick.id)
             rows.append(pick)
         return rows
+
+    async def _best_scored(
+        self, waiting: Select[Any], project_id: uuid.UUID, stage: ScreeningStage, n: int
+    ) -> list[Record]:
+        """The `n` best-scored records waiting for me. The review's best scores are read
+        straight off the index, 20n at a time, then eight times as many while my own
+        decisions have used them up: asked for in one query, PostgreSQL joined and sorted
+        every score first (0.1-0.5 s at 100,000 records, Phase 9)."""
+        depth = n * 20
+        while True:
+            top = (
+                select(RecordScore.record_id, RecordScore.score)
+                .where(RecordScore.project_id == project_id, RecordScore.stage == stage)
+                .order_by(RecordScore.score.desc(), RecordScore.record_id)
+                .limit(depth)
+                .subquery()
+            )
+            rows = list(
+                await self._db.scalars(
+                    waiting.join(top, top.c.record_id == Record.id)
+                    .order_by(top.c.score.desc(), Record.id)
+                    .limit(n)
+                )
+            )
+            if len(rows) == n:
+                return rows
+            read = await self._db.scalar(select(func.count()).select_from(top))
+            if (read or 0) < depth:  # every score read: these are all there are
+                return rows
+            depth *= 8
 
     async def _in_order(
         self, waiting: Select[Any], sort: QueueSort, user_id: uuid.UUID, n: int
