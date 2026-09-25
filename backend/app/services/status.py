@@ -188,15 +188,18 @@ async def _write(
     for record_id, result in rows:
         by_outcome[result].append(record_id)
     for result, ids in by_outcome.items():
-        values_ = (
-            {Record.ta_final: _TA[result]}
+        column, value = (
+            (Record.ta_final, _TA[result])
             if stage is ScreeningStage.TITLE_ABSTRACT
-            else {Record.ft_final: _FT[result]}
+            else (Record.ft_final, _FT[result])
         )
+        # Only the records whose status changes: a row rewritten to the same value is still
+        # a new version in every index, and a settings change recomputes the whole review
+        # (100,000 unchanged rows took minutes, slowing decisions made meanwhile).
         await db.execute(
             update(Record)
-            .where(Record.id.in_(ids), Record.project_id == project_id)
-            .values(values_)
+            .where(Record.id.in_(ids), Record.project_id == project_id, column != value)
+            .values({column: value})
             .execution_options(synchronize_session=None)
         )
     if stage is ScreeningStage.TITLE_ABSTRACT:
