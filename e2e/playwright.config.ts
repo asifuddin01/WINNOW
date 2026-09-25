@@ -16,7 +16,9 @@ export default defineConfig({
   // The development stack compiles route chunks on demand, so first visits are slow.
   expect: { timeout: 10_000 },
   retries: process.env.CI ? 1 : 0,
-  reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
+  // "github" turns failures into annotations on the run, which can be read without
+  // signing in to GitHub (the job logs cannot).
+  reporter: process.env.CI ? [["list"], ["github"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL: process.env.BASE_URL ?? "http://localhost:8080",
     trace: "retain-on-failure",
