@@ -46,6 +46,9 @@ export function SelectField<T extends string>({
       <Select
         value={value}
         onValueChange={(next) => {
+          // Radix reports "" while a select that has just appeared settles (its hidden
+          // native select has no options yet); that is never a choice unless offered.
+          if (next === "" && !options.some((option) => option.value === "")) return;
           onChange(next as T);
         }}
         disabled={disabled}
