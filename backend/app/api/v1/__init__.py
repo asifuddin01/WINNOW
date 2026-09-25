@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 
 from app.api.deps import verify_csrf
 from app.api.v1 import (
+    audit,
     auth,
     conflicts,
     dedup,
@@ -40,4 +41,5 @@ api_router.include_router(fulltext.router)
 api_router.include_router(fulltext.files)
 api_router.include_router(reporting.router)
 api_router.include_router(rob.router)
+api_router.include_router(audit.router)
 api_router.include_router(invites.router)

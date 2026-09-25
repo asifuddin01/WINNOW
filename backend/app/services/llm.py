@@ -43,6 +43,7 @@ from app.services.audit import Actor
 from app.services.blinding import screens, settings_of
 from app.services.errors import DomainError, FeatureUnavailableError, NotFoundError
 from app.services.screening import NotScreeningError
+from app.spreadsheet import safe_cell
 
 
 class LlmFailedError(DomainError):
@@ -211,7 +212,7 @@ class LlmService:
             )
             writer.writerow(
                 [
-                    _cell(value)
+                    safe_cell(value)
                     for value in (
                         suggestion.created_at.isoformat(),
                         suggestion.stage.value,
@@ -265,9 +266,3 @@ def _out(row: LlmSuggestion) -> SuggestionOut:
         model=row.model,
         created_at=row.created_at,
     )
-
-
-def _cell(value: object) -> str:
-    """A CSV cell a spreadsheet will not run as a formula."""
-    text = "" if value is None else str(value)
-    return "'" + text if text[:1] in ("=", "+", "-", "@", "\t", "\r") else text

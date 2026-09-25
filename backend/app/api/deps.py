@@ -29,6 +29,7 @@ from app.security.rate_limit import API_PER_USER, Limit, RateLimiter
 from app.security.sessions import SESSION_COOKIE, Session, SessionStore, session_key
 from app.services.accounts import AccountService
 from app.services.audit import Actor
+from app.services.audit_log import AuditLogService
 from app.services.conflicts import ConflictService
 from app.services.dedup import DedupService
 from app.services.errors import NotAuthenticatedError
@@ -267,6 +268,13 @@ def get_rob(db: SessionDep) -> RobService:
 
 
 RobDep = Annotated[RobService, Depends(get_rob)]
+
+
+def get_audit_log(db: SessionDep) -> AuditLogService:
+    return AuditLogService(db)
+
+
+AuditLogDep = Annotated[AuditLogService, Depends(get_audit_log)]
 
 
 def _origin(url: str) -> str | None:
