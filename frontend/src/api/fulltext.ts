@@ -109,7 +109,7 @@ export const batchQuery = (pid: string, bid: string) =>
  * Files go as form data, which openapi-fetch would serialise wrongly; this is fetch with
  * the CSRF header the client adds (like `uploadImports`).
  */
-async function postFile<T>(path: string, file: File): Promise<T> {
+export async function postFile<T>(path: string, file: File): Promise<T> {
   const body = new FormData();
   body.append("file", file, file.name);
   const response = await fetch(`${window.location.origin}/api/v1${path}`, {

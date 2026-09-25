@@ -1,0 +1,50 @@
+/** What each audit action means, in words; unknown ones fall back to their code. */
+const WORDS: Record<string, string> = {
+  "decision.made": "decided on a record",
+  "decision.changed": "changed a decision",
+  "decision.undone": "undid a decision",
+  "decision.bulk": "decided many records at once",
+  "conflict.resolved": "resolved a conflict",
+  "conflict.discussion": "started a discussion on a conflict",
+  "import.uploaded": "uploaded search results",
+  "import.started": "imported search results",
+  "import.undone": "undid an import",
+  "dedup.merged": "merged duplicates",
+  "dedup.ignored": "kept records apart",
+  "dedup.auto_resolved": "merged the certain duplicates",
+  "fulltext.added": "added a PDF",
+  "fulltext.removed": "removed a PDF",
+  "fulltext.quarantined": "PDF held back by the virus scanner",
+  "fulltext.not_retrievable": "marked a full text not retrievable",
+  "fulltext.retrievable": "unmarked a full text as not retrievable",
+  "fulltext.zip_uploaded": "uploaded a ZIP of PDFs",
+  "fulltext.zip_applied": "attached PDFs from a ZIP",
+  "fulltext.zip_discarded": "discarded a ZIP of PDFs",
+  "rob.saved": "saved a risk-of-bias assessment",
+  "rob.final_chosen": "chose the final risk-of-bias assessment",
+  "llm.suggested": "asked for an AI suggestion",
+  "member.invited": "invited someone",
+  "member.invite_revoked": "withdrew an invitation",
+  "member.joined": "joined the review",
+  "member.left": "left the review",
+  "member.removed": "removed a member",
+  "member.role_changed": "changed a member's role",
+  "member.updated": "changed a member's rights",
+  "member.keep_blind_changed": "changed whether they stay blind",
+  "project.created": "created the review",
+  "project.updated": "changed the review's details",
+  "project.settings_changed": "changed the review's settings",
+  "project.blind_mode_changed": "switched blind mode",
+  "project.transferred": "transferred the review",
+  "project.restored": "restored the review from a backup",
+  "prisma.manual_changed": "changed the PRISMA counts",
+  "ranking.trained": "retrained the relevance ranking",
+  "export.requested": "asked for an export",
+  "export.downloaded": "downloaded an export",
+};
+
+export function describe(action: string): string {
+  if (WORDS[action]) return WORDS[action];
+  const [family, ...rest] = action.split(".");
+  return `${family}: ${rest.join(" ").replaceAll("_", " ")}`;
+}

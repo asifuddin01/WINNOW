@@ -51,3 +51,17 @@ export function initials(name: string): string {
   const last = parts.length > 1 ? (parts.at(-1)?.[0] ?? "") : "";
   return (first + last).toUpperCase() || "?";
 }
+
+const SIZES = ["bytes", "KB", "MB", "GB"] as const;
+
+/** "840 KB", "12.4 MB": a file's size as people read it. */
+export function fileSize(bytes: number): string {
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < SIZES.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  const shown = unit === 0 || value >= 100 ? Math.round(value).toString() : value.toFixed(1);
+  return `${shown} ${SIZES[unit]}`;
+}

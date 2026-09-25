@@ -79,3 +79,18 @@ export function fullTextSearch(
 ): ReturnType<typeof screenSearch> & { view?: "pdfs" } {
   return { ...screenSearch(search), ...(search.view === "pdfs" && { view: "pdfs" as const }) };
 }
+
+export const ROB_TOOLS = ["rob2", "robins_i", "nos", "quadas2"] as const;
+export type RobToolKey = (typeof ROB_TOOLS)[number];
+
+/** The risk-of-bias page: which tool, and which study is open. */
+export function robSearch(search: Record<string, unknown>): { tool?: RobToolKey; study?: string } {
+  return {
+    ...(typeof search.tool === "string" &&
+      (ROB_TOOLS as readonly string[]).includes(search.tool) && {
+        tool: search.tool as RobToolKey,
+      }),
+    ...(typeof search.study === "string" &&
+      /^[0-9a-f-]{36}$/i.test(search.study) && { study: search.study }),
+  };
+}

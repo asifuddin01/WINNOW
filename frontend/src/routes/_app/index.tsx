@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { LibraryBigIcon, PlusIcon, UsersIcon } from "lucide-react";
+import { ArchiveRestoreIcon, LibraryBigIcon, PlusIcon, UsersIcon } from "lucide-react";
 
 import { projectsQuery, type ProjectSummary } from "@/api/projects";
 import { Badge } from "@/components/ui/badge";
@@ -27,11 +27,18 @@ function MyReviews() {
             Systematic, scoping and rapid reviews you lead or take part in.
           </p>
         </div>
-        <Button asChild>
-          <Link to="/new">
-            <PlusIcon aria-hidden="true" /> New review
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link to="/restore">
+              <ArchiveRestoreIcon aria-hidden="true" /> Restore a backup
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link to="/new">
+              <PlusIcon aria-hidden="true" /> New review
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {isPending ? (

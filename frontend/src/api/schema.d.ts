@@ -3734,7 +3734,7 @@ export interface components {
             /** Reports Assessed */
             reports_assessed: number;
             /** Reports Excluded */
-            reports_excluded: components["schemas"]["app__schemas__reporting__ReasonOut"][];
+            reports_excluded: components["schemas"]["ReasonCount"][];
             /** Reports Excluded Total */
             reports_excluded_total: number;
             /** Studies Included */
@@ -4062,12 +4062,32 @@ export interface components {
              */
             redis: "ok" | "unavailable";
         };
+        /** ReasonCount */
+        ReasonCount: {
+            /** Reason */
+            reason: string;
+            /** Count */
+            count: number;
+        };
         /** ReasonCreate */
         ReasonCreate: {
             /** Label */
             label: string;
             /** @default both */
             stage: components["schemas"]["ReasonStage"];
+        };
+        /** ReasonOut */
+        ReasonOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Label */
+            label: string;
+            stage: components["schemas"]["ReasonStage"];
+            /** Position */
+            position: number;
         };
         /**
          * ReasonStage
@@ -4743,26 +4763,6 @@ export interface components {
             domains: components["schemas"]["DomainSummaryOut"][];
             /** Studies */
             studies: components["schemas"]["StudyRow"][];
-        };
-        /** ReasonOut */
-        app__schemas__reporting__ReasonOut: {
-            /** Reason */
-            reason: string;
-            /** Count */
-            count: number;
-        };
-        /** ReasonOut */
-        app__schemas__setup__ReasonOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Label */
-            label: string;
-            stage: components["schemas"]["ReasonStage"];
-            /** Position */
-            position: number;
         };
         /** ValidationIssue */
         ValidationIssue: {
@@ -7396,7 +7396,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__schemas__setup__ReasonOut"][];
+                    "application/json": components["schemas"]["ReasonOut"][];
                 };
             };
             /** @description Unauthorized */
@@ -7459,7 +7459,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__schemas__setup__ReasonOut"];
+                    "application/json": components["schemas"]["ReasonOut"];
                 };
             };
             /** @description Unauthorized */
@@ -7590,7 +7590,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__schemas__setup__ReasonOut"];
+                    "application/json": components["schemas"]["ReasonOut"];
                 };
             };
             /** @description Unauthorized */

@@ -1,5 +1,7 @@
 import {
+  ChartColumnIcon,
   CopyCheckIcon,
+  GaugeIcon,
   ListChecksIcon,
   ScaleIcon,
   FileTextIcon,
@@ -34,8 +36,8 @@ export const workspaceNav: NavItem[] = [
 ];
 
 /**
- * Inside a review, in workflow order (guide 11.2). Extraction, Risk of bias and Report
- * join this list as their phases land.
+ * Inside a review, in workflow order (guide 11.2). Extraction joins this list when its
+ * forms land.
  */
 export const projectNav: NavItem[] = [
   { to: "/p/$pid", label: "Overview", icon: LayoutDashboardIcon, exact: true },
@@ -50,6 +52,8 @@ export const projectNav: NavItem[] = [
     requires: "resolve_conflicts",
     badge: "conflicts",
   },
+  { to: "/p/$pid/rob", label: "Risk of bias", icon: GaugeIcon },
+  { to: "/p/$pid/report", label: "Report", icon: ChartColumnIcon },
   { to: "/p/$pid/records", label: "Records", icon: TableIcon },
   { to: "/p/$pid/settings", label: "Settings", icon: SettingsIcon },
 ];

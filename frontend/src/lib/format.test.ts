@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { describeDevice, initials, timeAgo } from "@/lib/format";
+import { describeDevice, fileSize, initials, timeAgo } from "@/lib/format";
 
 describe("formatters", () => {
   test("devices", () => {
@@ -15,6 +15,14 @@ describe("formatters", () => {
     );
     expect(describeDevice("curl/8.0")).toBe("Unknown device");
     expect(describeDevice(null)).toBe("Unknown device");
+  });
+
+  test("file sizes", () => {
+    expect(fileSize(512)).toBe("512 bytes");
+    expect(fileSize(2048)).toBe("2.0 KB");
+    expect(fileSize(860_000)).toBe("840 KB");
+    expect(fileSize(13 * 1024 ** 2)).toBe("13.0 MB");
+    expect(fileSize(3 * 1024 ** 4)).toBe("3072 GB");
   });
 
   test("relative times", () => {

@@ -1,16 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, Outlet, createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute } from "@tanstack/react-router";
 
 import { projectQuery } from "@/api/projects";
-import type { FileRouteTypes } from "@/routeTree.gen";
-import { cn } from "@/lib/utils";
+import { SectionTabs, type SectionTab } from "@/components/layout/SectionTabs";
 
 export const Route = createFileRoute("/_app/p/$pid/settings")({
   component: SettingsLayout,
   staticData: { title: "Settings" },
 });
 
-const TABS: { to: FileRouteTypes["to"]; label: string; exact?: boolean }[] = [
+const TABS: SectionTab[] = [
   { to: "/p/$pid/settings", label: "General", exact: true },
   { to: "/p/$pid/settings/criteria", label: "Criteria" },
   { to: "/p/$pid/settings/keywords", label: "Keywords" },
@@ -34,29 +33,7 @@ function SettingsLayout() {
             : "How this review works. Your role lets you read these, not change them."}
         </p>
       </div>
-      <nav aria-label="Settings sections" className="border-b border-border">
-        <ul className="-mb-px flex flex-wrap gap-1">
-          {TABS.map((tab) => (
-            <li key={tab.to}>
-              <Link
-                to={tab.to}
-                params={{ pid }}
-                activeOptions={{ exact: tab.exact ?? false }}
-                className={cn(
-                  "inline-block border-b-2 border-transparent px-3 py-2 text-sm text-muted-foreground hover:text-foreground",
-                  "focus-visible:rounded-t-md focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
-                )}
-                activeProps={{
-                  className: "border-primary font-medium text-foreground",
-                  "aria-current": "page",
-                }}
-              >
-                {tab.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <SectionTabs pid={pid} label="Settings sections" tabs={TABS} />
       <Outlet />
     </div>
   );

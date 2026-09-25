@@ -3311,7 +3311,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/app__schemas__setup__ReasonOut"
+                    "$ref": "#/components/schemas/ReasonOut"
                   },
                   "title": "Response List Exclusion Reasons"
                 }
@@ -3395,7 +3395,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/app__schemas__setup__ReasonOut"
+                  "$ref": "#/components/schemas/ReasonOut"
                 }
               }
             }
@@ -3499,7 +3499,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/app__schemas__setup__ReasonOut"
+                  "$ref": "#/components/schemas/ReasonOut"
                 }
               }
             }
@@ -15771,7 +15771,7 @@
           },
           "reports_excluded": {
             "items": {
-              "$ref": "#/components/schemas/app__schemas__reporting__ReasonOut"
+              "$ref": "#/components/schemas/ReasonCount"
             },
             "type": "array",
             "title": "Reports Excluded"
@@ -16694,6 +16694,24 @@
         ],
         "title": "ReadinessChecks"
       },
+      "ReasonCount": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason",
+          "count"
+        ],
+        "title": "ReasonCount"
+      },
       "ReasonCreate": {
         "properties": {
           "label": {
@@ -16712,6 +16730,34 @@
           "label"
         ],
         "title": "ReasonCreate"
+      },
+      "ReasonOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/ReasonStage"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "stage",
+          "position"
+        ],
+        "title": "ReasonOut"
       },
       "ReasonStage": {
         "type": "string",
@@ -18790,52 +18836,6 @@
           "studies"
         ],
         "title": "VariantSummary"
-      },
-      "app__schemas__reporting__ReasonOut": {
-        "properties": {
-          "reason": {
-            "type": "string",
-            "title": "Reason"
-          },
-          "count": {
-            "type": "integer",
-            "title": "Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "reason",
-          "count"
-        ],
-        "title": "ReasonOut"
-      },
-      "app__schemas__setup__ReasonOut": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "label": {
-            "type": "string",
-            "title": "Label"
-          },
-          "stage": {
-            "$ref": "#/components/schemas/ReasonStage"
-          },
-          "position": {
-            "type": "integer",
-            "title": "Position"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "label",
-          "stage",
-          "position"
-        ],
-        "title": "ReasonOut"
       },
       "ValidationIssue": {
         "properties": {
