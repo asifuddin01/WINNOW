@@ -147,3 +147,11 @@ class NotInClusterError(DomainError):
     status = 422
     code = "not_in_cluster"
     message = "That record is not in this group of duplicates."
+
+
+class AccountDisabledError(DomainError):
+    """Guide 8.18: told only after the right password, so it reveals nothing more."""
+
+    status = 403
+    code = "account_disabled"
+    message = "This account is disabled. Ask this Winnow's administrator to enable it."

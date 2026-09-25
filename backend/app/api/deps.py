@@ -28,11 +28,12 @@ from app.security.permissions import (
 from app.security.rate_limit import API_PER_USER, Limit, RateLimiter
 from app.security.sessions import SESSION_COOKIE, Session, SessionStore, session_key
 from app.services.accounts import AccountService
+from app.services.admin import AdminService
 from app.services.audit import Actor
 from app.services.audit_log import AuditLogService
 from app.services.conflicts import ConflictService
 from app.services.dedup import DedupService
-from app.services.errors import NotAuthenticatedError
+from app.services.errors import NotAuthenticatedError, NotFoundError
 from app.services.exports import ExportService
 from app.services.extraction import ExtractionService
 from app.services.fulltext import FulltextService
@@ -143,7 +144,7 @@ async def get_authenticated(
     if session is None:
         raise NotAuthenticatedError
     user = await db.get(User, session.user_id)
-    if user is None or user.deleted_at is not None:
+    if user is None or user.deleted_at is not None or user.disabled_at is not None:
         await sessions.delete(session.key, session.user_id)
         raise NotAuthenticatedError
     await enforce_limit(limiter, API_PER_USER, str(user.id))
@@ -352,3 +353,23 @@ async def verify_csrf(request: Request) -> None:
             "Your security token is missing or out of date. Reload the page and try again.",
             code="csrf_invalid",
         )
+
+
+async def get_instance_admin(auth: AuthDep) -> User:
+    """The signed-in instance administrator (guide 8.18); anyone else gets 404, so the
+    panel's existence is not advertised."""
+    if not auth.user.is_instance_admin:
+        raise NotFoundError
+    return auth.user
+
+
+InstanceAdminDep = Annotated[User, Depends(get_instance_admin)]
+
+
+def get_admin(
+    db: SessionDep, sessions: SessionsDep, redis: RedisDep, mailer: MailerDep, settings: SettingsDep
+) -> AdminService:
+    return AdminService(db, sessions, redis, mailer, settings)
+
+
+AdminDep = Annotated[AdminService, Depends(get_admin)]

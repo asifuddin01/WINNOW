@@ -968,3 +968,25 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   in the database: presence is only ever "now".
 - **Only people who screen announce themselves**; every member sees who is screening, on
   the review's overview and on the screening pages. Nobody is shown to themselves.
+
+### Admin panel (guide 8.18)
+- **Anyone who is not an instance administrator gets 404** from `/api/v1/admin/…`, as
+  non-members get for a review: the panel is not advertised.
+- **Disabling keeps everything**: the account cannot sign in and its sessions end at once,
+  but its reviews, decisions and history stay. "This account is disabled" is said only
+  after the right password (a wrong one is a wrong password, as for anyone), so it does
+  not reveal which addresses have accounts. An administrator cannot disable themselves,
+  so someone is always left to enable accounts.
+- **Resetting two-factor is for a lost authenticator and lost recovery codes**: it turns
+  two-factor off, ends the person's sessions and emails them; the panel asks the
+  administrator to check who is asking first.
+- **Only two settings change while Winnow runs: the registration mode and the Unpaywall
+  email.** They are safe to change live and useful to (closing registration after a
+  workshop). Everything else (email server, storage, AI provider, sizes) stays in `.env`,
+  read at start-up, and is shown read-only; secrets are never shown, only whether they
+  are set. A value set in the panel wins over `.env` until "Use the value in .env" clears
+  it.
+- **Health is read, never guessed**: the worker is alive if its arq health check is fresh
+  (with its job counts), the queue length is the arq queue's, the disk is where files are
+  kept, the database size is PostgreSQL's own, and the last backup is what `make backup`
+  records (item 11), or "none recorded".

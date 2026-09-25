@@ -15,7 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 interface ConfirmDialogProps {
-  trigger: ReactNode;
+  /** What opens it; leave it out and pass `open` to open it from elsewhere (a menu). */
+  trigger?: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   title: string;
   description: ReactNode;
   confirmLabel: string;
@@ -28,6 +31,8 @@ interface ConfirmDialogProps {
 /** Guide 2.3: anything destructive is confirmed, and the important ones are typed out. */
 export function ConfirmDialog({
   trigger,
+  open: controlled,
+  onOpenChange,
   title,
   description,
   confirmLabel,
@@ -35,7 +40,12 @@ export function ConfirmDialog({
   destructive = false,
   onConfirm,
 }: ConfirmDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [own, setOwn] = useState(false);
+  const open = controlled ?? own;
+  const setOpen = (next: boolean) => {
+    setOwn(next);
+    onOpenChange?.(next);
+  };
   const [typed, setTyped] = useState("");
   const ready = !confirmPhrase || typed.trim() === confirmPhrase;
 
@@ -47,7 +57,7 @@ export function ConfirmDialog({
         if (!next) setTyped("");
       }}
     >
-      <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
+      {trigger && <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>

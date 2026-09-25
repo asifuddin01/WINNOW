@@ -50,6 +50,7 @@ from app.security import rate_limit as limits
 from app.security.sessions import SESSION_COOKIE, session_key
 from app.services import audit
 from app.services.errors import InvalidCredentialsError, InvalidSecondFactorError
+from app.services.instance import registration_mode
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -63,10 +64,10 @@ CHECK_EMAIL = "If the details are right, an email is on its way. Check your inbo
 
 
 @router.get("/options")
-async def auth_options(accounts: AccountsDep, settings: SettingsDep) -> AuthOptions:
+async def auth_options(accounts: AccountsDep, settings: SettingsDep, db: SessionDep) -> AuthOptions:
     """What the sign-in pages should offer on this instance."""
     return AuthOptions(
-        registration=settings.registration,
+        registration=await registration_mode(db, settings),
         single_user=settings.winnow_single_user,
         needs_setup=await accounts.needs_setup(),
         email_enabled=settings.email_enabled,

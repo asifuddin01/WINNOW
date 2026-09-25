@@ -17,7 +17,7 @@ import { Dialog } from "radix-ui";
 import { useCallback, useDeferredValue, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { signOut } from "@/api/auth";
+import { meQuery, signOut } from "@/api/auth";
 import { api, errorMessage, unwrap } from "@/api/client";
 import { projectQuery, projectsQuery } from "@/api/projects";
 import { projectNav, workspaceNav } from "@/components/layout/nav";
@@ -106,6 +106,7 @@ function Palette({ close }: { close: () => void }) {
   const { resolvedTheme, setTheme } = useTheme();
   const { data: project } = useQuery({ ...projectQuery(pid ?? ""), enabled: Boolean(pid) });
   const { data: reviews } = useQuery(projectsQuery);
+  const { data: me } = useQuery(meQuery);
   const [text, setText] = useState("");
   const [active, setActive] = useState(0);
   const query = useDeferredValue(text.trim());
@@ -209,6 +210,7 @@ function Palette({ close }: { close: () => void }) {
       },
     );
     for (const item of workspaceNav) {
+      if (item.adminOnly && !me?.is_instance_admin) continue;
       list.push({
         id: `page:${item.to}`,
         group: "Pages",
@@ -251,6 +253,7 @@ function Palette({ close }: { close: () => void }) {
     pid,
     project,
     reviews,
+    me,
     query,
     searching,
     found,

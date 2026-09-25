@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 
+import { meQuery } from "@/api/auth";
+
 import { projectQuery } from "@/api/projects";
 import { progressQuery } from "@/api/screening";
 import { BrandMark, Wordmark } from "@/components/layout/Brand";
@@ -23,6 +25,7 @@ export function AppSidebar() {
   const { isMobile, setOpenMobile } = useSidebar();
   // Inside a review, its own pages come first; elsewhere there is no pid to read.
   const { pid } = useParams({ strict: false });
+  const { data: me } = useQuery(meQuery);
   // On phones the sidebar is a sheet; close it once a destination is chosen.
   const closeOnMobile = () => {
     if (isMobile) setOpenMobile(false);
@@ -49,9 +52,11 @@ export function AppSidebar() {
             <SidebarGroupLabel>Workspace</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {workspaceNav.map((item) => (
-                  <NavLink key={item.to} item={item} onNavigate={closeOnMobile} />
-                ))}
+                {workspaceNav
+                  .filter((item) => !item.adminOnly || me?.is_instance_admin)
+                  .map((item) => (
+                    <NavLink key={item.to} item={item} onNavigate={closeOnMobile} />
+                  ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

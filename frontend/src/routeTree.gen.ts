@@ -16,11 +16,15 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppAccountRouteImport } from './routes/_app/account'
+import { Route as AppAdminRouteImport } from './routes/_app/admin'
 import { Route as AppNewRouteImport } from './routes/_app/new'
 import { Route as AppRestoreRouteImport } from './routes/_app/restore'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as ResetTokenRouteImport } from './routes/reset.$token'
 import { Route as VerifyTokenRouteImport } from './routes/verify.$token'
+import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
+import { Route as AppAdminHealthRouteImport } from './routes/_app/admin/health'
+import { Route as AppAdminSettingsRouteImport } from './routes/_app/admin/settings'
 import { Route as AppPPidRouteImport } from './routes/_app/p/$pid'
 import { Route as AppPPidIndexRouteImport } from './routes/_app/p/$pid/index'
 import { Route as AppPPidConflictsRouteImport } from './routes/_app/p/$pid/conflicts'
@@ -83,6 +87,11 @@ const AppAccountRoute = AppAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNewRoute = AppNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -107,6 +116,21 @@ const VerifyTokenRoute = VerifyTokenRouteImport.update({
   id: '/verify/$token',
   path: '/verify/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminHealthRoute = AppAdminHealthRouteImport.update({
+  id: '/health',
+  path: '/health',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminSettingsRoute = AppAdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppAdminRoute,
 } as any)
 const AppPPidRoute = AppPPidRouteImport.update({
   id: '/p/$pid',
@@ -253,12 +277,16 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/setup': typeof SetupRoute
   '/account': typeof AppAccountRoute
+  '/admin': typeof AppAdminRouteWithChildren
   '/new': typeof AppNewRoute
   '/restore': typeof AppRestoreRoute
   '/invite/$token': typeof InviteTokenRoute
   '/reset/$token': typeof ResetTokenRoute
   '/verify/$token': typeof VerifyTokenRoute
+  '/admin/health': typeof AppAdminHealthRoute
+  '/admin/settings': typeof AppAdminSettingsRoute
   '/p/$pid': typeof AppPPidRouteWithChildren
+  '/admin/': typeof AppAdminIndexRoute
   '/p/$pid/conflicts': typeof AppPPidConflictsRoute
   '/p/$pid/duplicates': typeof AppPPidDuplicatesRoute
   '/p/$pid/extraction': typeof AppPPidExtractionRouteWithChildren
@@ -298,6 +326,9 @@ export interface FileRoutesByTo {
   '/reset/$token': typeof ResetTokenRoute
   '/verify/$token': typeof VerifyTokenRoute
   '/': typeof AppIndexRoute
+  '/admin/health': typeof AppAdminHealthRoute
+  '/admin/settings': typeof AppAdminSettingsRoute
+  '/admin': typeof AppAdminIndexRoute
   '/p/$pid/conflicts': typeof AppPPidConflictsRoute
   '/p/$pid/duplicates': typeof AppPPidDuplicatesRoute
   '/p/$pid/import': typeof AppPPidImportRoute
@@ -330,13 +361,17 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/setup': typeof SetupRoute
   '/_app/account': typeof AppAccountRoute
+  '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/new': typeof AppNewRoute
   '/_app/restore': typeof AppRestoreRoute
   '/invite/$token': typeof InviteTokenRoute
   '/reset/$token': typeof ResetTokenRoute
   '/verify/$token': typeof VerifyTokenRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/admin/health': typeof AppAdminHealthRoute
+  '/_app/admin/settings': typeof AppAdminSettingsRoute
   '/_app/p/$pid': typeof AppPPidRouteWithChildren
+  '/_app/admin/': typeof AppAdminIndexRoute
   '/_app/p/$pid/conflicts': typeof AppPPidConflictsRoute
   '/_app/p/$pid/duplicates': typeof AppPPidDuplicatesRoute
   '/_app/p/$pid/extraction': typeof AppPPidExtractionRouteWithChildren
@@ -373,12 +408,16 @@ export interface FileRouteTypes {
     | '/register'
     | '/setup'
     | '/account'
+    | '/admin'
     | '/new'
     | '/restore'
     | '/invite/$token'
     | '/reset/$token'
     | '/verify/$token'
+    | '/admin/health'
+    | '/admin/settings'
     | '/p/$pid'
+    | '/admin/'
     | '/p/$pid/conflicts'
     | '/p/$pid/duplicates'
     | '/p/$pid/extraction'
@@ -418,6 +457,9 @@ export interface FileRouteTypes {
     | '/reset/$token'
     | '/verify/$token'
     | '/'
+    | '/admin/health'
+    | '/admin/settings'
+    | '/admin'
     | '/p/$pid/conflicts'
     | '/p/$pid/duplicates'
     | '/p/$pid/import'
@@ -449,13 +491,17 @@ export interface FileRouteTypes {
     | '/register'
     | '/setup'
     | '/_app/account'
+    | '/_app/admin'
     | '/_app/new'
     | '/_app/restore'
     | '/invite/$token'
     | '/reset/$token'
     | '/verify/$token'
     | '/_app/'
+    | '/_app/admin/health'
+    | '/_app/admin/settings'
     | '/_app/p/$pid'
+    | '/_app/admin/'
     | '/_app/p/$pid/conflicts'
     | '/_app/p/$pid/duplicates'
     | '/_app/p/$pid/extraction'
@@ -546,6 +592,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin': {
+      id: '/_app/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/new': {
       id: '/_app/new'
       path: '/new'
@@ -580,6 +633,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/verify/$token'
       preLoaderRoute: typeof VerifyTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/admin/': {
+      id: '/_app/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AppAdminIndexRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/health': {
+      id: '/_app/admin/health'
+      path: '/health'
+      fullPath: '/admin/health'
+      preLoaderRoute: typeof AppAdminHealthRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/settings': {
+      id: '/_app/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AppAdminSettingsRouteImport
+      parentRoute: typeof AppAdminRoute
     }
     '/_app/p/$pid': {
       id: '/_app/p/$pid'
@@ -773,6 +847,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppAdminRouteChildren {
+  AppAdminHealthRoute: typeof AppAdminHealthRoute
+  AppAdminSettingsRoute: typeof AppAdminSettingsRoute
+  AppAdminIndexRoute: typeof AppAdminIndexRoute
+}
+
+const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminHealthRoute: AppAdminHealthRoute,
+  AppAdminSettingsRoute: AppAdminSettingsRoute,
+  AppAdminIndexRoute: AppAdminIndexRoute,
+}
+
+const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
+  AppAdminRouteChildren,
+)
+
 interface AppPPidExtractionRouteChildren {
   AppPPidExtractionConsensusRoute: typeof AppPPidExtractionConsensusRoute
   AppPPidExtractionFormsRoute: typeof AppPPidExtractionFormsRoute
@@ -865,6 +955,7 @@ const AppPPidRouteWithChildren =
 
 interface AppRouteChildren {
   AppAccountRoute: typeof AppAccountRoute
+  AppAdminRoute: typeof AppAdminRouteWithChildren
   AppNewRoute: typeof AppNewRoute
   AppRestoreRoute: typeof AppRestoreRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -873,6 +964,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAccountRoute: AppAccountRoute,
+  AppAdminRoute: AppAdminRouteWithChildren,
   AppNewRoute: AppNewRoute,
   AppRestoreRoute: AppRestoreRoute,
   AppIndexRoute: AppIndexRoute,

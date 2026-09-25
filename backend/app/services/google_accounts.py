@@ -11,6 +11,7 @@ from app.security.google import PROVIDER, GoogleProfile
 from app.services import audit
 from app.services.audit import Actor
 from app.services.errors import RegistrationClosedError
+from app.services.instance import registration_mode
 
 
 async def user_for_google(
@@ -40,7 +41,7 @@ async def user_for_google(
         select(User).where(User.email == profile.email, User.deleted_at.is_(None))
     )
     if user is None:
-        if settings.winnow_single_user or settings.registration != "open":
+        if settings.winnow_single_user or await registration_mode(db, settings) != "open":
             raise RegistrationClosedError
         user = User(
             name=profile.name[:200],

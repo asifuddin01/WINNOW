@@ -5,6 +5,7 @@ import {
   GaugeIcon,
   ListChecksIcon,
   ScaleIcon,
+  ServerCogIcon,
   FileTextIcon,
   FileUpIcon,
   LayoutDashboardIcon,
@@ -28,12 +29,15 @@ export interface NavItem {
   requires?: Capability;
   /** A count beside the label, e.g. the conflicts waiting. */
   badge?: "conflicts";
+  /** Only for instance administrators (guide 8.18). */
+  adminOnly?: boolean;
 }
 
 /** Instance-level navigation, outside any review. */
 export const workspaceNav: NavItem[] = [
   { to: "/", label: "My reviews", icon: LibraryBigIcon, exact: true },
   { to: "/account", label: "Account", icon: ShieldCheckIcon },
+  { to: "/admin", label: "Instance admin", icon: ServerCogIcon, adminOnly: true },
 ];
 
 /**

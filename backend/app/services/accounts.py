@@ -22,6 +22,7 @@ from app.security.tokens import hash_token, new_token
 from app.services import audit
 from app.services.audit import Actor
 from app.services.errors import (
+    AccountDisabledError,
     InvalidCredentialsError,
     InvalidSecondFactorError,
     InvalidTokenError,
@@ -29,6 +30,7 @@ from app.services.errors import (
     SecondFactorRequiredError,
     WeakPasswordError,
 )
+from app.services.instance import registration_mode
 from app.services.members import invite_allows_registration
 from app.services.two_factor import IncorrectPasswordError, TwoFactorService
 
@@ -74,11 +76,12 @@ class AccountService:
         happened."""
         if self._settings.winnow_single_user:
             raise RegistrationClosedError("This Winnow instance is set up for a single user.")
-        if self._settings.registration == "invite_only" and not await invite_allows_registration(
+        mode = await registration_mode(self._db, self._settings)
+        if mode == "invite_only" and not await invite_allows_registration(
             self._db, invite_token, email
         ):
             raise RegistrationClosedError("Registration on this Winnow instance is by invitation.")
-        if self._settings.registration == "closed":
+        if mode == "closed":
             raise RegistrationClosedError
         await self.check_password(password, email=email)
         # Hash either way, so an existing address does not answer faster.
@@ -145,6 +148,12 @@ class AccountService:
         if not await self._passwords.verify(user.password_hash, password):
             await self._record_failure(user, actor, "wrong_password")
             raise InvalidCredentialsError
+        if user.disabled_at is not None:
+            audit.record(
+                self._db, "auth.login.failure", actor, user_id=user.id, after={"reason": "disabled"}
+            )
+            await self._db.commit()
+            raise AccountDisabledError
         if user.totp_enabled:
             if not second_factor:
                 raise SecondFactorRequiredError

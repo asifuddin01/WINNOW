@@ -62,6 +62,7 @@ from app.services import audit
 from app.services.audit import Actor
 from app.services.blinding import sees_others, settings_of
 from app.services.errors import ConflictError, DomainError, ForbiddenError, NotFoundError
+from app.services.instance import unpaywall_email
 from app.services.status import recompute
 from app.storage import Storage
 from app.storage.base import TooLargeError, new_key
@@ -381,7 +382,7 @@ class FulltextService:
         record = await self._record(access, record_id)
         if not self._settings.open_access_lookup:
             return OpenAccessFinds(candidates=[], note="Looking for free full text is off here.")
-        email = self._settings.unpaywall_email
+        email = await unpaywall_email(self._db, self._settings)
         if not record.doi and not record.pmcid:
             return OpenAccessFinds(
                 candidates=[], note="This record has no DOI or PMCID to look it up by."

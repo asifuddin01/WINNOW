@@ -15,7 +15,8 @@ export function SectionTabs({
   label,
   tabs,
 }: {
-  pid: string;
+  /** The review the tabs belong to; none for instance pages such as /admin. */
+  pid?: string;
   label: string;
   tabs: SectionTab[];
 }) {
@@ -26,7 +27,7 @@ export function SectionTabs({
           <li key={tab.to}>
             <Link
               to={tab.to}
-              params={{ pid }}
+              params={pid ? { pid } : {}}
               activeOptions={{ exact: tab.exact ?? false }}
               className={cn(
                 "inline-block border-b-2 border-transparent px-3 py-2 text-sm text-muted-foreground hover:text-foreground",

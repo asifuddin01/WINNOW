@@ -121,6 +121,8 @@ async def google_callback(
         return _to_sign_in(exc.code)
     except RegistrationClosedError:
         return _to_sign_in("registration_closed")
+    if user.disabled_at is not None:
+        return _to_sign_in("account_disabled")
 
     if user.totp_enabled:
         # Google proves who you are to Google; your Winnow second factor still applies.

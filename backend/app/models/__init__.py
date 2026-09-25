@@ -19,6 +19,7 @@ from app.models.fulltext import (
     ScanStatus,
     UnretrievableRecord,
 )
+from app.models.instance import InstanceSetting
 from app.models.llm import LlmSuggestion
 from app.models.notification import Notification, NotificationKind
 from app.models.project import (
@@ -98,6 +99,7 @@ __all__ = [
     "FulltextSource",
     "ImportBatch",
     "ImportStatus",
+    "InstanceSetting",
     "JobStatus",
     "Keyword",
     "KeywordGroup",

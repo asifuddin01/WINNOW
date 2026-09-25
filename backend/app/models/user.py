@@ -49,6 +49,9 @@ class User(UUIDPrimaryKey, Timestamps, Base):
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     preferences: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Set by an instance administrator (guide 8.18): the account cannot sign in until
+    # enabled again; its reviews and work are untouched.
+    disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     @property
     def email_verified(self) -> bool:

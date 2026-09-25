@@ -13,5 +13,9 @@ export function removeTestData(): void {
   run(
     `docker compose exec -T db psql -U winnow -d winnow -c "delete from projects where owner_id in (select id from users where email like 'e2e-%@example.com')"`,
   );
+  // The admin journey promotes (and may disable) a fixture account: none stays that way.
+  run(
+    `docker compose exec -T db psql -U winnow -d winnow -c "update users set is_instance_admin = false, disabled_at = null where email like 'e2e-%@example.com'"`,
+  );
   run(`docker compose exec -T api python -m app.cli sweep-files --apply --older-than-minutes 1`);
 }
