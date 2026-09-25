@@ -11,7 +11,7 @@ from fastapi import Depends, Path, Request, status
 from redis.asyncio import Redis
 
 from app.config import Settings
-from app.db import SessionDep
+from app.db import SessionDep, bind_user
 from app.email.mailer import Mailer
 from app.errors import ProblemError
 from app.llm.providers import Provider
@@ -139,6 +139,7 @@ async def get_authenticated(
         await sessions.delete(session.key, session.user_id)
         raise NotAuthenticatedError
     await enforce_limit(limiter, API_PER_USER, str(user.id))
+    await bind_user(db, user.id)
     return Authenticated(user=user, session=session)
 
 

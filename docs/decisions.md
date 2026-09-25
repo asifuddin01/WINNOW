@@ -723,3 +723,32 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
 - **The development machine's disk was 98% full** during the real-corpus run; macOS purged
   its caches and the API stalled for ~30 s. With space freed, the same run kept the
   health check at a median 40–85 ms.
+
+## Phase 8 — Extraction, risk of bias, reporting
+
+### Row-level security (guide 12.2)
+- **The app logs in as the database owner, a superuser, which row-level security never
+  binds.** So requests switch, at the start of every transaction, to `winnow_app` (no
+  login, not a superuser, no BYPASSRLS) with the signed-in user's id in `app.user_id`,
+  both local to the transaction so nothing outlives it on a pooled connection
+  (`app.db`). On `records`, `decisions` and `notes` (the tables the guide names) that
+  role reads and writes only rows of reviews the user belongs to. A query that forgets
+  its review filter, or a row moved into another review, is stopped by the database; an
+  unauthenticated request sees none of these rows at all.
+- **Workers, operator commands and migrations stay the owner, deliberately.** They act
+  for the system, not for a person, and PostgreSQL refuses COPY into a table under
+  row-level security, which imports rely on. Every non-request session says so
+  explicitly at each transaction.
+- **The role cannot change or delete audit rows** (guide 6's "REVOKE UPDATE, DELETE from
+  app role"), beside the append-only trigger.
+- **Defense in depth, not the boundary.** An attacker who could run SQL could `RESET ROLE`;
+  the guard is against mistakes in the app's own queries, which is what it is for.
+- **The cost, measured at 100,000 records:** list and search p95 45–62 ms (budget 150),
+  sort by title p95 124 ms (76 without), screening queue p95 14 ms (budget 80). Filters
+  that PostgreSQL cannot prove leak nothing (full-text matching) are checked after
+  membership, which keeps them off some indexes; the policy's membership list is worked
+  out once per query. Sorting by title is the case to watch.
+- **The role belongs to the server, not the database:** the migration creates it only if
+  missing, and a downgrade revokes its rights but leaves it (the test database uses it
+  too). An installation whose database user cannot create roles must create
+  `winnow_app` first.
