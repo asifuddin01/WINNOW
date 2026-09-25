@@ -9,6 +9,7 @@ export type Stats = components["schemas"]["StatsOut"];
 export type StageStats = components["schemas"]["StageStats"];
 export type Agreement = components["schemas"]["Agreement"];
 export type AuditEntry = components["schemas"]["AuditEntryOut"];
+export type Methods = components["schemas"]["MethodsOut"];
 
 export interface AuditFilters {
   action?: string;
@@ -21,6 +22,7 @@ export const reportKeys = {
   all: (pid: string) => ["projects", pid, "report"] as const,
   prisma: (pid: string) => ["projects", pid, "report", "prisma"] as const,
   stats: (pid: string) => ["projects", pid, "report", "stats"] as const,
+  methods: (pid: string) => ["projects", pid, "report", "methods"] as const,
   audit: (pid: string, filters: AuditFilters) =>
     ["projects", pid, "report", "audit", filters] as const,
 };
@@ -73,3 +75,12 @@ export function auditCsvUrl(pid: string, filters: AuditFilters): string {
   const query = new URLSearchParams(clean(filters) as Record<string, string>).toString();
   return `/api/v1/projects/${pid}/audit.csv${query ? `?${query}` : ""}`;
 }
+
+export const methodsQuery = (pid: string) =>
+  queryOptions({
+    queryKey: reportKeys.methods(pid),
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await api.GET("/api/v1/projects/{pid}/methods-text", { signal, params: { path: { pid } } }),
+      ),
+  });

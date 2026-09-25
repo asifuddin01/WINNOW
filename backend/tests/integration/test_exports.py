@@ -577,7 +577,7 @@ async def test_records_export_as_ris_and_bibtex_with_their_decisions(
         assert "N1  - Title/abstract: included\r\n" in text
         assert f"N1  - Title/abstract: excluded ({reasons[0]['label']})\r\n" in text
         assert f"C3  - {reasons[0]['label']}\r\n" in text
-        assert [item.title for item in ris.parse(text)] == [
+        assert [getattr(item, "title", None) for item in ris.parse(text)] == [
             "Night shifts and sleep, study 0",
             "Night shifts and sleep, study 1",
         ]

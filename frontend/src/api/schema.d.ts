@@ -1845,6 +1845,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{pid}/methods-text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Methods Text
+         * @description How the review was screened, in words with its numbers, to edit and copy (guide
+         *     8.15). Agreement and how disagreements were settled appear only for members who may see
+         *     others' decisions.
+         */
+        get: operations["methods_text"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{pid}/rob/tools": {
         parameters: {
             query?: never;
@@ -3537,6 +3559,18 @@ export interface components {
              * @default 1
              */
             clusters: number;
+        };
+        /**
+         * MethodsOut
+         * @description Guide 8.15: a paragraph or two to edit and copy into the review's methods section.
+         */
+        MethodsOut: {
+            /** Text */
+            text: string;
+            /** Complete */
+            complete: boolean;
+            /** Blind */
+            blind: boolean;
         };
         /** ModelOut */
         ModelOut: {
@@ -11754,6 +11788,65 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StatsOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+        };
+    };
+    methods_text: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project id */
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MethodsOut"];
                 };
             };
             /** @description Unauthorized */

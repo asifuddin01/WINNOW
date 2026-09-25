@@ -61,7 +61,7 @@ class PrismaDoesNotAddUpError(DomainError):
     code = "prisma_inconsistent"
 
 
-def _canonical(name: str) -> str:
+def canonical(name: str) -> str:
     return unicodedata.normalize("NFKC", name).strip().casefold()
 
 
@@ -113,7 +113,7 @@ class ReportingService:
     async def update_manual(
         self, access: ProjectAccess, body: PrismaManualIn, actor: Actor
     ) -> PrismaOut:
-        names = [_canonical(source.name) for source in body.other_sources]
+        names = [canonical(source.name) for source in body.other_sources]
         if len(set(names)) != len(names):
             raise ConflictError("Each other source may be listed once.")
         values = {
@@ -158,7 +158,7 @@ class ReportingService:
         )
         databases: dict[str, list[Any]] = {}
         for name, count in imported:
-            key = _canonical(name)
+            key = canonical(name)
             if key in databases:
                 databases[key][1] += count
             else:
@@ -357,7 +357,7 @@ class ReportingService:
             )
         ]
 
-        agreement = await self._agreement(access, stage) if told else None
+        agreement = await self.agreement(access, stage) if told else None
         return StageStats(
             stage=stage,
             records=records,
@@ -368,7 +368,7 @@ class ReportingService:
             agreement=agreement,
         )
 
-    async def _agreement(self, access: ProjectAccess, stage: ScreeningStage) -> Agreement:
+    async def agreement(self, access: ProjectAccess, stage: ScreeningStage) -> Agreement:
         rows = await self._db.execute(
             select(Decision.record_id, Decision.user_id, Decision.decision, User.name)
             .join(User, User.id == Decision.user_id)

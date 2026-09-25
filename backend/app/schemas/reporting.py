@@ -117,3 +117,13 @@ class StatsOut(BaseModel):
     stages: list[StageStats]
     # Whether the numbers about other reviewers were left out (blind mode).
     blind: bool
+
+
+class MethodsOut(BaseModel):
+    """Guide 8.15: a paragraph or two to edit and copy into the review's methods section."""
+
+    text: str
+    # False while screening is unfinished: the numbers are a snapshot.
+    complete: bool
+    # Blind mode hides others' work, so sentences about agreement are left out.
+    blind: bool

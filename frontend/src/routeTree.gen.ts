@@ -33,6 +33,7 @@ import { Route as AppPPidSettingsRouteImport } from './routes/_app/p/$pid/settin
 import { Route as AppPPidReportIndexRouteImport } from './routes/_app/p/$pid/report/index'
 import { Route as AppPPidReportAuditRouteImport } from './routes/_app/p/$pid/report/audit'
 import { Route as AppPPidReportExportsRouteImport } from './routes/_app/p/$pid/report/exports'
+import { Route as AppPPidReportMethodsRouteImport } from './routes/_app/p/$pid/report/methods'
 import { Route as AppPPidReportStatsRouteImport } from './routes/_app/p/$pid/report/stats'
 import { Route as AppPPidScreenFtRouteImport } from './routes/_app/p/$pid/screen/ft'
 import { Route as AppPPidScreenTaRouteImport } from './routes/_app/p/$pid/screen/ta'
@@ -163,6 +164,11 @@ const AppPPidReportExportsRoute = AppPPidReportExportsRouteImport.update({
   path: '/exports',
   getParentRoute: () => AppPPidReportRoute,
 } as any)
+const AppPPidReportMethodsRoute = AppPPidReportMethodsRouteImport.update({
+  id: '/methods',
+  path: '/methods',
+  getParentRoute: () => AppPPidReportRoute,
+} as any)
 const AppPPidReportStatsRoute = AppPPidReportStatsRouteImport.update({
   id: '/stats',
   path: '/stats',
@@ -238,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/p/$pid/': typeof AppPPidIndexRoute
   '/p/$pid/report/audit': typeof AppPPidReportAuditRoute
   '/p/$pid/report/exports': typeof AppPPidReportExportsRoute
+  '/p/$pid/report/methods': typeof AppPPidReportMethodsRoute
   '/p/$pid/report/stats': typeof AppPPidReportStatsRoute
   '/p/$pid/screen/ft': typeof AppPPidScreenFtRoute
   '/p/$pid/screen/ta': typeof AppPPidScreenTaRoute
@@ -270,6 +277,7 @@ export interface FileRoutesByTo {
   '/p/$pid': typeof AppPPidIndexRoute
   '/p/$pid/report/audit': typeof AppPPidReportAuditRoute
   '/p/$pid/report/exports': typeof AppPPidReportExportsRoute
+  '/p/$pid/report/methods': typeof AppPPidReportMethodsRoute
   '/p/$pid/report/stats': typeof AppPPidReportStatsRoute
   '/p/$pid/screen/ft': typeof AppPPidScreenFtRoute
   '/p/$pid/screen/ta': typeof AppPPidScreenTaRoute
@@ -307,6 +315,7 @@ export interface FileRoutesById {
   '/_app/p/$pid/': typeof AppPPidIndexRoute
   '/_app/p/$pid/report/audit': typeof AppPPidReportAuditRoute
   '/_app/p/$pid/report/exports': typeof AppPPidReportExportsRoute
+  '/_app/p/$pid/report/methods': typeof AppPPidReportMethodsRoute
   '/_app/p/$pid/report/stats': typeof AppPPidReportStatsRoute
   '/_app/p/$pid/screen/ft': typeof AppPPidScreenFtRoute
   '/_app/p/$pid/screen/ta': typeof AppPPidScreenTaRoute
@@ -344,6 +353,7 @@ export interface FileRouteTypes {
     | '/p/$pid/'
     | '/p/$pid/report/audit'
     | '/p/$pid/report/exports'
+    | '/p/$pid/report/methods'
     | '/p/$pid/report/stats'
     | '/p/$pid/screen/ft'
     | '/p/$pid/screen/ta'
@@ -376,6 +386,7 @@ export interface FileRouteTypes {
     | '/p/$pid'
     | '/p/$pid/report/audit'
     | '/p/$pid/report/exports'
+    | '/p/$pid/report/methods'
     | '/p/$pid/report/stats'
     | '/p/$pid/screen/ft'
     | '/p/$pid/screen/ta'
@@ -412,6 +423,7 @@ export interface FileRouteTypes {
     | '/_app/p/$pid/'
     | '/_app/p/$pid/report/audit'
     | '/_app/p/$pid/report/exports'
+    | '/_app/p/$pid/report/methods'
     | '/_app/p/$pid/report/stats'
     | '/_app/p/$pid/screen/ft'
     | '/_app/p/$pid/screen/ta'
@@ -606,6 +618,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPPidReportExportsRouteImport
       parentRoute: typeof AppPPidReportRoute
     }
+    '/_app/p/$pid/report/methods': {
+      id: '/_app/p/$pid/report/methods'
+      path: '/methods'
+      fullPath: '/p/$pid/report/methods'
+      preLoaderRoute: typeof AppPPidReportMethodsRouteImport
+      parentRoute: typeof AppPPidReportRoute
+    }
     '/_app/p/$pid/report/stats': {
       id: '/_app/p/$pid/report/stats'
       path: '/stats'
@@ -682,6 +701,7 @@ declare module '@tanstack/react-router' {
 interface AppPPidReportRouteChildren {
   AppPPidReportAuditRoute: typeof AppPPidReportAuditRoute
   AppPPidReportExportsRoute: typeof AppPPidReportExportsRoute
+  AppPPidReportMethodsRoute: typeof AppPPidReportMethodsRoute
   AppPPidReportStatsRoute: typeof AppPPidReportStatsRoute
   AppPPidReportIndexRoute: typeof AppPPidReportIndexRoute
 }
@@ -689,6 +709,7 @@ interface AppPPidReportRouteChildren {
 const AppPPidReportRouteChildren: AppPPidReportRouteChildren = {
   AppPPidReportAuditRoute: AppPPidReportAuditRoute,
   AppPPidReportExportsRoute: AppPPidReportExportsRoute,
+  AppPPidReportMethodsRoute: AppPPidReportMethodsRoute,
   AppPPidReportStatsRoute: AppPPidReportStatsRoute,
   AppPPidReportIndexRoute: AppPPidReportIndexRoute,
 }

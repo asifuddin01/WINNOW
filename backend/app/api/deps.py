@@ -38,6 +38,7 @@ from app.services.fulltext import FulltextService
 from app.services.imports import ImportService
 from app.services.llm import LlmService
 from app.services.members import MemberService
+from app.services.methods import MethodsService
 from app.services.projects import ProjectService
 from app.services.ranking import RankingService
 from app.services.records import RecordService
@@ -263,6 +264,13 @@ def get_reporting(db: SessionDep) -> ReportingService:
 
 
 ReportingDep = Annotated[ReportingService, Depends(get_reporting)]
+
+
+def get_methods(db: SessionDep) -> MethodsService:
+    return MethodsService(db)
+
+
+MethodsDep = Annotated[MethodsService, Depends(get_methods)]
 
 
 def get_rob(db: SessionDep) -> RobService:

@@ -542,3 +542,45 @@ describe("restoring a backup", () => {
     expect(await screen.findByText("The backup is larger than 2 GB.")).toBeVisible();
   });
 });
+
+describe("methods text", () => {
+  test("the review's paragraph, edited, copied and put back", async () => {
+    const text = "We searched PubMed (6 records). Two reviewers independently screened 6 records.";
+    mockApi(routes({ [`GET ${base}/methods-text`]: { text, complete: false, blind: false } }));
+    const user = userEvent.setup();
+    const copied: string[] = [];
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: (value: string) => (copied.push(value), Promise.resolve()) },
+    });
+    renderApp(`${report}/methods`);
+
+    const box = await screen.findByLabelText("Methods text");
+    expect(box).toHaveValue(text);
+    expect(screen.getByText(/these numbers are a snapshot/)).toBeVisible();
+    const reset = screen.getByRole("button", { name: /Back to Winnow/ });
+    expect(reset).toBeDisabled();
+    await user.type(box, " Screening was piloted.");
+    await user.click(screen.getByRole("button", { name: "Copy" }));
+    expect(copied).toEqual([`${text} Screening was piloted.`]);
+    expect(await screen.findByText("Copied.")).toBeVisible();
+    await user.click(reset);
+    expect(box).toHaveValue(text);
+  });
+
+  test("blinded readers are told why sentences are missing; an empty review says so", async () => {
+    mockApi(
+      routes({
+        [`GET ${base}/methods-text`]: { text: "We searched PubMed.", complete: true, blind: true },
+      }),
+    );
+    const { unmount } = renderApp(`${report}/methods`);
+    expect(await screen.findByText(/Blind mode is on, so sentences about agreement/)).toBeVisible();
+    expect(screen.queryByText(/snapshot/)).toBeNull();
+    unmount();
+
+    mockApi(routes({ [`GET ${base}/methods-text`]: { text: "", complete: false, blind: false } }));
+    renderApp(`${report}/methods`);
+    expect(await screen.findByText(/Nothing to describe yet/)).toBeVisible();
+  });
+});

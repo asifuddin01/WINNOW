@@ -9,11 +9,11 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, Query, Response
 
-from app.api.deps import ActorDep, AdminAccess, ReportingDep, ViewerAccess
+from app.api.deps import ActorDep, AdminAccess, MethodsDep, ReportingDep, ViewerAccess
 from app.api.responses import PROJECT, Responses
 from app.images import svg_to_pdf, svg_to_png
 from app.schemas.problem import problem_content
-from app.schemas.reporting import PrismaManualIn, PrismaOut, StatsOut
+from app.schemas.reporting import MethodsOut, PrismaManualIn, PrismaOut, StatsOut
 
 router = APIRouter(prefix="/projects/{pid}", tags=["reporting"])
 
@@ -81,3 +81,11 @@ async def screening_stats(access: ViewerAccess, reporting: ReportingDep) -> Stat
     """Progress per reviewer and stage, time per record, decisions per day, and
     inter-rater agreement (guide 8.15, 9.3)."""
     return await reporting.stats(access)
+
+
+@router.get("/methods-text", responses=PROJECT)
+async def methods_text(access: ViewerAccess, methods: MethodsDep) -> MethodsOut:
+    """How the review was screened, in words with its numbers, to edit and copy (guide
+    8.15). Agreement and how disagreements were settled appear only for members who may see
+    others' decisions."""
+    return await methods.methods(access)

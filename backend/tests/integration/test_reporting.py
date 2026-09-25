@@ -3,6 +3,7 @@
 fixture; kappa matches a reference implementation")."""
 
 import uuid
+from datetime import date
 from typing import Any
 
 from fastapi import FastAPI
@@ -28,7 +29,7 @@ from app.models import (
 )
 from app.models.base import uuid7
 from tests.conftest import MemoryMailer
-from tests.project_helpers import OWNER, REVIEWER, add_member, api, get, person
+from tests.project_helpers import OWNER, REVIEWER, add_member, api, get, person, post
 from tests.screening_helpers import THIRD, add_records, decide, settings, team
 
 
@@ -360,3 +361,51 @@ async def test_viewers_may_read_the_prisma_flow(
         flow = await get(viewer, f"/projects/{pid}/prisma")
         assert flow.status_code == 200
         assert flow.json()["records_screened"] == 2
+
+
+async def test_the_methods_text_describes_the_review_with_its_numbers(
+    db_app: FastAPI, db: AsyncSession, mailer: MemoryMailer
+) -> None:
+    async with team(db_app, db, mailer, records=4) as t:
+        await settings(t.owner, t.pid, reviewers_per_record_ta=2)
+        await batch(db, t.pid, "PubMed", 4, ImportStatus.DONE)
+        await db.execute(
+            update(ImportBatch)
+            .where(ImportBatch.project_id == uuid.UUID(t.pid))
+            .values(search_date=date(2026, 3, 3))
+        )
+        await db.commit()
+        # Three agreements and one disagreement in four: 75%, kappa (0.75 - 0.5) / 0.5.
+        for record, mine, theirs in zip(
+            t.records,
+            ["include", "include", "exclude", "include"],
+            ["include", "include", "exclude", "exclude"],
+            strict=True,
+        ):
+            await decide(t.owner, t.pid, record, mine)
+            await decide(t.reviewer, t.pid, record, theirs)
+        resolved = await post(
+            t.owner,
+            f"/projects/{t.pid}/conflicts/{t.records[3]}/resolve",
+            {"final_decision": "include"},
+        )
+        assert resolved.status_code == 200, resolved.text
+
+        methods = (await get(t.owner, f"/projects/{t.pid}/methods-text")).json()
+        assert methods["complete"] is False  # full texts still wait
+        assert methods["blind"] is False
+        first, second = methods["text"].split("\n\n")
+        assert first == (
+            "We searched PubMed (4 records, searched 3 March 2026). Two reviewers "
+            "independently screened the titles and abstracts of 4 records, blinded to each "
+            "other's decisions; agreement was 75.0% (Cohen's κ = 0.50, moderate). "
+            "Disagreements at title and abstract (1) were resolved by discussion (1)."
+        )
+        assert second.startswith("We sought 3 full-text reports.")
+
+        # A blinded reviewer's text leaves out what the team did together.
+        theirs = (await get(t.reviewer, f"/projects/{t.pid}/methods-text")).json()
+        assert theirs["blind"] is True
+        assert "κ" not in theirs["text"]
+        assert "Disagreements" not in theirs["text"]
+        assert theirs["text"].startswith("We searched PubMed (4 records")

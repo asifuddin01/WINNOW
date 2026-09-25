@@ -15,6 +15,7 @@ function ReportLayout() {
   const tabs: SectionTab[] = [
     { to: "/p/$pid/report", label: "PRISMA", exact: true },
     { to: "/p/$pid/report/stats", label: "Statistics" },
+    { to: "/p/$pid/report/methods", label: "Methods text" },
     { to: "/p/$pid/report/exports", label: "Exports" },
     // The log holds people's addresses: owners and admins only (guide 12.8).
     ...(project?.permissions.includes("edit_settings")
