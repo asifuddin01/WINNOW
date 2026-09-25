@@ -115,6 +115,10 @@ async def run_ranking(
         corpus = await _corpus(session, project_id)
         lap("corpus")
         # Training is CPU work; off the event loop, so the worker's other jobs keep going.
+        # ponytail: a thread cannot be stopped, so a run past the job's timeout keeps a
+        # core busy until it ends (seen only on generated near-identical texts; real
+        # 100,000-record reviews train in minutes). A process pool would make it
+        # killable, at the price of the corpus cache.
         ranking = await asyncio.to_thread(rank, corpus, labels, targets)
         lap("train")
         await _write_scores(session, project_id, stage, ranking.scores)

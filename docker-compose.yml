@@ -30,6 +30,30 @@ x-backend: &backend
 services:
   db:
     image: postgres:16-alpine
+    # Docker's default 64 MB of /dev/shm is too little for PostgreSQL's parallel workers:
+    # VACUUM of the records table failed with "could not resize shared memory segment".
+    shm_size: 256mb
+    # PostgreSQL's stock settings, adjusted for an SSD and bulk imports: room between
+    # checkpoints, SSD costs, and a modest cache (512 MB of shared buffers got the database
+    # OOM-killed on a 4 GB Docker VM that also runs ClamAV, the worker and Vite).
+    command:
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=1GB
+      - -c
+      - work_mem=8MB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - max_wal_size=2GB
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-winnow}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-winnow}
@@ -113,6 +137,10 @@ services:
   worker:
     <<: *backend
     command: ["arq", "app.workers.settings.WorkerSettings", "--watch", "app"]
+    # Background work yields the CPU to people waiting on the API: a 100,000-record
+    # retrain is minutes of CPU, and at the default weight it slowed decisions (p95 154 ms
+    # at the Phase 9 audit). The worker still uses every core nobody else wants.
+    cpu_shares: 256
     depends_on:
       db:
         condition: service_healthy
@@ -121,7 +149,14 @@ services:
       mailpit:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "arq", "--check", "app.workers.settings.WorkerSettings"]
+      # The worker's own heartbeat: arq refreshes this key while it runs and lets it
+      # expire when it stops. (`arq --check` imports all of Winnow first, which takes
+      # longer than the timeout on a busy machine.)
+      test:
+        - CMD
+        - python
+        - -c
+        - "import os, sys, redis; sys.exit(0 if redis.Redis.from_url(os.environ['REDIS_URL']).exists('arq:queue:health-check') else 1)"
       interval: 15s
       timeout: 5s
       retries: 5
