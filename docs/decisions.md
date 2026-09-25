@@ -643,8 +643,17 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   full-text queue, its status becomes `not_retrievable` (PRISMA's "reports not
   retrieved"), and deciding on it is refused until the mark is undone. A conflict
   resolution still wins over the mark, and a PDF added later clears it.
-- **The default exclusion reason "Full text unavailable"** overlaps with this mark; left
-  as it is for now (existing reviews use it), and raised with the owner.
+- **New reviews no longer get the default exclusion reason "Full text unavailable"**
+  (guide 8.2 lists it). It did the same job as this mark but counted the report as
+  excluded, where PRISMA 2020 counts it as not retrieved; with both on offer, the numbers
+  would depend on which a reviewer happened to pick. The owner's call ("do the best").
+  Existing reviews keep their reasons: an owner can remove it under Settings → Exclusion
+  reasons.
+
+### Deleted reviews
+- **A deleted review is hidden, not purged: its records, decisions, PDFs and every other
+  piece of progress stay**, with no expiry (the owner's call). `sweep-files` removes only
+  files no row refers to, so a deleted review's PDFs are never swept.
 
 ### ZIPs of PDFs
 - **Checked before anything is unpacked:** at most 1,000 files and 2 GB in all, no entry

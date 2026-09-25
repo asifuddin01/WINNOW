@@ -56,10 +56,11 @@ async def test_a_new_review_starts_ready_to_use(db_app: FastAPI, mailer: MemoryM
         }
         # Guide 8.2: the standard exclusion reasons are there from the start.
         reasons = (await get(owner, f"/projects/{project['id']}/exclusion-reasons")).json()
-        assert [reason["label"] for reason in reasons] == [
-            label for label, _ in DEFAULT_EXCLUSION_REASONS
-        ]
-        assert reasons[-1]["stage"] == "full_text"
+        labels = [reason["label"] for reason in reasons]
+        assert labels == [label for label, _ in DEFAULT_EXCLUSION_REASONS]
+        # A full text nobody could get is marked "not retrievable" (guide 8.8), counted by
+        # PRISMA as not retrieved, so no exclusion reason competes with it.
+        assert not any("full text" in label.lower() for label in labels)
 
 
 async def test_the_dashboard_lists_my_reviews_newest_first(

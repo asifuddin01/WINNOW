@@ -54,7 +54,9 @@ from app.services.errors import (
 from app.services.pagination import decode_cursor, encode_cursor
 from app.services.status import recompute
 
-# Guide 8.2: every new review starts with these, in this order.
+# Guide 8.2: every new review starts with these, in this order. Its "full text
+# unavailable" is left out: a report nobody could get is marked "not retrievable" (guide
+# 8.8), which PRISMA 2020 counts as not retrieved rather than excluded.
 DEFAULT_EXCLUSION_REASONS: tuple[tuple[str, ReasonStage], ...] = (
     ("Wrong population", ReasonStage.BOTH),
     ("Wrong intervention", ReasonStage.BOTH),
@@ -64,7 +66,6 @@ DEFAULT_EXCLUSION_REASONS: tuple[tuple[str, ReasonStage], ...] = (
     ("Wrong publication type", ReasonStage.BOTH),
     ("Not in an included language", ReasonStage.BOTH),
     ("Duplicate", ReasonStage.BOTH),
-    ("Full text unavailable", ReasonStage.FULL_TEXT),
 )
 _BASIC_FIELDS = ("title", "review_type", "description", "research_question", "status")
 

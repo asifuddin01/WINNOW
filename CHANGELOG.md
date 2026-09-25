@@ -46,6 +46,9 @@ All notable changes, one section per build phase (guide Section 17).
 - The first ranking model trains from the first include and exclude, not five of each
   (the owner's decision on the benchmark: median saving over random order 63%, up from
   55%; `docs/ranking-benchmark.md`).
+- New reviews no longer start with the exclusion reason "Full text unavailable": "Not
+  retrievable" replaces it, so PRISMA counts such reports as not retrieved rather than
+  excluded. Existing reviews keep their reasons.
 - `make up`, `make dev` and `make local` no longer leave the web container's old
   `node_modules` volume behind on every start (they had piled up to 3 GB).
 
