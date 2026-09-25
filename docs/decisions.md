@@ -1020,3 +1020,31 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   forcing the page wider or hiding columns on small screens.
 - **Open menus stay outside landmarks** (axe `region`, moderate). Moving them into the
   header would misplace them, and focus moves into them anyway.
+
+### Performance audit (guide 2.2, 13)
+- **`make perf` measures on the running stack, over HTTP**, so middleware, sessions and
+  row-level security are included. The API's own time comes from its `Server-Timing`
+  header, so a busy machine's scheduling is not counted against the API. The table is
+  vacuumed first and analysed after seeding, the state autovacuum keeps it in.
+  docs/performance.md has the method and results.
+- **Every order of the records list is read from an index**: title, year both ways, and
+  newest or oldest first, through one partial index on `(project_id, id)` whose predicate
+  matches the queries' `is_duplicate IS false` exactly. Relevance order is two index
+  reads, scored records best first and then the rest newest first, instead of one sort
+  over a score read for every record.
+- **The list counts to 1,000, not 10,000**: past that it says "1,000+". A count costs in
+  proportion to its ceiling, and a broad search read 10,001 rows (2 s cold) to say
+  "10,000+". The filter counts beside the list stay exact.
+- **Imports write 5,000 rows per COPY, two COPYs at a time, parsing the next chunk
+  meanwhile.** PostgreSQL's per-row work (the stemmed search vector, three GIN indexes)
+  is most of an import. Two writers let it use two cores, as the guide's smallest server
+  has. A session factory bound to one connection (the tests') gets one writer.
+- **Deduplication caps its blocks at 200 records**, splitting larger ones by more of the
+  title, and scores pairs in a thread. One block of thousands of near-identical titles
+  had held the worker for over ten minutes.
+- **PostgreSQL gets 256 MB of `/dev/shm` and settings for an SSD and bulk loads.** The
+  shared buffers stay modest (256 MB): 512 MB got the database OOM-killed on a 4 GB
+  Docker VM that also runs ClamAV, the worker and Vite. The production file sizes its
+  own server.
+- **The worker's health check reads its heartbeat from Redis.** `arq --check` imported
+  all of Winnow, which took longer than its own timeout on a busy machine.

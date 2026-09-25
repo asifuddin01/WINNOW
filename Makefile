@@ -15,7 +15,7 @@ API_NO_DEPS := $(COMPOSE) run --rm --no-deps api
 WEB := $(COMPOSE) run --rm --no-deps web
 
 .DEFAULT_GOAL := help
-.PHONY: help env dev up local down logs ps build migrate revision seed seed-large \
+.PHONY: help env dev up local down logs ps build migrate revision seed seed-large perf \
 	test test-backend test-frontend e2e lint typecheck format check api-types size clean create-admin
 
 help: ## List the targets
@@ -75,6 +75,9 @@ seed: .env ## Demo review in an existing account: make seed email=you@example.or
 seed-large: .env ## 100,000 generated records for the budgets: make seed-large email=you@example.org
 	@test -n "$(email)" || (echo 'Usage: make seed-large email=you@example.org [records=100000]' && exit 1)
 	$(API) python -m app.cli seed-large --email "$(email)" --records "$(or $(records),100000)"
+
+perf: .env ## Measure the budgets of guide 2.2 on the running stack; makes and deletes its own data
+	$(API) python -m benchmarks.budgets $(if $(json),--json $(json)) $(if $(parts),--parts $(parts))
 
 test: test-backend test-frontend ## Run backend and frontend tests
 

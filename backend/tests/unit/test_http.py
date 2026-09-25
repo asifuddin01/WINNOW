@@ -90,6 +90,8 @@ async def test_unhandled_error_is_generic_and_traceable(client: AsyncClient) -> 
 async def test_request_id_is_generated(client: AsyncClient) -> None:
     response = await client.get("/api/v1/healthz")
     assert re.fullmatch(r"[0-9a-f]{32}", response.headers["x-request-id"])
+    # And how long the API took, as dev tools and `make perf` read it.
+    assert re.fullmatch(r"app;dur=\d+\.\d", response.headers["server-timing"])
 
 
 async def test_plain_request_id_is_propagated(client: AsyncClient) -> None:

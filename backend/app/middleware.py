@@ -38,6 +38,9 @@ class RequestContextMiddleware:
                 status_code = message["status"]
                 headers = MutableHeaders(scope=message)
                 headers[REQUEST_ID_HEADER] = request_id
+                # How long the API took, for browser dev tools and `make perf` (a client
+                # sees the time anyway; this separates it from the network's share).
+                headers["Server-Timing"] = f"app;dur={(time.perf_counter() - started) * 1000:.1f}"
                 # API responses carry private data: never cache unless a route opts in.
                 headers.setdefault("Cache-Control", "no-store")
             await send(message)
