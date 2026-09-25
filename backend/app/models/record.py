@@ -104,7 +104,13 @@ class Record(UUIDPrimaryKey, Timestamps, Base):
     __tablename__ = "records"
     __table_args__ = (
         # Guide 6.3, in the order the list and screening queries need them.
-        Index("ix_records_project_id_live", "project_id", postgresql_where="is_duplicate = false"),
+        # The same predicate as the queries' `is_duplicate.is_(False)`, or it goes unused.
+        Index(
+            "ix_records_project_id_live",
+            "project_id",
+            "id",
+            postgresql_where="is_duplicate IS false",
+        ),
         Index("ix_records_project_id_ta_final", "project_id", "ta_final"),
         Index("ix_records_project_id_ft_final", "project_id", "ft_final"),
         Index("ix_records_project_id_doi_norm", "project_id", "doi_norm"),
@@ -192,6 +198,19 @@ class Record(UUIDPrimaryKey, Timestamps, Base):
 
 
 # The screening queue reads the best-scoring records first; nulls (not yet scored) last.
+
+
+# The records list's orders (services.records._ordered), each readable straight off an
+# index: without them a 100,000-record review was read and sorted whole for every page of
+# 50 (0.8 s at the Phase 9 audit). Declared here because the order of each column matters.
+Index("ix_records_project_id_title", Record.project_id, Record.title_norm, Record.id.desc())
+Index(
+    "ix_records_project_id_year",
+    Record.project_id,
+    Record.year.desc().nulls_last(),
+    Record.id.desc(),
+)
+Index("ix_records_project_id_year_asc", Record.project_id, Record.year, Record.id.desc())
 
 
 # The columns an import writes with COPY, in order. Anything left out takes its default:

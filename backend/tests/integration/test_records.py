@@ -5,10 +5,15 @@ from typing import Any
 
 from fastapi import FastAPI
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models import RecordScore, ScreeningStage
+from app.services.pagination import encode_cursor
 from tests.conftest import MemoryMailer
 from tests.integration.test_imports import run, upload
 from tests.project_helpers import OWNER, REVIEWER, add_member, create_project, get, person, post
+
+TA = ScreeningStage.TITLE_ABSTRACT
 
 
 async def loaded(client: AsyncClient, db_app: FastAPI, name: str = "ovid_embase.ris") -> str:
@@ -120,6 +125,49 @@ async def test_a_record_from_another_review_is_not_found(
         other = await loaded(owner, db_app, "cochrane.ris")
         theirs = (await get(owner, f"/projects/{other}/records")).json()["items"][0]["id"]
         assert (await get(owner, f"/projects/{mine}/records/{theirs}")).status_code == 404
+
+
+async def test_relevance_lists_scored_records_best_first_then_the_rest_newest_first(
+    db_app: FastAPI, db: AsyncSession, mailer: MemoryMailer
+) -> None:
+    """Two index reads stand in for one sort: pages must cross from the scored records to
+    the unscored ones, and split a tie, without repeating or missing any."""
+    async with person(db_app, mailer, OWNER) as owner:
+        pid = (await create_project(owner))["id"]
+        for name in ("ovid_embase.ris", "cochrane.ris", "wos.ris", "cinahl.ris"):
+            batch = await upload(owner, pid, name)
+            await post(owner, f"/projects/{pid}/imports/{batch['id']}/confirm", {})
+            await run(db_app, batch["id"])
+        ids = sorted(
+            (
+                uuid.UUID(r["id"])
+                for r in (await get(owner, f"/projects/{pid}/records")).json()["items"]
+            ),
+            key=lambda record_id: record_id.int,
+        )
+        scores = {ids[0]: 0.9, ids[3]: 0.4, ids[1]: 0.4}  # a tie, broken by id
+        db.add_all(
+            RecordScore(record_id=rid, project_id=uuid.UUID(pid), stage=TA, score=value)
+            for rid, value in scores.items()
+        )
+        await db.commit()
+
+        seen: list[uuid.UUID] = []
+        listed: list[float | None] = []
+        cursor: str | None = None
+        for _ in range(6):
+            path = f"/projects/{pid}/records?limit=2&sort=relevance"
+            page = (await get(owner, f"{path}&cursor={cursor}" if cursor else path)).json()
+            seen += [uuid.UUID(r["id"]) for r in page["items"]]
+            listed += [r["relevance_score"] for r in page["items"]]
+            if (cursor := page["next_cursor"]) is None:
+                break
+        unscored = sorted((i for i in ids if i not in scores), key=lambda i: -i.int)
+        assert seen == [ids[0], ids[3], ids[1], *unscored]
+        assert listed[:3] == [0.9, 0.4, 0.4]
+        broken = encode_cursor("not a score", str(ids[0]))
+        path = f"/projects/{pid}/records?sort=relevance&cursor={broken}"
+        assert (await get(owner, path)).status_code == 400
 
 
 async def test_every_sort_order_pages_without_repeating_a_record(

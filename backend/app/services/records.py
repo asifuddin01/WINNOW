@@ -30,8 +30,11 @@ from app.services.errors import InvalidCursorError, NotFoundError
 from app.services.pagination import decode_cursor, encode_cursor
 from app.services.search import Query, parse_query
 
-# Counting every matching row on a 100k-record project costs more than it tells anyone.
-COUNT_CEILING = 10_000
+# Counting every matching row on a 100k-record project costs more than it tells anyone,
+# and the count costs in proportion to its ceiling: a search that matches most of a
+# review read 10,001 rows to say "10,000+" (2 s cold at the Phase 9 audit). Past a
+# thousand, "1,000+" says as much; the filter counts beside the list stay exact.
+COUNT_CEILING = 1_000
 FACET_TTL_SECONDS = 5
 FACET_KEY = "facets:{project_id}"
 TOP_YEARS = 12
@@ -123,10 +126,13 @@ class RecordService:
         base = self._filtered(
             access, query=query, ta=ta, ft=ft, batch_id=batch_id, duplicates=duplicates
         )
-        statement = _ordered(base, sort)
-        if cursor is not None:
-            statement = statement.where(_after(sort, cursor))
-        rows = list(await self._db.scalars(statement.limit(limit + 1)))
+        if sort == "relevance":
+            rows = await self._by_relevance(base, cursor, limit + 1)
+        else:
+            statement = _ordered(base, sort)
+            if cursor is not None:
+                statement = statement.where(_after(sort, cursor))
+            rows = list(await self._db.scalars(statement.limit(limit + 1)))
         own = await self._own_statuses(access, [record.id for record in rows[:limit]])
         scores = await self._scores([record.id for record in rows[:limit]])
         items = [_out(record, own, scores.get(record.id)) for record in rows[:limit]]
@@ -137,6 +143,44 @@ class RecordService:
         )
         total, exact = await self._count(base)
         return RecordPage(items=items, next_cursor=next_cursor, total=total, total_is_exact=exact)
+
+    async def _by_relevance(
+        self, base: Select[Any], cursor: str | None, wanted: int
+    ) -> list[Record]:
+        """Scored records best first, then the unscored newest first (the order of
+        `_ordered`'s "relevance"), as two index reads: one ORDER BY over each record's
+        score read and sorted a whole 100,000-record review for every page (0.7 s)."""
+        score = RecordScore.score
+        value, last_id = decode_cursor(cursor, 2) if cursor else ("-", "")
+        rows: list[Record] = []
+        if value != "":  # the page starts among the scored records
+            scored = base.join(
+                RecordScore,
+                and_(
+                    RecordScore.record_id == Record.id,
+                    RecordScore.project_id == Record.project_id,
+                    RecordScore.stage == ScreeningStage.TITLE_ABSTRACT,
+                ),
+            ).order_by(score.desc(), Record.id.desc())
+            if cursor:
+                typed, record_id = _score(value), _uuid(last_id)
+                scored = scored.where(
+                    or_(score < typed, and_(score == typed, Record.id < record_id))
+                )
+            rows = list(await self._db.scalars(scored.limit(wanted)))
+        if len(rows) < wanted:
+            unscored = base.where(
+                ~select(RecordScore.record_id)
+                .where(
+                    RecordScore.record_id == Record.id,
+                    RecordScore.stage == ScreeningStage.TITLE_ABSTRACT,
+                )
+                .exists()
+            ).order_by(Record.id.desc())
+            if value == "":  # the page starts among the unscored ones
+                unscored = unscored.where(Record.id < _uuid(last_id))
+            rows += await self._db.scalars(unscored.limit(wanted - len(rows)))
+        return rows
 
     async def _count(self, base: Select[Any]) -> tuple[int, bool]:
         capped = base.with_only_columns(Record.id).limit(COUNT_CEILING + 1).subquery()
@@ -346,22 +390,8 @@ def _ordered(statement: Select[Any], sort: Sort) -> Select[Any]:
         return statement.order_by(Record.year.asc().nullslast(), Record.id.desc())
     if sort == "title":
         return statement.order_by(Record.title_norm.asc().nullslast(), Record.id.desc())
-    if sort == "relevance":
-        return statement.order_by(_relevance().desc().nullslast(), Record.id.desc())
+    # "relevance" is RecordService._by_relevance's: scored best first, then newest first.
     return statement.order_by(Record.id.desc())
-
-
-def _relevance() -> Any:
-    """A record's title/abstract score, for ordering the records list by relevance."""
-    return (
-        select(RecordScore.score)
-        .where(
-            RecordScore.record_id == Record.id,
-            RecordScore.stage == ScreeningStage.TITLE_ABSTRACT,
-        )
-        .correlate(Record)
-        .scalar_subquery()
-    )
 
 
 def _cursor_for(sort: Sort, record: Record, score: float | None) -> str:
@@ -393,8 +423,6 @@ def _after(sort: Sort, cursor: str) -> Any:
     typed: Any = value
     if sort in {"year", "year_asc"}:
         typed = int(value) if value.isdigit() else None
-    elif sort == "relevance":
-        typed = float(value)
     ahead = column > typed if ascending else column < typed
     return or_(ahead, and_(column == typed, Record.id < record_id), column.is_(None))
 
@@ -402,9 +430,14 @@ def _after(sort: Sort, cursor: str) -> Any:
 def _sort_column(sort: Sort) -> tuple[Any, bool]:
     if sort in {"year", "year_asc"}:
         return Record.year, sort == "year_asc"
-    if sort == "title":
-        return Record.title_norm, True
-    return _relevance(), False
+    return Record.title_norm, True
+
+
+def _score(value: str) -> float:
+    try:
+        return float(value)
+    except ValueError:
+        raise InvalidCursorError from None
 
 
 def _uuid(value: str) -> uuid.UUID:
