@@ -7,6 +7,8 @@ from typing import Annotated
 import structlog
 from fastapi import Depends, Request
 from redis.asyncio import Redis
+from redis.asyncio.retry import Retry
+from redis.backoff import ExponentialBackoff
 
 from app.config import Settings
 
@@ -20,6 +22,10 @@ def create_redis(settings: Settings) -> Redis:
         socket_connect_timeout=2,
         socket_timeout=5,
         health_check_interval=30,
+        # Every request checks its rate limit here, so a blip must not become an error:
+        # a connection that timed out under a burst of requests was a 500 (Phase 9 load
+        # test). Three tries, 50 ms apart at first, then Redis really is gone.
+        retry=Retry(ExponentialBackoff(cap=0.5, base=0.05), retries=3),
     )
     return client
 
