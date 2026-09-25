@@ -2,6 +2,65 @@
 
 All notable changes, one section per build phase (guide Section 17).
 
+## Phase 8: Extraction, risk of bias, reporting (2026-09-25)
+
+### Added
+- Data extraction (guide 8.12): a form builder with short and long text, numbers with
+  units and bounds, choices, several choices, yes/no/unclear, dates, tables of repeating
+  rows and section headings, reordered by drag or keyboard. Forms are versioned: a
+  published version is locked, and a change starts the next one. Each reviewer extracts
+  on their own, blinded like screening; with dual extraction, whoever resolves conflicts
+  sees the differences field by field and saves a consensus.
+- Risk of bias (guide 8.13) with RoB 2, ROBINS-I, Newcastle–Ottawa and QUADAS-2: an
+  assessment form per study with the signalling questions, a judgement per domain (and
+  per axis for QUADAS-2) and support text; the final assessment chosen where several
+  people assessed a study; traffic-light and summary plots as SVG and PNG, and their
+  judgements as a table.
+- The PRISMA 2020 diagram (guide 8.14) counted from the review, downloadable as SVG, PNG
+  at 300 dpi and PDF, with the counts only a person can know (other sources, removals
+  before screening) and a warning while screening is unfinished.
+- Screening statistics (guide 8.15): progress per reviewer and stage, median time per
+  record, decisions per day, and agreement: percent agreement and Cohen's kappa per pair,
+  Fleiss' kappa for three or more reviewers, with Landis–Koch bands. Blinded reviewers see
+  their own numbers only.
+- The methods text (guide 8.15): the review's search and screening in words with its real
+  numbers, to edit and copy; a fact the review does not hold drops its sentence.
+- Exports (guide 8.16), made in the worker and kept for a day for whoever asked: records
+  as CSV, XLSX, RIS (decisions in notes and custom fields) and BibTeX, with the records
+  table's filters and blinding; extracted data as CSV or XLSX, long or wide; the audit log
+  as CSV.
+- Full project backup and restore: the owner's ZIP of every table and file, restored as a
+  new review owned by whoever restores it, on this Winnow or another. People are matched
+  by email or kept as placeholders that cannot sign in; PDFs are scanned again.
+- The audit log viewer for owners and admins, filtered and paged.
+- PostgreSQL row-level security as defence in depth: requests run as a role that sees
+  only the rows of reviews its user belongs to (records, decisions, notes, extraction
+  entries and consensus), and cannot change or delete audit rows.
+
+### Measured
+- Acceptance: PRISMA numbers match a hand-calculated review; Cohen's kappa matches
+  scikit-learn's and Fleiss' kappa the formula written out independently; a backup
+  restores as a whole new review whose PRISMA flow and kappa equal the original's,
+  including one from "another instance" whose people are unknown here.
+- Row-level security at 100,000 records: list and search p95 45–62 ms (budget 150),
+  sorting by title 124 ms, the screening queue 14 ms (budget 80).
+- A backup of 100,000 records and 100,000 decisions takes 8.5 s (10.6 MB) and restores in
+  40 s, in the worker.
+- The initial bundle is 155.9 KB gzipped (budget 200 KB); the new pages load on demand.
+
+### Changed
+- Primary buttons deepen on hover instead of fading, which kept them below 4.5:1 contrast.
+- Caddy accepts up to 2.1 GB on the restore upload only (`MAX_BACKUP_MB`, default 2,048);
+  other uploads stay at 210 MB.
+- Winnow's BibTeX reader unescapes LaTeX's special characters and no longer ends a value
+  at an escaped brace, so what Winnow writes it reads back.
+
+### Fixed
+- A select that appears after its page first renders reported an empty value, which sent
+  exports with an empty format.
+- Two API models shared the name `ReasonOut`, which silently renamed a frontend type; a
+  test now keeps every schema name unique.
+
 ## Phase 7: Full texts (2026-09-25)
 
 ### Added

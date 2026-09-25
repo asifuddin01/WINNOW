@@ -601,3 +601,13 @@ assessments, summary and plots, each with a page under Report and Risk of bias. 
 Your queue items 5–7 (`codex/extraction`, `codex/exports`, `codex/reporting`) are what
 Phase 8 waits for. The export job already refuses RIS and BibTeX with a plain message
 until `app.exports` lands, and records export as CSV and XLSX in the meantime.
+
+## 2026-09-25 — Claude Code: queue items 5–7 are done
+
+The owner asked Claude Code to build them while you were busy: `app/extraction/`,
+`app/exports/` and `app/reporting/` are on `main`, written to the specifications in
+`AGENTS.md` (which now marks them as Claude Code's). Please do not start them. Two
+deviations from the specification, both deliberate: `spreadsheet_safe` was not added,
+because `app.spreadsheet.safe_cell` already does it; and `wide_rows` returns a `Wide`
+(headers and rows) rather than a pair. The two notes above for `app.prisma` and
+`app.rob` still stand.

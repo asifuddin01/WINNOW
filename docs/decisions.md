@@ -854,3 +854,66 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
 - **PDFs are scanned again** before anyone can open them, as on upload.
 - **Measured at 100,000 records and 100,000 decisions:** backup 8.5 s (10.6 MB), restore
   40 s, both in the worker.
+
+### Citation files: RIS and BibTeX (guide 8.16)
+- **Decisions go where reference managers keep them.** RIS: `N1` notes ("Title/abstract:
+  excluded (Wrong population)", labels, the Winnow id) and the custom fields `C1`–`C4`
+  (statuses, reasons, labels). BibTeX: the `note` field. A blinded reader's file says the
+  decisions are their own. "Not eligible" at full text (the record never got there) is
+  left out of the notes, since every record excluded at title/abstract would carry it;
+  the status field still has it.
+- **The PubMed id is written as an accession number (`AN`) with `DB  - PubMed`**, as Ovid
+  does, so reference managers and Winnow read it back as a PubMed id.
+- **What Winnow writes, Winnow reads back**: both formats are tested through Winnow's own
+  readers, which is why the BibTeX reader learnt LaTeX's escaped special characters.
+- **BibTeX keys are the first author's surname and the year, ASCII only**, then `a`, `b`
+  … `aa` on clashes, unique across the whole file even though it is written in batches.
+  Other text stays UTF-8, which biber and current BibTeX read.
+
+### Methods text (guide 8.15)
+- **Only what the review holds.** Every fact is optional and a missing one drops its
+  sentence: no agreement sentence without decisions to compare, no "blinded" for one
+  reviewer, no full-text paragraph before there is a full-text stage.
+- **A blinded reader's text leaves out what the team did together** (agreement, how
+  disagreements were settled, work done in duplicate), as the statistics do.
+- **Disagreements settled by one of the record's own reviewers count as "by discussion";
+  by someone who had not decided it, as "by a third reviewer".** Winnow does not record
+  a discussion as such, and this is the honest reading of who settled it.
+- **Several pairs of reviewers give Cohen's kappa as a range**, not an average of kappas,
+  which has no clear meaning.
+- **Edited in the page, never saved**: the paragraph is a starting point to copy into a
+  manuscript, and the numbers underneath change until screening ends (the page says so).
+- **Screening stopped early by the stopping rule is not claimed**: Winnow only advises
+  (guide 8.5) and records no stop, so the sentence exists but is never filled in yet.
+
+### Data extraction (guide 8.12)
+- **A form's versions share a family: the first version's id.** Entries belong to the
+  exact version they were made on; a published version never changes, so exports and
+  consensus always read data with its own form.
+- **Only a draft can be edited or deleted; only the newest published version starts the
+  next one**, and a family has at most one draft at a time.
+- **An empty value is absent.** Text is trimmed, "12", 12 and 12.0 are one number, a
+  multi-select is kept in the form's order, and an empty table row is dropped, so two
+  extractors who typed the same thing never "differ".
+- **Drafts may be partial; a submission is complete.** Required fields and a table's
+  fewest rows are checked on submission only.
+- **Dual extraction is set per form.** With it, whoever may resolve conflicts reconciles:
+  the consensus starts from what every extractor agreed on, and each difference can be
+  taken from either side. Saving it marks the entries it reconciled "verified"; changing
+  an entry afterwards makes it "submitted" again, so the change shows.
+- **Blinded like screening, in the service and in the database.** A blinded reviewer sees
+  and exports only their own entries, never the consensus; entries and consensus rows are
+  under the same row-level security as decisions.
+- **"Final" exports are what an analysis uses**: the consensus where there is one, else the
+  only submitted extraction; a study extracted twice and not reconciled is left out rather
+  than guessed. "All" gives every extractor and the consensus, labelled, for checking.
+- **The builder's column names come from labels** (`Participants (n)` → `participants_n`)
+  and can be changed; they are the exports' column headings, so they follow the rules R
+  and Stata accept.
+- **Drag and drop, with buttons.** Fields reorder by dragging, and by "Move up" and "Move
+  down" for keyboards and screen readers.
+
+### Taken over from Codex
+- The owner reassigned Codex's queue items 5–7 (extraction rules, citation writers, the
+  methods text) to Claude Code on 2026-09-25 because Codex was busy. They follow the
+  specifications in `AGENTS.md`, which now says so.
