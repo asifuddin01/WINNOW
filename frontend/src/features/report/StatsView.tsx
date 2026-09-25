@@ -4,6 +4,7 @@ import { EyeOffIcon } from "lucide-react";
 import { errorMessage } from "@/api/client";
 import { statsQuery, type Agreement, type StageStats } from "@/api/reporting";
 import { FormAlert } from "@/components/forms/FormAlert";
+import { ScrollRegion } from "@/components/layout/ScrollRegion";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const STAGES: Record<StageStats["stage"], string> = {
@@ -67,7 +68,7 @@ function Stage({ stage }: { stage: StageStats }) {
       </div>
 
       {stage.reviewers.length > 0 ? (
-        <div className="overflow-x-auto">
+        <ScrollRegion label={`${name}: progress per reviewer`}>
           <table className="w-full min-w-[34rem] text-sm">
             <caption className="sr-only">{name}: progress per reviewer</caption>
             <thead className="text-left text-xs text-muted-foreground">
@@ -110,7 +111,7 @@ function Stage({ stage }: { stage: StageStats }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollRegion>
       ) : (
         <p className="text-sm text-muted-foreground">No decisions at this stage yet.</p>
       )}
@@ -199,7 +200,7 @@ function AgreementTable({ name, agreement }: { name: string; agreement: Agreemen
   return (
     <div className="grid gap-2">
       <h3 className="text-sm font-medium">Agreement between reviewers</h3>
-      <div className="overflow-x-auto">
+      <ScrollRegion label={`${name}: agreement between reviewers`}>
         <table className="w-full min-w-[34rem] text-sm">
           <caption className="sr-only">{name}: agreement between reviewers</caption>
           <thead className="text-left text-xs text-muted-foreground">
@@ -235,7 +236,7 @@ function AgreementTable({ name, agreement }: { name: string; agreement: Agreemen
             ))}
           </tbody>
         </table>
-      </div>
+      </ScrollRegion>
       {agreement.raters >= 3 && (
         <p className="text-sm">
           Fleiss&apos; κ over the {n(agreement.fleiss_records)} records decided by{" "}

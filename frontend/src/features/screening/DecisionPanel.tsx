@@ -77,7 +77,7 @@ export function ReasonChips({
                 onToggle(reason.id);
               }}
               className={cn(
-                "min-h-9 rounded-full border px-3 py-1 text-sm transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+                "min-h-9 rounded-full border px-3 py-1 text-sm pointer-coarse:min-h-11 transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
                 on
                   ? "border-exclude bg-exclude-muted font-medium text-foreground"
                   : "border-border hover:bg-muted",
@@ -123,7 +123,7 @@ export function LabelChips({
                 onToggle(label.id);
               }}
               className={cn(
-                "min-h-9 rounded-full border px-3 py-1 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+                "min-h-9 rounded-full border px-3 py-1 text-sm pointer-coarse:min-h-11 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
                 on ? COLOR_CHIP[label.color] : "border-border text-muted-foreground hover:bg-muted",
               )}
             >
@@ -193,7 +193,7 @@ export function Notes({
                 setVisibility(option);
               }}
               className={cn(
-                "min-h-8 rounded-md border px-2",
+                "min-h-8 rounded-md border px-2 pointer-coarse:min-h-11",
                 visibility === option ? "border-ring bg-muted font-medium" : "border-border",
               )}
             >

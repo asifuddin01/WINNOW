@@ -376,7 +376,7 @@ export function ScreeningPage({
           <Link
             to="/p/$pid/conflicts"
             params={{ pid }}
-            className="text-conflict underline-offset-2 hover:underline"
+            className="text-conflict underline underline-offset-2"
           >
             {progress.conflicts.toLocaleString()} conflict{progress.conflicts === 1 ? "" : "s"}
           </Link>

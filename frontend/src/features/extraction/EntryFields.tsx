@@ -2,6 +2,7 @@ import { PlusIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
 import { useId } from "react";
 
 import type { EntryData, FieldDef, FormSchema, Row } from "@/api/extraction";
+import { ScrollRegion } from "@/components/layout/ScrollRegion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -259,13 +260,15 @@ function TableField({
   const columns = field.columns ?? [];
   const full = field.max_rows !== undefined && rows.length >= field.max_rows;
   return (
-    <fieldset className="grid gap-2" disabled={disabled}>
+    // Each control is disabled on its own rather than the fieldset, whose disabling would
+    // also take the table's scroll area out of reach (axe counts it as disabled too).
+    <fieldset className="grid gap-2">
       <legend className="mb-1 text-sm font-medium">
         {field.label}
         {field.required && <span className="sr-only"> (required)</span>}
       </legend>
       {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <ScrollRegion label={field.label} className="rounded-lg border border-border">
         <table className="w-full min-w-[32rem] text-sm">
           <caption className="sr-only">{field.label}</caption>
           <thead className="bg-muted/50 text-left text-xs">
@@ -316,6 +319,7 @@ function TableField({
                     type="button"
                     variant="ghost"
                     size="icon-sm"
+                    disabled={disabled}
                     aria-label={`Remove row ${index + 1} of ${field.label}`}
                     onClick={() => {
                       onChange(rows.filter((_, i) => i !== index));
@@ -328,14 +332,14 @@ function TableField({
             ))}
           </tbody>
         </table>
-      </div>
+      </ScrollRegion>
       {problems[field.key] && <p className="text-sm text-destructive">{problems[field.key]}</p>}
       <div>
         <Button
           type="button"
           variant="outline"
           size="sm"
-          disabled={full}
+          disabled={(disabled ?? false) || full}
           onClick={() => {
             onChange([...rows, {}]);
           }}

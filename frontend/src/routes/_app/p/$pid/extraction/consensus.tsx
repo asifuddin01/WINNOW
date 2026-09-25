@@ -17,6 +17,7 @@ import {
 } from "@/api/extraction";
 import { projectQuery } from "@/api/projects";
 import { FormAlert } from "@/components/forms/FormAlert";
+import { ScrollRegion } from "@/components/layout/ScrollRegion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -187,7 +188,10 @@ function Editor({
           <h3 id="differences" className="text-base font-medium">
             Where they differ ({view.differences.length})
           </h3>
-          <div className="overflow-x-auto rounded-lg border border-border">
+          <ScrollRegion
+            label="Values the extractors gave differently"
+            className="rounded-lg border border-border"
+          >
             <table className="w-full min-w-[32rem] text-sm">
               <caption className="sr-only">Values the extractors gave differently</caption>
               <thead className="bg-muted/50 text-left text-xs">
@@ -229,7 +233,7 @@ function Editor({
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollRegion>
         </section>
       )}
 

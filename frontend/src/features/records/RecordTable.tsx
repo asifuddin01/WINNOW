@@ -143,7 +143,7 @@ function RecordRow({
       onClick={onSelect}
       aria-current={active ? "true" : undefined}
       className={cn(
-        "grid w-full gap-1 border-b border-border px-4 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none",
+        "grid w-full gap-1 border-b border-border px-4 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none focus-visible:ring-inset",
         active && "bg-muted",
       )}
     >

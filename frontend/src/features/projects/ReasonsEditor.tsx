@@ -47,12 +47,12 @@ export function ReasonsEditor({ pid, canEdit }: { pid: string; canEdit: boolean 
         {reasons.map((reason, index) => (
           <li
             key={reason.id}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card p-3"
+            className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-3"
           >
-            <span className="flex-1 text-sm">{reason.label}</span>
+            <span className="min-w-40 flex-1 text-sm">{reason.label}</span>
             <Badge variant="outline">{REASON_STAGES[reason.stage]}</Badge>
             {canEdit && (
-              <span className="flex items-center gap-0.5">
+              <span className="ml-auto flex items-center gap-0.5">
                 <Button
                   size="icon"
                   variant="ghost"

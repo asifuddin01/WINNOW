@@ -151,7 +151,7 @@ function InviteBox({ project, emailWorks }: { project: Project; emailWorks: bool
   return (
     <div className="grid gap-4">
       <form
-        className="grid gap-3 rounded-lg border border-dashed border-input p-4 sm:grid-cols-[1fr_12rem_auto] sm:items-end"
+        className="grid gap-3 rounded-lg border border-dashed border-input p-4 sm:grid-cols-[1fr_12rem] sm:items-end xl:grid-cols-[1fr_12rem_auto]"
         onSubmit={(event) => {
           event.preventDefault();
           if (!email.trim()) return;
@@ -182,10 +182,10 @@ function InviteBox({ project, emailWorks }: { project: Project; emailWorks: bool
           }}
         />
         <SelectField label="As" value={role} options={ROLE_OPTIONS} onChange={setRole} />
-        <Button type="submit" disabled={invite.isPending}>
+        <Button type="submit" disabled={invite.isPending} className="justify-self-start">
           <MailIcon aria-hidden="true" /> Send invitation
         </Button>
-        <dl className="text-xs text-muted-foreground sm:col-span-3">
+        <dl className="text-xs text-muted-foreground sm:col-span-2 xl:col-span-3">
           {ASSIGNABLE.map((value) => (
             <div key={value} className="flex gap-2">
               <dt className="min-w-16 font-medium text-foreground">{ROLES[value]}</dt>

@@ -34,7 +34,8 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" aria-label={t("shell.main")}>
+    // The whole sidebar is navigation (its home link too); the groups inside are named.
+    <Sidebar collapsible="icon" role="navigation" aria-label={t("shell.main")}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

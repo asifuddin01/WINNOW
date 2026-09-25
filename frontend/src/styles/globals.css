@@ -177,6 +177,53 @@
   }
 }
 
+/* Guide 14: on touch screens every control is at least 44 × 44 px. Controls grow to it;
+   checkboxes and switches keep their look and get a 44 px hit area around them instead. A
+   link inside a sentence is exempt, as in WCAG (min sizes do not apply to inline links).
+   This is the base layer, so a control with its own min-h-* class also needs
+   pointer-coarse:min-h-11 (e2e/tests/a11y.spec.ts measures every control). */
+@layer base {
+  @media (pointer: coarse) {
+    :is(
+      a[href],
+      button,
+      summary,
+      select,
+      textarea,
+      input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"]),
+      [role="button"],
+      [role="tab"],
+      [role="menuitem"],
+      [role="menuitemradio"],
+      [role="menuitemcheckbox"],
+      [role="option"],
+      [role="radio"],
+      [role="combobox"]
+    ):not([role="checkbox"], [role="switch"]) {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    /* A native checkbox or radio is tapped through the label around it. */
+    label:has(> input:is([type="checkbox"], [type="radio"])) {
+      min-height: 44px;
+    }
+  }
+}
+@media (pointer: coarse) {
+  :is([data-slot="checkbox"], [data-slot="switch"])::after {
+    inset: auto;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    translate: -50% -50%;
+  }
+  /* The sidebar's edge rail is a mouse shortcut; on touch the menu button does the job. */
+  [data-slot="sidebar-rail"] {
+    display: none;
+  }
+}
+
 /* Guide 14: respect reduced-motion preferences everywhere. */
 @media (prefers-reduced-motion: reduce) {
   *,

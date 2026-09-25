@@ -55,7 +55,7 @@ function NewReview() {
               className={cn(
                 "flex items-center gap-2 rounded-full border px-3 py-1 text-sm",
                 active
-                  ? "border-primary/40 bg-primary/10 font-medium text-primary"
+                  ? "border-primary bg-primary/10 font-medium text-foreground"
                   : "border-border text-muted-foreground",
               )}
             >

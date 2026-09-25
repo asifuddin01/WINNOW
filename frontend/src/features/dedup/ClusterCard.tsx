@@ -100,7 +100,7 @@ export function ClusterCard({
               </th>
               {cluster.members.map((member) => (
                 <th key={member.id} scope="col" className="p-2 text-left">
-                  <span className="flex items-start gap-2">
+                  <label className="flex cursor-pointer items-start gap-2">
                     <input
                       type="radio"
                       id={`keep-${cluster.id}-${member.id}`}
@@ -115,7 +115,7 @@ export function ClusterCard({
                         setPrimaryId(member.id);
                       }}
                     />
-                    <label htmlFor={`keep-${cluster.id}-${member.id}`}>
+                    <span>
                       <span className="block text-xs font-medium">
                         Keep this one
                         {member.id === suggested?.id && (
@@ -128,8 +128,8 @@ export function ClusterCard({
                       <span className="block text-xs text-muted-foreground">
                         {member.database_name ?? member.source ?? "Imported"}
                       </span>
-                    </label>
-                  </span>
+                    </span>
+                  </label>
                 </th>
               ))}
             </tr>
