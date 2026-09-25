@@ -1005,3 +1005,18 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
 - **English is bundled; other languages will load when chosen.** i18next and
   react-i18next add 22.5 KB to the initial bundle (178.4 KB of the 200 KB budget);
   bundling further catalogues would eat the rest.
+
+### Accessibility audit (guide 14)
+- **One sweep checks every page, not a check per journey.** `e2e/tests/a11y.spec.ts`
+  visits all 43 stops in both themes at the guide's four breakpoints, and checks what
+  axe cannot: sideways scrolling, 44 px touch targets, visible focus and reduced motion.
+  docs/accessibility.md has the findings and fixes.
+- **44 × 44 px on touch screens, by one rule, not per component.** On a coarse pointer
+  every control grows to 44 px (in the base layer, so a component asking for more still
+  gets it). Checkboxes and switches keep their size and get a larger hit area, so forms
+  do not balloon. With a mouse nothing changes: the density suits long screening
+  sessions.
+- **Tables scroll inside a named, focusable region** (`ScrollRegion`), rather than
+  forcing the page wider or hiding columns on small screens.
+- **Open menus stay outside landmarks** (axe `region`, moderate). Moving them into the
+  header would misplace them, and focus moves into them anyway.
