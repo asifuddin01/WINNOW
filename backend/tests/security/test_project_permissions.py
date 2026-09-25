@@ -60,6 +60,9 @@ REVIEWER_WRITES = VIEWER_WRITES | {
     ("POST", "/api/v1/projects/{pid}/fulltext/{fid}/annotations"),
     ("PATCH", "/api/v1/projects/{pid}/fulltext/{fid}/annotations/{aid}"),
     ("DELETE", "/api/v1/projects/{pid}/fulltext/{fid}/annotations/{aid}"),
+    # Assessing risk of bias is part of reviewing the included studies (guide 8.13).
+    ("PUT", "/api/v1/projects/{pid}/rob/{rid}"),
+    ("DELETE", "/api/v1/projects/{pid}/rob/{rid}"),
 }
 
 

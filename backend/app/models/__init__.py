@@ -34,6 +34,7 @@ from app.models.record import (
     TitleAbstractStatus,
 )
 from app.models.reporting import PrismaManual
+from app.models.rob import RobAssessment, RobStatus
 from app.models.screening import (
     ConflictResolution,
     Decision,
@@ -103,6 +104,8 @@ __all__ = [
     "RecordScore",
     "ResolutionSource",
     "ReviewType",
+    "RobAssessment",
+    "RobStatus",
     "ScanStatus",
     "ScreeningStage",
     "TitleAbstractStatus",

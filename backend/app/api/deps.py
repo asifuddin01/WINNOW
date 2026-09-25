@@ -40,6 +40,7 @@ from app.services.projects import ProjectService
 from app.services.ranking import RankingService
 from app.services.records import RecordService
 from app.services.reporting import ReportingService
+from app.services.rob import RobService
 from app.services.screening import ScreeningService
 from app.services.setup import SetupService
 from app.services.two_factor import TwoFactorService
@@ -259,6 +260,13 @@ def get_reporting(db: SessionDep) -> ReportingService:
 
 
 ReportingDep = Annotated[ReportingService, Depends(get_reporting)]
+
+
+def get_rob(db: SessionDep) -> RobService:
+    return RobService(db)
+
+
+RobDep = Annotated[RobService, Depends(get_rob)]
 
 
 def _origin(url: str) -> str | None:

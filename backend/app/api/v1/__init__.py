@@ -17,6 +17,7 @@ from app.api.v1 import (
     ranking,
     records,
     reporting,
+    rob,
     screening,
     setup,
 )
@@ -38,4 +39,5 @@ api_router.include_router(llm.router)
 api_router.include_router(fulltext.router)
 api_router.include_router(fulltext.files)
 api_router.include_router(reporting.router)
+api_router.include_router(rob.router)
 api_router.include_router(invites.router)
