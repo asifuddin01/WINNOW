@@ -130,6 +130,25 @@ async def test_assessments_are_blinded_and_one_is_chosen_final(
         [variant] = summary["variants"]
         assert [s["record_id"] for s in variant["studies"]] == [str(single)]
 
+        # The list of studies says where each stands, blinded the same way.
+        mine = (await get(t.reviewer, f"{base}/studies?tool=rob2")).json()
+        assert [(s["label"], s["mine"], s["submitted"]) for s in mine] == [
+            ("Smith 2019", "submitted", None),
+            ("Smith 2019", "submitted", None),
+            ("Smith 2019", "none", None),
+        ]
+        everyone = (await get(t.owner, f"{base}/studies?tool=rob2")).json()
+        assert {
+            s["record_id"]: (s["mine"], s["submitted"], s["final_chosen"]) for s in everyone
+        } == {
+            str(single): ("none", 1, False),
+            str(double): ("submitted", 2, False),
+            str(draft_only): ("draft", 0, False),
+        }
+        nothing = (await get(t.owner, f"{base}/studies?tool=nos")).json()
+        assert {s["mine"] for s in nothing} == {"none"}
+        assert (await get(t.owner, f"{base}/studies?tool=grade")).status_code == 404
+
         # A reviewer without the right to resolve cannot choose; the owner can.
         body = {"assessment_id": theirs.json()["id"]}
         assert (await post(t.reviewer, f"{base}/{double}/final", body)).status_code == 403

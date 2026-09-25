@@ -23,6 +23,7 @@ from app.schemas.rob import (
     PlotKind,
     RecordRob,
     RobSummary,
+    StudyStatus,
     ToolOut,
 )
 from app.services.errors import NotFoundError
@@ -40,6 +41,12 @@ Tool = Annotated[
 async def rob_tools(access: ViewerAccess, assessments: RobDep) -> list[ToolOut]:
     """The built-in tools, with their domains, signalling questions and judgements."""
     return assessments.tools()
+
+
+@router.get("/studies", responses=PROJECT)
+async def rob_studies(tool: Tool, access: ViewerAccess, assessments: RobDep) -> list[StudyStatus]:
+    """The studies included at full text, and where each one's assessment stands."""
+    return await assessments.studies(access, tool)
 
 
 @router.get("/summary", responses=PROJECT)

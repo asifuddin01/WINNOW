@@ -26,6 +26,7 @@ from app.schemas.rob import (
     RecordRob,
     RobSummary,
     StudyRow,
+    StudyStatus,
     ToolOut,
     VariantOut,
     VariantSummary,
@@ -35,6 +36,9 @@ from app.services import audit
 from app.services.audit import Actor
 from app.services.blinding import sees_others
 from app.services.errors import ConflictError, DomainError, ForbiddenError, NotFoundError
+
+# Reviews include tens to hundreds of studies; the list stops well above that.
+MAX_STUDIES = 5_000
 
 
 class InvalidAssessmentError(DomainError):
@@ -152,6 +156,58 @@ class RobService:
 
     def tools(self) -> list[ToolOut]:
         return [tool_out(template) for template in rob.BUILTIN_TEMPLATES]
+
+    async def studies(self, access: ProjectAccess, tool_key: str) -> list[StudyStatus]:
+        """Every study included at full text, with my assessment's state and, unless I am
+        blind to others' work, how many have been submitted."""
+        template_for(tool_key)
+        others = sees_others(access)
+        assessed = (
+            select(
+                RobAssessment.record_id,
+                func.max(RobAssessment.status)
+                .filter(RobAssessment.user_id == access.user.id)
+                .label("mine"),
+                func.count().filter(RobAssessment.status == RobStatus.SUBMITTED).label("submitted"),
+                func.bool_or(RobAssessment.final).label("final_chosen"),
+            )
+            .where(
+                RobAssessment.project_id == access.project_id,
+                RobAssessment.tool_key == tool_key,
+            )
+            .group_by(RobAssessment.record_id)
+            .subquery()
+        )
+        rows = await self._db.execute(
+            select(
+                Record.id,
+                Record.authors,
+                Record.year,
+                Record.title,
+                assessed.c.mine,
+                assessed.c.submitted,
+                assessed.c.final_chosen,
+            )
+            .outerjoin(assessed, assessed.c.record_id == Record.id)
+            .where(
+                Record.project_id == access.project_id,
+                Record.ft_final == FullTextStatus.INCLUDED,
+                Record.is_duplicate.is_(False),
+            )
+            .order_by(Record.year.nulls_last(), Record.id)
+            .limit(MAX_STUDIES)
+        )
+        return [
+            StudyStatus(
+                record_id=record_id,
+                label=_study_label(authors, year, title),
+                title=title,
+                mine="none" if mine is None else RobStatus(mine).value,
+                submitted=(submitted or 0) if others else None,
+                final_chosen=bool(final_chosen) if others else None,
+            )
+            for record_id, authors, year, title, mine, submitted, final_chosen in rows
+        ]
 
     async def for_record(self, access: ProjectAccess, record_id: uuid.UUID) -> RecordRob:
         record = await self._included(access, record_id)

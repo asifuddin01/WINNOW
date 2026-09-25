@@ -85,6 +85,19 @@ class RecordRob(BaseModel):
     assessments: list[AssessmentOut]
 
 
+class StudyStatus(BaseModel):
+    """One study included at full text, and where its assessment with a tool stands."""
+
+    record_id: uuid.UUID
+    label: str
+    title: str | None
+    # My own assessment: none yet, a draft, or submitted.
+    mine: Literal["none", "draft", "submitted"]
+    # Unless blind mode hides others' work: how many submitted, and whether one is final.
+    submitted: int | None
+    final_chosen: bool | None
+
+
 class JudgementCountOut(BaseModel):
     judgement: str
     label: str

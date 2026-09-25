@@ -3311,7 +3311,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ReasonOut"
+                    "$ref": "#/components/schemas/app__schemas__setup__ReasonOut"
                   },
                   "title": "Response List Exclusion Reasons"
                 }
@@ -3395,7 +3395,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReasonOut"
+                  "$ref": "#/components/schemas/app__schemas__setup__ReasonOut"
                 }
               }
             }
@@ -3499,7 +3499,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReasonOut"
+                  "$ref": "#/components/schemas/app__schemas__setup__ReasonOut"
                 }
               }
             }
@@ -9241,6 +9241,1928 @@
         }
       }
     },
+    "/api/v1/projects/{pid}/prisma": {
+      "get": {
+        "tags": [
+          "reporting"
+        ],
+        "summary": "Prisma",
+        "description": "The PRISMA 2020 flow, counted from the review (guide 9.4).",
+        "operationId": "prisma",
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrismaOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/prisma/manual": {
+      "patch": {
+        "tags": [
+          "reporting"
+        ],
+        "summary": "Update Prisma Manual",
+        "description": "Records found outside the imported databases, and records removed before screening\nfor other reasons: what Winnow cannot count itself.",
+        "operationId": "update_prisma_manual",
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrismaManualIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrismaOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/prisma.{kind}": {
+      "get": {
+        "tags": [
+          "reporting"
+        ],
+        "summary": "Prisma File",
+        "description": "The diagram as SVG, PNG at 300 dpi or PDF.",
+        "operationId": "prisma_file",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "svg",
+                "png",
+                "pdf"
+              ],
+              "type": "string",
+              "title": "Kind"
+            }
+          },
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          },
+          {
+            "name": "inline",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Shown in the app rather than downloaded",
+              "default": false,
+              "title": "Inline"
+            },
+            "description": "Shown in the app rather than downloaded"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "image/svg+xml": {},
+              "image/png": {},
+              "application/pdf": {}
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/stats": {
+      "get": {
+        "tags": [
+          "reporting"
+        ],
+        "summary": "Screening Stats",
+        "description": "Progress per reviewer and stage, time per record, decisions per day, and\ninter-rater agreement (guide 8.15, 9.3).",
+        "operationId": "screening_stats",
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/rob/tools": {
+      "get": {
+        "tags": [
+          "risk of bias"
+        ],
+        "summary": "Rob Tools",
+        "description": "The built-in tools, with their domains, signalling questions and judgements.",
+        "operationId": "rob_tools",
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ToolOut"
+                  },
+                  "title": "Response Rob Tools"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/rob/studies": {
+      "get": {
+        "tags": [
+          "risk of bias"
+        ],
+        "summary": "Rob Studies",
+        "description": "The studies included at full text, and where each one's assessment stands.",
+        "operationId": "rob_studies",
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          },
+          {
+            "name": "tool",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,63}$",
+              "description": "rob2, robins_i, nos, quadas2",
+              "title": "Tool"
+            },
+            "description": "rob2, robins_i, nos, quadas2"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StudyStatus"
+                  },
+                  "title": "Response Rob Studies"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/rob/summary": {
+      "get": {
+        "tags": [
+          "risk of bias"
+        ],
+        "summary": "Rob Summary",
+        "description": "Per-domain counts and the traffic-light rows, from one final assessment per study.",
+        "operationId": "rob_summary",
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          },
+          {
+            "name": "tool",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,63}$",
+              "description": "rob2, robins_i, nos, quadas2",
+              "title": "Tool"
+            },
+            "description": "rob2, robins_i, nos, quadas2"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RobSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/rob/summary.{kind}": {
+      "get": {
+        "tags": [
+          "risk of bias"
+        ],
+        "summary": "Rob Summary Plot",
+        "description": "The traffic-light table or the summary bar plot, as SVG or PNG at 300 dpi.",
+        "operationId": "rob_summary_plot",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "svg",
+                "png"
+              ],
+              "type": "string",
+              "title": "Kind"
+            }
+          },
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          },
+          {
+            "name": "tool",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,63}$",
+              "description": "rob2, robins_i, nos, quadas2",
+              "title": "Tool"
+            },
+            "description": "rob2, robins_i, nos, quadas2"
+          },
+          {
+            "name": "plot",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "traffic-light",
+                "summary"
+              ],
+              "type": "string",
+              "default": "traffic-light",
+              "title": "Plot"
+            }
+          },
+          {
+            "name": "variant",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Variant"
+            }
+          },
+          {
+            "name": "inline",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Inline"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "image/svg+xml": {},
+              "image/png": {}
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/rob/{rid}": {
+      "get": {
+        "tags": [
+          "risk of bias"
+        ],
+        "summary": "Record Assessments",
+        "description": "This study's assessments: mine, and others' unless blind mode hides them.",
+        "operationId": "record_assessments",
+        "parameters": [
+          {
+            "name": "rid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rid"
+            }
+          },
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordRob"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "risk of bias"
+        ],
+        "summary": "Save Assessment",
+        "description": "Save my assessment of this study with one tool: a draft, or submitted when every\ndomain is judged.",
+        "operationId": "save_assessment",
+        "parameters": [
+          {
+            "name": "rid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rid"
+            }
+          },
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessmentIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "risk of bias"
+        ],
+        "summary": "Delete Assessment",
+        "operationId": "delete_assessment",
+        "parameters": [
+          {
+            "name": "rid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rid"
+            }
+          },
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          },
+          {
+            "name": "tool",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,63}$",
+              "description": "rob2, robins_i, nos, quadas2",
+              "title": "Tool"
+            },
+            "description": "rob2, robins_i, nos, quadas2"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/rob/{rid}/final": {
+      "post": {
+        "tags": [
+          "risk of bias"
+        ],
+        "summary": "Choose Final",
+        "description": "Where several people assessed a study, the assessment the plots use.",
+        "operationId": "choose_final",
+        "parameters": [
+          {
+            "name": "rid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rid"
+            }
+          },
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinalIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/audit": {
+      "get": {
+        "tags": [
+          "audit"
+        ],
+        "summary": "Audit Log",
+        "description": "What happened in the review, newest first. `action` matches a whole action or a\nfamily of them (`decision` matches `decision.made` and `decision.undone`).",
+        "operationId": "audit_log",
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100,
+                  "pattern": "^[a-z0-9_.]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/audit.csv": {
+      "get": {
+        "tags": [
+          "audit"
+        ],
+        "summary": "Audit Log Csv",
+        "description": "The same log as a CSV file, with the same filters.",
+        "operationId": "audit_log_csv",
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100,
+                  "pattern": "^[a-z0-9_.]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/csv": {}
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/exports": {
+      "post": {
+        "tags": [
+          "exports"
+        ],
+        "summary": "Request Export",
+        "description": "Records (CSV, XLSX, RIS, BibTeX), filtered as in the records table, or the review's\nfull backup (owner only).",
+        "operationId": "request_export",
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "exports"
+        ],
+        "summary": "My Exports",
+        "operationId": "my_exports",
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExportOut"
+                  },
+                  "title": "Response My Exports"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/exports/{eid}": {
+      "get": {
+        "tags": [
+          "exports"
+        ],
+        "summary": "Export Status",
+        "operationId": "export_status",
+        "parameters": [
+          {
+            "name": "eid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Eid"
+            }
+          },
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{pid}/exports/{eid}/file": {
+      "get": {
+        "tags": [
+          "exports"
+        ],
+        "summary": "Download Export",
+        "operationId": "download_export",
+        "parameters": [
+          {
+            "name": "eid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Eid"
+            }
+          },
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Project id",
+              "title": "Pid"
+            },
+            "description": "Project id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/octet-stream": {}
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/restores": {
+      "post": {
+        "tags": [
+          "exports"
+        ],
+        "summary": "Restore Backup",
+        "description": "Restore a backup as a new review of yours; it is checked, then built in the worker.",
+        "operationId": "restore_backup",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_restore_backup"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request Entity Too Large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/restores/{restore_id}": {
+      "get": {
+        "tags": [
+          "exports"
+        ],
+        "summary": "Restore Status",
+        "operationId": "restore_status",
+        "parameters": [
+          {
+            "name": "restore_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Restore Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/invites/{token}": {
       "get": {
         "tags": [
@@ -9412,6 +11334,57 @@
           "detail"
         ],
         "title": "Accepted"
+      },
+      "Agreement": {
+        "properties": {
+          "pairs": {
+            "items": {
+              "$ref": "#/components/schemas/PairAgreement"
+            },
+            "type": "array",
+            "title": "Pairs"
+          },
+          "fleiss_kappa": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fleiss Kappa"
+          },
+          "fleiss_band": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fleiss Band"
+          },
+          "fleiss_records": {
+            "type": "integer",
+            "title": "Fleiss Records"
+          },
+          "raters": {
+            "type": "integer",
+            "title": "Raters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pairs",
+          "fleiss_kappa",
+          "fleiss_band",
+          "fleiss_records",
+          "raters"
+        ],
+        "title": "Agreement",
+        "description": "Guide 9.3. `None` means not calculable (no overlap, or one category only)."
       },
       "AnnotationIn": {
         "properties": {
@@ -9588,6 +11561,348 @@
         "type": "object",
         "title": "AnnotationPatch"
       },
+      "AssessmentIn": {
+        "properties": {
+          "tool_key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "title": "Tool Key"
+          },
+          "variant_key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "title": "Variant Key"
+          },
+          "answers": {
+            "patternProperties": {
+              "^[a-z][a-z0-9_]{0,63}$": {
+                "patternProperties": {
+                  "^[a-z][a-z0-9_]{0,63}$": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_]{0,63}$"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "type": "object",
+            "title": "Answers"
+          },
+          "judgements": {
+            "patternProperties": {
+              "^[a-z][a-z0-9_]{0,63}$": {
+                "patternProperties": {
+                  "^[a-z][a-z0-9_]{0,63}$": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_]{0,63}$"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "type": "object",
+            "title": "Judgements"
+          },
+          "support": {
+            "patternProperties": {
+              "^[a-z][a-z0-9_]{0,63}$": {
+                "type": "string",
+                "maxLength": 5000
+              }
+            },
+            "type": "object",
+            "title": "Support"
+          },
+          "overall": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,63}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overall"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RobStatus",
+            "default": "draft"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tool_key",
+          "variant_key"
+        ],
+        "title": "AssessmentIn"
+      },
+      "AssessmentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "record_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Record Id"
+          },
+          "tool_key": {
+            "type": "string",
+            "title": "Tool Key"
+          },
+          "tool_version": {
+            "type": "string",
+            "title": "Tool Version"
+          },
+          "variant_key": {
+            "type": "string",
+            "title": "Variant Key"
+          },
+          "answers": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Answers"
+          },
+          "judgements": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Judgements"
+          },
+          "support": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Support"
+          },
+          "overall": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overall"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RobStatus"
+          },
+          "final": {
+            "type": "boolean",
+            "title": "Final"
+          },
+          "assessor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessor"
+          },
+          "mine": {
+            "type": "boolean",
+            "title": "Mine"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "record_id",
+          "tool_key",
+          "tool_version",
+          "variant_key",
+          "answers",
+          "judgements",
+          "support",
+          "overall",
+          "status",
+          "final",
+          "assessor",
+          "mine",
+          "updated_at"
+        ],
+        "title": "AssessmentOut"
+      },
+      "AuditEntryOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "actor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Id"
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Type"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Id"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before"
+          },
+          "after": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After"
+          },
+          "withheld": {
+            "type": "boolean",
+            "title": "Withheld"
+          },
+          "ip": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip"
+          },
+          "user_agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Agent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "at",
+          "action",
+          "actor",
+          "actor_id",
+          "entity_type",
+          "entity_id",
+          "before",
+          "after",
+          "withheld",
+          "ip",
+          "user_agent"
+        ],
+        "title": "AuditEntryOut"
+      },
+      "AuditPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditEntryOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "AuditPage"
+      },
       "AuthOptions": {
         "properties": {
           "registration": {
@@ -9665,6 +11980,32 @@
         "type": "object",
         "title": "AutoResolve",
         "description": "Guide 8.4: merge everything at or above this score, plus the exact matches."
+      },
+      "AxisOut": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "judgements": {
+            "items": {
+              "$ref": "#/components/schemas/ChoiceOut"
+            },
+            "type": "array",
+            "title": "Judgements"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "name",
+          "judgements"
+        ],
+        "title": "AxisOut"
       },
       "BatchApplied": {
         "properties": {
@@ -9831,6 +12172,21 @@
           "failed"
         ],
         "title": "BatchStatus"
+      },
+      "Body_restore_backup": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "A Winnow project backup (.zip)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_restore_backup"
       },
       "Body_upload": {
         "properties": {
@@ -10081,6 +12437,24 @@
           "new_password"
         ],
         "title": "ChangePasswordRequest"
+      },
+      "ChoiceOut": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label"
+        ],
+        "title": "ChoiceOut"
       },
       "ClusterMember": {
         "properties": {
@@ -10795,6 +13169,25 @@
         "title": "Curve",
         "description": "Where each relevant record was found, in the order of screening: the recall curve\nis a step up at each of these positions (guide 8.10)."
       },
+      "DayCount": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "decisions": {
+            "type": "integer",
+            "title": "Decisions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "decisions"
+        ],
+        "title": "DayCount"
+      },
       "DecisionIn": {
         "properties": {
           "stage": {
@@ -10972,6 +13365,81 @@
         ],
         "title": "DiscussIn"
       },
+      "DomainOut": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOut"
+            },
+            "type": "array",
+            "title": "Questions"
+          },
+          "axes": {
+            "items": {
+              "$ref": "#/components/schemas/AxisOut"
+            },
+            "type": "array",
+            "title": "Axes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "name",
+          "questions",
+          "axes"
+        ],
+        "title": "DomainOut"
+      },
+      "DomainSummaryOut": {
+        "properties": {
+          "domain_key": {
+            "type": "string",
+            "title": "Domain Key"
+          },
+          "domain_name": {
+            "type": "string",
+            "title": "Domain Name"
+          },
+          "axis_key": {
+            "type": "string",
+            "title": "Axis Key"
+          },
+          "axis_name": {
+            "type": "string",
+            "title": "Axis Name"
+          },
+          "counts": {
+            "items": {
+              "$ref": "#/components/schemas/JudgementCountOut"
+            },
+            "type": "array",
+            "title": "Counts"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "domain_key",
+          "domain_name",
+          "axis_key",
+          "axis_name",
+          "counts",
+          "total"
+        ],
+        "title": "DomainSummaryOut"
+      },
       "DuplicateSetupRequest": {
         "properties": {
           "title": {
@@ -11025,6 +13493,135 @@
         ],
         "title": "Estimate"
       },
+      "ExportFormat": {
+        "type": "string",
+        "enum": [
+          "csv",
+          "xlsx",
+          "ris",
+          "bibtex",
+          "zip"
+        ],
+        "title": "ExportFormat"
+      },
+      "ExportIn": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ExportKind",
+            "default": "records"
+          },
+          "format": {
+            "$ref": "#/components/schemas/ExportFormat",
+            "default": "csv"
+          },
+          "filters": {
+            "$ref": "#/components/schemas/RecordFiltersIn"
+          }
+        },
+        "type": "object",
+        "title": "ExportIn"
+      },
+      "ExportKind": {
+        "type": "string",
+        "enum": [
+          "records",
+          "backup"
+        ],
+        "title": "ExportKind"
+      },
+      "ExportOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ExportKind"
+          },
+          "format": {
+            "$ref": "#/components/schemas/ExportFormat"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filename"
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Bytes"
+          },
+          "rows": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rows"
+          },
+          "problem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "format",
+          "status",
+          "filename",
+          "size_bytes",
+          "rows",
+          "problem",
+          "created_at",
+          "expires_at"
+        ],
+        "title": "ExportOut"
+      },
       "FetchIn": {
         "properties": {
           "candidate": {
@@ -11059,6 +13656,20 @@
           "exclude"
         ],
         "title": "FinalDecision"
+      },
+      "FinalIn": {
+        "properties": {
+          "assessment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Assessment Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "assessment_id"
+        ],
+        "title": "FinalIn"
       },
       "FullTextStatus": {
         "type": "string",
@@ -11854,6 +14465,39 @@
           "state"
         ],
         "title": "InvitePreview"
+      },
+      "JobStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "running",
+          "ready",
+          "failed"
+        ],
+        "title": "JobStatus"
+      },
+      "JudgementCountOut": {
+        "properties": {
+          "judgement": {
+            "type": "string",
+            "title": "Judgement"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "judgement",
+          "label",
+          "count"
+        ],
+        "title": "JudgementCountOut"
       },
       "KeywordGroupCreate": {
         "properties": {
@@ -12874,6 +15518,65 @@
         "title": "OtherDecision",
         "description": "Someone else's decision: only ever sent to a caller who is allowed to see it."
       },
+      "PairAgreement": {
+        "properties": {
+          "reviewer_a": {
+            "type": "string",
+            "title": "Reviewer A"
+          },
+          "reviewer_b": {
+            "type": "string",
+            "title": "Reviewer B"
+          },
+          "records": {
+            "type": "integer",
+            "title": "Records"
+          },
+          "percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percent"
+          },
+          "kappa": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kappa"
+          },
+          "band": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Band"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reviewer_a",
+          "reviewer_b",
+          "records",
+          "percent",
+          "kappa",
+          "band"
+        ],
+        "title": "PairAgreement"
+      },
       "PersonOut": {
         "properties": {
           "id": {
@@ -12961,6 +15664,159 @@
         },
         "type": "object",
         "title": "Pico"
+      },
+      "PrismaManualIn": {
+        "properties": {
+          "other_sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceIn"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Other Sources"
+          },
+          "removed_other_reasons": {
+            "type": "integer",
+            "maximum": 100000000.0,
+            "minimum": 0.0,
+            "title": "Removed Other Reasons",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "PrismaManualIn",
+        "description": "What Winnow cannot count itself: records found outside the imported databases\n(citation searching, websites, organisations) and records removed before screening\nfor other reasons (e.g. marked ineligible by an automation tool)."
+      },
+      "PrismaManualOut": {
+        "properties": {
+          "other_sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceOut"
+            },
+            "type": "array",
+            "title": "Other Sources"
+          },
+          "removed_other_reasons": {
+            "type": "integer",
+            "title": "Removed Other Reasons"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "other_sources",
+          "removed_other_reasons",
+          "updated_at"
+        ],
+        "title": "PrismaManualOut"
+      },
+      "PrismaOut": {
+        "properties": {
+          "database_sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceOut"
+            },
+            "type": "array",
+            "title": "Database Sources"
+          },
+          "other_sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceOut"
+            },
+            "type": "array",
+            "title": "Other Sources"
+          },
+          "records_identified": {
+            "type": "integer",
+            "title": "Records Identified"
+          },
+          "duplicates_removed": {
+            "type": "integer",
+            "title": "Duplicates Removed"
+          },
+          "records_removed_other_reasons": {
+            "type": "integer",
+            "title": "Records Removed Other Reasons"
+          },
+          "records_screened": {
+            "type": "integer",
+            "title": "Records Screened"
+          },
+          "records_excluded": {
+            "type": "integer",
+            "title": "Records Excluded"
+          },
+          "reports_sought": {
+            "type": "integer",
+            "title": "Reports Sought"
+          },
+          "reports_not_retrieved": {
+            "type": "integer",
+            "title": "Reports Not Retrieved"
+          },
+          "reports_assessed": {
+            "type": "integer",
+            "title": "Reports Assessed"
+          },
+          "reports_excluded": {
+            "items": {
+              "$ref": "#/components/schemas/app__schemas__reporting__ReasonOut"
+            },
+            "type": "array",
+            "title": "Reports Excluded"
+          },
+          "reports_excluded_total": {
+            "type": "integer",
+            "title": "Reports Excluded Total"
+          },
+          "studies_included": {
+            "type": "integer",
+            "title": "Studies Included"
+          },
+          "awaiting_title_abstract": {
+            "type": "integer",
+            "title": "Awaiting Title Abstract"
+          },
+          "awaiting_full_text": {
+            "type": "integer",
+            "title": "Awaiting Full Text"
+          },
+          "manual": {
+            "$ref": "#/components/schemas/PrismaManualOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "database_sources",
+          "other_sources",
+          "records_identified",
+          "duplicates_removed",
+          "records_removed_other_reasons",
+          "records_screened",
+          "records_excluded",
+          "reports_sought",
+          "reports_not_retrieved",
+          "reports_assessed",
+          "reports_excluded",
+          "reports_excluded_total",
+          "studies_included",
+          "awaiting_title_abstract",
+          "awaiting_full_text",
+          "manual"
+        ],
+        "title": "PrismaOut",
+        "description": "The flow, with where screening still has work to do: an unfinished stage makes\nthe diagram a snapshot, not the review's final numbers."
       },
       "Problem": {
         "properties": {
@@ -13679,6 +16535,32 @@
         "title": "ProjectUpdate",
         "description": "Send only what changes. Optional text sent as \"\" or null is cleared."
       },
+      "QuestionOut": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "answers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Answers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "prompt",
+          "answers"
+        ],
+        "title": "QuestionOut"
+      },
       "QueuePage": {
         "properties": {
           "items": {
@@ -13830,34 +16712,6 @@
           "label"
         ],
         "title": "ReasonCreate"
-      },
-      "ReasonOut": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "label": {
-            "type": "string",
-            "title": "Label"
-          },
-          "stage": {
-            "$ref": "#/components/schemas/ReasonStage"
-          },
-          "position": {
-            "type": "integer",
-            "title": "Position"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "label",
-          "stage",
-          "position"
-        ],
-        "title": "ReasonOut"
       },
       "ReasonStage": {
         "type": "string",
@@ -14261,6 +17115,56 @@
         "title": "RecordFacets",
         "description": "Counts for the filter panel (guide 10)."
       },
+      "RecordFiltersIn": {
+        "properties": {
+          "q": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Q",
+            "default": ""
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TitleAbstractStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "full_text": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FullTextStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "batch": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch"
+          },
+          "duplicates": {
+            "type": "boolean",
+            "title": "Duplicates",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "RecordFiltersIn",
+        "description": "The records table's filters: an export holds the records the table would show."
+      },
       "RecordFulltext": {
         "properties": {
           "fulltext": {
@@ -14550,6 +17454,40 @@
         ],
         "title": "RecordPreview"
       },
+      "RecordRob": {
+        "properties": {
+          "record_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Record Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "assessments": {
+            "items": {
+              "$ref": "#/components/schemas/AssessmentOut"
+            },
+            "type": "array",
+            "title": "Assessments"
+          }
+        },
+        "type": "object",
+        "required": [
+          "record_id",
+          "title",
+          "assessments"
+        ],
+        "title": "RecordRob"
+      },
       "RecoveryCodesOut": {
         "properties": {
           "recovery_codes": {
@@ -14687,6 +17625,68 @@
         ],
         "title": "ResolveIn"
       },
+      "RestoreOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "problem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem"
+          },
+          "restored": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Restored"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "status",
+          "project_id",
+          "problem",
+          "restored",
+          "created_at"
+        ],
+        "title": "RestoreOut"
+      },
       "ReviewType": {
         "type": "string",
         "enum": [
@@ -14697,6 +17697,115 @@
           "other"
         ],
         "title": "ReviewType"
+      },
+      "ReviewerProgress": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "mine": {
+            "type": "boolean",
+            "title": "Mine"
+          },
+          "decided": {
+            "type": "integer",
+            "title": "Decided"
+          },
+          "included": {
+            "type": "integer",
+            "title": "Included"
+          },
+          "excluded": {
+            "type": "integer",
+            "title": "Excluded"
+          },
+          "maybe": {
+            "type": "integer",
+            "title": "Maybe"
+          },
+          "median_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "name",
+          "mine",
+          "decided",
+          "included",
+          "excluded",
+          "maybe",
+          "median_seconds"
+        ],
+        "title": "ReviewerProgress"
+      },
+      "RobStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "submitted"
+        ],
+        "title": "RobStatus"
+      },
+      "RobSummary": {
+        "properties": {
+          "tool_key": {
+            "type": "string",
+            "title": "Tool Key"
+          },
+          "tool_name": {
+            "type": "string",
+            "title": "Tool Name"
+          },
+          "tool_version": {
+            "type": "string",
+            "title": "Tool Version"
+          },
+          "variants": {
+            "items": {
+              "$ref": "#/components/schemas/VariantSummary"
+            },
+            "type": "array",
+            "title": "Variants"
+          },
+          "awaiting_final": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Awaiting Final"
+          },
+          "own_only": {
+            "type": "boolean",
+            "title": "Own Only"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tool_key",
+          "tool_name",
+          "tool_version",
+          "variants",
+          "awaiting_final",
+          "own_only"
+        ],
+        "title": "RobSummary"
       },
       "ScanStatus": {
         "type": "string",
@@ -15047,6 +18156,128 @@
         "title": "SignedLink",
         "description": "A link to the PDF that works for five minutes, for the person who asked (guide 10)."
       },
+      "SourceIn": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "count": {
+            "type": "integer",
+            "maximum": 100000000.0,
+            "minimum": 0.0,
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "count"
+        ],
+        "title": "SourceIn"
+      },
+      "SourceOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "count"
+        ],
+        "title": "SourceOut"
+      },
+      "StageStats": {
+        "properties": {
+          "stage": {
+            "$ref": "#/components/schemas/ScreeningStage"
+          },
+          "records": {
+            "type": "integer",
+            "title": "Records"
+          },
+          "decided": {
+            "type": "integer",
+            "title": "Decided"
+          },
+          "conflicts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conflicts"
+          },
+          "reviewers": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewerProgress"
+            },
+            "type": "array",
+            "title": "Reviewers"
+          },
+          "per_day": {
+            "items": {
+              "$ref": "#/components/schemas/DayCount"
+            },
+            "type": "array",
+            "title": "Per Day"
+          },
+          "agreement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Agreement"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "stage",
+          "records",
+          "decided",
+          "conflicts",
+          "reviewers",
+          "per_day",
+          "agreement"
+        ],
+        "title": "StageStats"
+      },
+      "StatsOut": {
+        "properties": {
+          "stages": {
+            "items": {
+              "$ref": "#/components/schemas/StageStats"
+            },
+            "type": "array",
+            "title": "Stages"
+          },
+          "blind": {
+            "type": "boolean",
+            "title": "Blind"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stages",
+          "blind"
+        ],
+        "title": "StatsOut"
+      },
       "StoppingAdvice": {
         "properties": {
           "stage": {
@@ -15114,6 +18345,112 @@
         "additionalProperties": false,
         "type": "object",
         "title": "StoppingRule"
+      },
+      "StudyRow": {
+        "properties": {
+          "record_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Record Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "cells": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Cells"
+          },
+          "overall": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overall"
+          }
+        },
+        "type": "object",
+        "required": [
+          "record_id",
+          "label",
+          "cells",
+          "overall"
+        ],
+        "title": "StudyRow",
+        "description": "One row of the traffic-light table."
+      },
+      "StudyStatus": {
+        "properties": {
+          "record_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Record Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "mine": {
+            "type": "string",
+            "enum": [
+              "none",
+              "draft",
+              "submitted"
+            ],
+            "title": "Mine"
+          },
+          "submitted": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted"
+          },
+          "final_chosen": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Chosen"
+          }
+        },
+        "type": "object",
+        "required": [
+          "record_id",
+          "label",
+          "title",
+          "mine",
+          "submitted",
+          "final_chosen"
+        ],
+        "title": "StudyStatus",
+        "description": "One study included at full text, and where its assessment with a tool stands."
       },
       "SuggestionOut": {
         "properties": {
@@ -15202,6 +18539,47 @@
           "token"
         ],
         "title": "TokenRequest"
+      },
+      "ToolOut": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          },
+          "variants": {
+            "items": {
+              "$ref": "#/components/schemas/VariantOut"
+            },
+            "type": "array",
+            "title": "Variants"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "name",
+          "version",
+          "source_url",
+          "note",
+          "variants"
+        ],
+        "title": "ToolOut"
       },
       "TrainStarted": {
         "properties": {
@@ -15352,6 +18730,112 @@
           "created_at"
         ],
         "title": "UserOut"
+      },
+      "VariantOut": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "domains": {
+            "items": {
+              "$ref": "#/components/schemas/DomainOut"
+            },
+            "type": "array",
+            "title": "Domains"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "name",
+          "domains"
+        ],
+        "title": "VariantOut"
+      },
+      "VariantSummary": {
+        "properties": {
+          "variant_key": {
+            "type": "string",
+            "title": "Variant Key"
+          },
+          "variant_name": {
+            "type": "string",
+            "title": "Variant Name"
+          },
+          "domains": {
+            "items": {
+              "$ref": "#/components/schemas/DomainSummaryOut"
+            },
+            "type": "array",
+            "title": "Domains"
+          },
+          "studies": {
+            "items": {
+              "$ref": "#/components/schemas/StudyRow"
+            },
+            "type": "array",
+            "title": "Studies"
+          }
+        },
+        "type": "object",
+        "required": [
+          "variant_key",
+          "variant_name",
+          "domains",
+          "studies"
+        ],
+        "title": "VariantSummary"
+      },
+      "app__schemas__reporting__ReasonOut": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason",
+          "count"
+        ],
+        "title": "ReasonOut"
+      },
+      "app__schemas__setup__ReasonOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/ReasonStage"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "stage",
+          "position"
+        ],
+        "title": "ReasonOut"
       },
       "ValidationIssue": {
         "properties": {
