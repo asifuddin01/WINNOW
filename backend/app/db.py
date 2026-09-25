@@ -61,6 +61,13 @@ async def bind_user(session: AsyncSession, user_id: uuid.UUID) -> None:
     await session.execute(select(func.set_config("app.user_id", str(user_id), True)))
 
 
+def act_for(session: AsyncSession, user_id: uuid.UUID) -> None:
+    """Make a session that is not a request's (a worker's, building someone's export)
+    run as that person, under row-level security, from its next transaction on."""
+    session.info[_REQUEST] = True
+    session.info[_USER] = str(user_id)
+
+
 async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
     """One session per request, closed when the response is done. Until a user is bound
     (`bind_user`, done when the request is authenticated) its transactions see no rows of

@@ -30,6 +30,16 @@
 		}
 	}
 
+	# Restoring a project backup (guide 8.16) is the one larger upload: MAX_BACKUP_MB, 2 GB
+	# by default, checked again by the API. Raise both together.
+	handle /api/v1/restores {
+		request_body {
+			max_size 2100MB
+		}
+		header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		reverse_proxy api:8000
+	}
+
 	# JSON never needs to load anything.
 	handle /api/* {
 		# Uploads are capped here as well as in the API (guide 12.4).

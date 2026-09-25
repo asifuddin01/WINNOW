@@ -35,6 +35,8 @@ LLM_SUGGEST_PER_USER = Limit("llm-suggest-user", 60, 3600)  # guide 12.6
 PDF_UPLOADS_PER_USER = Limit("pdf-upload-user", 300, 3600)
 # Looking up and fetching open-access copies asks Unpaywall, PMC and publishers' servers.
 OPEN_ACCESS_PER_USER = Limit("open-access-user", 120, 3600)
+# Exports and backups are built in the worker; this keeps one person from filling its queue.
+EXPORTS_PER_USER = Limit("export-user", 60, 3600)
 
 # Atomically: drop hits older than the window, then either record this hit or report how
 # long until the oldest one expires. Returns {allowed, retry_after_ms}.

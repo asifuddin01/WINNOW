@@ -40,16 +40,23 @@ class ZipRejectedError(Exception):
     """This ZIP is not accepted; the message says why, in words for the uploader."""
 
 
-def inspect(source: Path | BinaryIO, *, max_entry_bytes: int) -> list[Entry]:
+def inspect(
+    source: Path | BinaryIO,
+    *,
+    max_entry_bytes: int,
+    max_entries: int = MAX_ENTRIES,
+    max_total_bytes: int = MAX_TOTAL_BYTES,
+    max_ratio: int = MAX_RATIO,
+) -> list[Entry]:
     try:
         archive = zipfile.ZipFile(source)
     except (zipfile.BadZipFile, OSError) as error:
         raise ZipRejectedError("This is not a ZIP file Winnow can open.") from error
     with archive:
         infos = archive.infolist()
-        if len(infos) > MAX_ENTRIES:
+        if len(infos) > max_entries:
             raise ZipRejectedError(
-                f"The ZIP holds {len(infos):,} files; at most {MAX_ENTRIES:,} are accepted."
+                f"The ZIP holds {len(infos):,} files; at most {max_entries:,} are accepted."
             )
         entries: list[Entry] = []
         total = 0
@@ -66,12 +73,12 @@ def inspect(source: Path | BinaryIO, *, max_entry_bytes: int) -> list[Entry]:
             if info.is_dir():
                 continue
             total += info.file_size
-            if total > MAX_TOTAL_BYTES:
+            if total > max_total_bytes:
                 raise ZipRejectedError(
                     "The ZIP would unpack to more than "
-                    f"{MAX_TOTAL_BYTES // 1024**3} GB; it was not opened."
+                    f"{max_total_bytes // 1024**3} GB; it was not opened."
                 )
-            if info.file_size > RATIO_FROM_BYTES and info.file_size > MAX_RATIO * max(
+            if info.file_size > RATIO_FROM_BYTES and info.file_size > max_ratio * max(
                 info.compress_size, 1
             ):
                 raise ZipRejectedError(

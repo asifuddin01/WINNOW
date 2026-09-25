@@ -66,15 +66,13 @@ def test_symlinks_are_refused() -> None:
         zipcheck.inspect(io.BytesIO(out.getvalue()), max_entry_bytes=LIMIT)
 
 
-def test_too_many_files_or_too_much_in_all(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_too_many_files_or_too_much_in_all() -> None:
     many = make_zip({f"{n}.pdf": b"%PDF-" for n in range(12)})
-    monkeypatch.setattr(zipcheck, "MAX_ENTRIES", 10)
     with pytest.raises(zipcheck.ZipRejectedError, match="at most 10"):
-        zipcheck.inspect(io.BytesIO(many), max_entry_bytes=LIMIT)
-    monkeypatch.setattr(zipcheck, "MAX_ENTRIES", 1000)
-    monkeypatch.setattr(zipcheck, "MAX_TOTAL_BYTES", 40)
+        zipcheck.inspect(io.BytesIO(many), max_entry_bytes=LIMIT, max_entries=10)
     with pytest.raises(zipcheck.ZipRejectedError, match="more than"):
-        zipcheck.inspect(io.BytesIO(many), max_entry_bytes=LIMIT)
+        zipcheck.inspect(io.BytesIO(many), max_entry_bytes=LIMIT, max_total_bytes=40)
+    assert len(zipcheck.inspect(io.BytesIO(many), max_entry_bytes=LIMIT)) == 12
 
 
 def test_not_a_zip() -> None:

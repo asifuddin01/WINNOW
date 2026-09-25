@@ -3,6 +3,7 @@
 from app.models.audit import AuditLog
 from app.models.base import Base
 from app.models.dedup import ClusterStatus, DupCluster, DupClusterMember
+from app.models.export import ExportFormat, ExportJob, ExportKind, JobStatus, RestoreJob
 from app.models.fulltext import (
     BatchStatus,
     Fulltext,
@@ -75,6 +76,9 @@ __all__ = [
     "EmailToken",
     "EmailTokenPurpose",
     "ExclusionReason",
+    "ExportFormat",
+    "ExportJob",
+    "ExportKind",
     "FileFormat",
     "FinalDecision",
     "FullTextStatus",
@@ -83,6 +87,7 @@ __all__ = [
     "FulltextSource",
     "ImportBatch",
     "ImportStatus",
+    "JobStatus",
     "Keyword",
     "KeywordGroup",
     "KeywordKind",
@@ -103,6 +108,7 @@ __all__ = [
     "RecordLabel",
     "RecordScore",
     "ResolutionSource",
+    "RestoreJob",
     "ReviewType",
     "RobAssessment",
     "RobStatus",

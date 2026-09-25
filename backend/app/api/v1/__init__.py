@@ -8,6 +8,7 @@ from app.api.v1 import (
     auth,
     conflicts,
     dedup,
+    exports,
     fulltext,
     google,
     health,
@@ -42,4 +43,6 @@ api_router.include_router(fulltext.files)
 api_router.include_router(reporting.router)
 api_router.include_router(rob.router)
 api_router.include_router(audit.router)
+api_router.include_router(exports.router)
+api_router.include_router(exports.restores)
 api_router.include_router(invites.router)

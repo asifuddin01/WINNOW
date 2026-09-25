@@ -33,6 +33,7 @@ from app.services.audit_log import AuditLogService
 from app.services.conflicts import ConflictService
 from app.services.dedup import DedupService
 from app.services.errors import NotAuthenticatedError
+from app.services.exports import ExportService
 from app.services.fulltext import FulltextService
 from app.services.imports import ImportService
 from app.services.llm import LlmService
@@ -41,6 +42,7 @@ from app.services.projects import ProjectService
 from app.services.ranking import RankingService
 from app.services.records import RecordService
 from app.services.reporting import ReportingService
+from app.services.restores import RestoreService
 from app.services.rob import RobService
 from app.services.screening import ScreeningService
 from app.services.setup import SetupService
@@ -275,6 +277,26 @@ def get_audit_log(db: SessionDep) -> AuditLogService:
 
 
 AuditLogDep = Annotated[AuditLogService, Depends(get_audit_log)]
+
+
+def get_exports(request: Request, db: SessionDep) -> ExportService:
+    queue: ArqRedis = request.app.state.queue
+    return ExportService(db, queue)
+
+
+def get_restores(request: Request, db: SessionDep, settings: SettingsDep) -> RestoreService:
+    state = request.app.state
+    return RestoreService(db, settings, state.storage, state.queue)
+
+
+def get_storage(request: Request) -> Storage:
+    storage: Storage = request.app.state.storage
+    return storage
+
+
+ExportsDep = Annotated[ExportService, Depends(get_exports)]
+RestoresDep = Annotated[RestoreService, Depends(get_restores)]
+StorageDep = Annotated[Storage, Depends(get_storage)]
 
 
 def _origin(url: str) -> str | None:

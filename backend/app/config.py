@@ -60,6 +60,8 @@ class Settings(BaseSettings):
     open_access_lookup: bool = True
     # One PDF; clamd is configured to take streams of this size (docker-compose.yml).
     max_pdf_mb: int = Field(default=100, ge=1, le=1_000)
+    # A project backup (records, everyone's work and its PDFs) to restore (guide 8.16).
+    max_backup_mb: int = Field(default=2_048, ge=10, le=50_000)
 
     llm_provider: Literal["none", "anthropic", "openai_compatible"] = "none"
     llm_api_key: SecretStr | None = None

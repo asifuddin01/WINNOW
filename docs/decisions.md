@@ -752,3 +752,105 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   missing, and a downgrade revokes its rights but leaves it (the test database uses it
   too). An installation whose database user cannot create roles must create
   `winnow_app` first.
+
+### PRISMA 2020 (guide 9.4)
+- **Counted from the review, never typed in**, except what Winnow cannot know: records
+  from other sources (citation searching, websites) and records removed before screening
+  for other reasons. Owners and admins enter those. Codex's `app.prisma` checks that the
+  boxes add up; a flow that does not is reported as `prisma_inconsistent` (422) rather
+  than drawn wrong.
+- **Databases are grouped by name however it was typed** ("pubmed", "PubMed "), so the
+  identification box does not list one database twice.
+- **Full-text numbers count only records still included at title/abstract**, so a record
+  sent back to exclusion after its PDF was found does not stay in "reports assessed".
+- **One reason per excluded report** (PRISMA lists each report once): a resolution's
+  reason first, then the reviewers'; among several, the one listed first in the review's
+  reasons. An exclusion with no reason is counted under "Reason not recorded" rather
+  than dropped, so the boxes still add up.
+- **An unfinished stage makes the diagram a snapshot**: the API says how many records
+  still wait at each stage, so the page can say so beside the diagram.
+- **Images are drawn from the same SVG**: PNG at 300 dpi with the resolution written
+  into the file (so it prints at the intended size), and PDF, through CairoSVG in its
+  safe mode (no external files or URLs are read while rendering).
+
+### Screening statistics (guide 9.3)
+- **Agreement is only for those allowed to see others' decisions.** Kappa between two
+  people reveals how often they disagreed; a blinded reviewer sees only their own
+  progress and pace. The rule sits in the service, like every other blinding rule.
+- **Cohen's kappa per pair of reviewers, over the records both decided; Fleiss' kappa
+  when the review asks for three or more reviewers per record, over the records that
+  have exactly that many decisions** (Fleiss needs the same number of raters for every
+  subject). "Maybe" is its own category when the review keeps maybes as maybes, and counts
+  as include when the review moves them on, so agreement matches how decisions count.
+- **Kappa is `null` when it cannot be calculated** (no shared records, or everyone used
+  one category), never 0 or 1 by convention.
+- **Checked against a hand-calculated review, scikit-learn's `cohen_kappa_score`, and
+  the Fleiss formula written out independently in the test.**
+
+### Risk of bias (guide 8.13)
+- **Assessed per person, per study, per tool, and blinded like decisions.** Only studies
+  included at full text can be assessed. Drafts may be partial; a submitted assessment
+  judges every domain (and both axes for QUADAS-2).
+- **Each assessment stores its tool's version and variant**, so a later edition of a tool
+  never reinterprets saved judgements.
+- **The plots use one final assessment per study**: the only submitted one, or the one
+  chosen by someone who may resolve conflicts. Changing an assessment clears that choice,
+  and studies still waiting for one are listed rather than silently dropped.
+- **robvis's colours, and a symbol in every cell**, so the traffic-light plot never
+  relies on colour alone. Newcastle–Ottawa is drawn as stars, as it is scored.
+
+### Audit log viewer (guide 12.9)
+- **Owners and admins only**: the log holds people's email addresses and IP addresses.
+- **A reader who is blind to others' decisions sees that someone decided, and when, but
+  not what**: the before/after of decision, conflict, risk-of-bias, AI-suggestion and
+  extraction entries are withheld from them, in the service and the CSV alike.
+- **The CSV streams**, so a long history never sits in memory, and every cell is
+  formula-safe.
+
+### Exports (guide 8.16, 10)
+- **Every role may export, as guide 7 says; a full backup is the owner's alone.** A backup
+  holds everyone's decisions and everyone's email address, and restoring it creates a
+  review, which is an owner's act.
+- **An export holds what the records table would show the person who asked**, with the
+  same filters, and blinding applies: a blinded reviewer's file has their own decisions,
+  reasons and labels, never the review's status computed from others'.
+- **Made in the worker, acting as the person who asked**, under row-level security like a
+  request, and their membership is checked again when it runs: someone removed from the
+  review before their export is made does not get it.
+- **Yours alone, for a day.** Another member cannot see or download it; files and rows
+  are removed after 24 hours (failed and never-run jobs too). Asking and downloading are
+  both in the audit log.
+- **Spreadsheets cannot run anything.** CSV cells that start like a formula get an
+  apostrophe; XLSX cells are written as text, so `=HYPERLINK(...)` stays words. Cells
+  are cut at 32,000 characters with an ellipsis (Excel's limit is 32,767) rather than
+  making a file Excel refuses to open.
+- **RIS and BibTeX wait for Codex's writers** (`app.exports`); until they land, asking
+  for them fails with a plain message rather than a half-made file.
+
+### Full backup and restore (guide 8.16)
+- **A ZIP of JSON lines, one file per table, plus the files.** `manifest.json` (format,
+  version, row counts, files), `project.json`, `people.json`, `tables/<table>.jsonl`,
+  and `files/imports/…` and `files/pdfs/…`. Rows are written from their columns, so a
+  column added later travels without changing the exporter; the format has a version
+  for the day it must change.
+- **PDFs the scanner has not cleared are left out**, row and file: a backup never carries
+  a quarantined file. A PDF missing from storage is noted in the backup and restored as
+  an empty placeholder rather than failing the whole backup.
+- **A restore is a new review, never a merge.** Every id is replaced, so a backup can be
+  restored twice, or beside its original, and can never write into another review. It
+  is titled "… (restored)" and belongs to whoever restored it.
+- **The backup is untrusted input.** The ZIP is checked before it is read (entries,
+  names, total size, and a 200:1 ratio: real backups compress 14–16:1, a bomb about
+  1,000:1). Only known tables and columns are accepted; every value is typed by its
+  column; every reference must point at a row of the same backup; settings and the
+  review's description pass the same validation as a review created here. Anything
+  else stops the restore with a message saying where, and nothing is kept.
+- **Nobody gains access through a backup.** The person restoring becomes the only member.
+  People in the backup are matched to existing accounts by email (their work stays
+  theirs) or become placeholders under `.invalid` addresses that cannot sign in or
+  receive mail, so a backup can neither create a working account nor add anyone.
+- **The new owner starts blind**, like any owner; they see the team's work once they
+  switch "Keep me blind too" off.
+- **PDFs are scanned again** before anyone can open them, as on upload.
+- **Measured at 100,000 records and 100,000 decisions:** backup 8.5 s (10.6 MB), restore
+  40 s, both in the worker.

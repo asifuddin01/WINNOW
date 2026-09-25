@@ -20,9 +20,12 @@ from app.email.messages import Email
 from app.logging_config import configure_logging
 from app.models import ScreeningStage
 from app.redis_client import create_redis
+from app.services.exports import EXPORT_JOB
 from app.services.fulltext import BATCH_JOB, SCAN_JOB
+from app.services.restores import RESTORE_JOB
 from app.storage import create_storage
 from app.workers.dedup import run_dedup
+from app.workers.exports import purge_expired, run_export, run_restore
 from app.workers.fulltext import SCAN_TRIES, discard_stale_batches, run_batch, run_scan
 from app.workers.imports import run_import
 from app.workers.ranking import run_ranking
@@ -111,6 +114,33 @@ async def tidy_fulltext_batches(ctx: dict[str, Any]) -> int:
     return await discard_stale_batches(sessionmaker=ctx["sessionmaker"], storage=ctx["storage"])
 
 
+async def build_export(ctx: dict[str, Any], export_id: str) -> str | None:
+    """Records or a full backup, for whoever asked (guide 8.16)."""
+    status = await run_export(
+        sessionmaker=ctx["sessionmaker"],
+        redis=ctx["events"],
+        storage=ctx["storage"],
+        export_id=uuid.UUID(export_id),
+    )
+    return None if status is None else status.value
+
+
+async def restore_backup(ctx: dict[str, Any], restore_id: str) -> str | None:
+    """A backup, restored as a new review (guide 8.16)."""
+    status = await run_restore(
+        sessionmaker=ctx["sessionmaker"],
+        queue=ctx["redis"],
+        storage=ctx["storage"],
+        settings=get_settings(),
+        restore_id=uuid.UUID(restore_id),
+    )
+    return None if status is None else status.value
+
+
+async def tidy_exports(ctx: dict[str, Any]) -> int:
+    return await purge_expired(sessionmaker=ctx["sessionmaker"], storage=ctx["storage"])
+
+
 async def startup(ctx: dict[str, Any]) -> None:
     settings = get_settings()
     configure_logging(settings)
@@ -149,9 +179,13 @@ class WorkerSettings:
         # longer. The file stays unavailable until a scan says it is clean.
         func(scan_fulltext, name=SCAN_JOB, max_tries=SCAN_TRIES, timeout=600, keep_result=0),
         func(match_fulltext_batch, name=BATCH_JOB, max_tries=1, timeout=1800, keep_result=0),
+        # A 100,000-record export or a backup with its PDFs takes minutes, not hours.
+        func(build_export, name=EXPORT_JOB, max_tries=1, timeout=3600, keep_result=0),
+        func(restore_backup, name=RESTORE_JOB, max_tries=1, timeout=3600, keep_result=0),
     ]
     cron_jobs: ClassVar[list[CronJob]] = [
         cron(tidy_fulltext_batches, minute={17}, run_at_startup=False, keep_result=0),
+        cron(tidy_exports, minute={47}, run_at_startup=False, keep_result=0),
     ]
     on_startup = startup
     on_shutdown = shutdown

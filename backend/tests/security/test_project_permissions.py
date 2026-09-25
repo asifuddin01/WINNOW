@@ -38,6 +38,8 @@ VIEWER_WRITES = {
     ("PATCH", "/api/v1/projects/{pid}/membership"),
     ("DELETE", "/api/v1/projects/{pid}/membership"),
     ("POST", "/api/v1/projects/{pid}/duplicate-setup"),
+    # Guide 7: everyone may export ("Export data, PRISMA"); the full backup is the owner's.
+    ("POST", "/api/v1/projects/{pid}/exports"),
 }
 # And the ones a reviewer adds: their own screening work (guide 7, "Screen / decide").
 REVIEWER_WRITES = VIEWER_WRITES | {
