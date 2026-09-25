@@ -12,6 +12,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ImportBatch, Record
+from app.workers import imports as imports_worker
 from app.workers.imports import run_import
 from tests.conftest import MemoryMailer
 from tests.project_helpers import OWNER, api, create_project, delete, get, person, post
@@ -118,6 +119,22 @@ async def test_upload_preview_confirm_and_read(
         )
         assert vector is not None
         assert "nurs" in vector  # stemmed, weighted A for the title
+
+
+async def test_a_file_bigger_than_a_chunk_arrives_whole(
+    db_app: FastAPI, mailer: MemoryMailer, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Chunks are parsed ahead and written as the writers come free; none is lost."""
+    monkeypatch.setattr(imports_worker, "BATCH_ROWS", 2)
+    titles = [f"Night shifts and sleep, cohort {n}" for n in range(5)]
+    ris = "\n".join(f"TY  - JOUR\nTI  - {title}\nPY  - 2020\nER  - " for title in titles)
+    async with person(db_app, mailer, OWNER) as owner:
+        pid = (await create_project(owner))["id"]
+        batch = await upload(owner, pid, "search.ris", ris.encode())
+        await post(owner, f"/projects/{pid}/imports/{batch['id']}/confirm", {})
+        assert await run(db_app, batch["id"]) == {"imported": 5, "problems": 0}
+        listed = (await get(owner, f"/projects/{pid}/records?limit=10")).json()["items"]
+        assert sorted(record["title"] for record in listed) == titles
 
 
 async def test_a_record_that_cannot_be_read_is_reported_not_fatal(

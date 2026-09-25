@@ -5,6 +5,7 @@ batches, progress is published as each batch lands, and a record that cannot be 
 collected as a problem rather than failing the import.
 """
 
+import asyncio
 import json
 import uuid
 from collections.abc import Iterable, Iterator
@@ -15,7 +16,7 @@ import structlog
 from arq.connections import ArqRedis
 from redis.asyncio import Redis
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession, async_sessionmaker
 
 from app.models import (
     COPY_COLUMNS,
@@ -36,7 +37,11 @@ from app.storage import Storage
 log = structlog.get_logger(__name__)
 
 # Rows per COPY: few enough round trips for 100k records, flat memory, visible progress.
-BATCH_ROWS = 1_000
+# 5,000 wrote real records 40% faster than 1,000 (0.55 s against 0.91 s a thousand, at
+# the Phase 9 audit): each COPY pays for its transaction and its index updates.
+BATCH_ROWS = 5_000
+# COPYs in flight at once (see run_import).
+WRITERS = 2
 # What the import report keeps. The count of the rest is kept as well.
 MAX_PROBLEMS = 200
 
@@ -71,6 +76,11 @@ def record_row(
         now,
         now,
     )
+
+
+async def _write(sessionmaker: async_sessionmaker[AsyncSession], rows: list[Any]) -> int:
+    await copy_records(sessionmaker, rows)
+    return len(rows)
 
 
 async def copy_records(
@@ -135,20 +145,55 @@ async def run_import(
     now = datetime.now(UTC)
     try:
         text = await storage.read_text(file_key)
-        stream = parse(file_format.value, text, mapping)
-        for chunk in _batched(stream, BATCH_ROWS):
-            records = [item for item in chunk if isinstance(item, ParsedRecord)]
-            for item in chunk:
-                if isinstance(item, ParseProblem) and len(problems) < MAX_PROBLEMS:
-                    problems.append({"at": item.at, "unit": item.unit, "reason": item.reason})
-                elif isinstance(item, ParseProblem):
-                    problems.append({"at": item.at, "unit": item.unit, "reason": "…"})
-            if records:
-                await copy_records(
-                    sessionmaker, [record_row(r, project_id, batch_id, now) for r in records]
-                )
-                imported += len(records)
+        chunks = _batched(parse(file_format.value, text, mapping), BATCH_ROWS)
+
+        def prepare() -> list[Any] | None:
+            """The next chunk, parsed and made into rows: CPU work, done in a thread while
+            the database writes the chunk before it (a third of an import's time)."""
+            chunk = next(chunks, None)
+            if chunk is None:
+                return None
+            return [
+                record_row(item, project_id, batch_id, now)
+                if isinstance(item, ParsedRecord)
+                else item
+                for item in chunk
+            ]
+
+        # Two COPYs at once let PostgreSQL build search vectors and index entries on two
+        # cores. A session factory bound to one connection (the tests') can run only one.
+        bound = isinstance(sessionmaker.kw.get("bind"), AsyncConnection)
+        writers = 1 if bound else WRITERS
+        writing: set[asyncio.Future[int]] = set()
+
+        async def one_written() -> None:
+            nonlocal imported
+            done, _ = await asyncio.wait(writing, return_when=asyncio.FIRST_COMPLETED)
+            writing.difference_update(done)
+            imported += sum(task.result() for task in done)
             await _progress(sessionmaker, redis, batch_id, project_id, imported, len(problems))
+
+        ahead = asyncio.ensure_future(asyncio.to_thread(prepare))
+        try:
+            while (chunk := await ahead) is not None:
+                ahead = asyncio.ensure_future(asyncio.to_thread(prepare))
+                rows = [item for item in chunk if not isinstance(item, ParseProblem)]
+                for item in chunk:
+                    if isinstance(item, ParseProblem) and len(problems) < MAX_PROBLEMS:
+                        problems.append({"at": item.at, "unit": item.unit, "reason": item.reason})
+                    elif isinstance(item, ParseProblem):
+                        problems.append({"at": item.at, "unit": item.unit, "reason": "…"})
+                if rows:
+                    if len(writing) >= writers:
+                        await one_written()
+                    writing.add(asyncio.ensure_future(_write(sessionmaker, rows)))
+            while writing:
+                await one_written()
+        finally:
+            # After a failure, neither the chunk read ahead nor other writes are wanted.
+            ahead.cancel()
+            for task in writing:
+                task.cancel()
     except (MalformedXMLError, UnicodeDecodeError, ValueError) as error:
         failure = f"{type(error).__name__}: {error}"
         log.warning("import.failed", batch_id=str(batch_id), error=type(error).__name__)
