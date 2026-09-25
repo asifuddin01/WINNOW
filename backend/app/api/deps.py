@@ -40,6 +40,7 @@ from app.services.imports import ImportService
 from app.services.llm import LlmService
 from app.services.members import MemberService
 from app.services.methods import MethodsService
+from app.services.notifications import NotificationService
 from app.services.projects import ProjectService
 from app.services.ranking import RankingService
 from app.services.records import RecordService
@@ -286,6 +287,13 @@ def get_extraction(db: SessionDep) -> ExtractionService:
 
 
 ExtractionDep = Annotated[ExtractionService, Depends(get_extraction)]
+
+
+def get_notifications(db: SessionDep) -> NotificationService:
+    return NotificationService(db)
+
+
+NotificationsDep = Annotated[NotificationService, Depends(get_notifications)]
 
 
 def get_audit_log(db: SessionDep) -> AuditLogService:

@@ -4,6 +4,7 @@ import { CircleCheckIcon, MailWarningIcon } from "lucide-react";
 
 import { meQuery } from "@/api/auth";
 import { Badge } from "@/components/ui/badge";
+import { NotificationsSection } from "@/features/account/NotificationsSection";
 import { PasswordSection } from "@/features/account/PasswordSection";
 import { Section } from "@/features/account/Section";
 import { SessionsSection } from "@/features/account/SessionsSection";
@@ -52,6 +53,7 @@ function Account() {
       <PasswordSection />
       <TwoFactorSection />
       <SessionsSection />
+      <NotificationsSection />
     </div>
   );
 }

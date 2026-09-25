@@ -117,6 +117,20 @@ test("report, risk of bias, and a backup restored as a new review", async ({
 
   const page = await owner.newPage();
 
+  // The reviewer's decision made a conflict: the owner, who resolves them, is told.
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "My reviews" })).toBeVisible();
+  const bell = page.getByRole("button", { name: "Notifications, 1 unread" });
+  await expect(bell).toBeVisible();
+  await bell.click();
+  const conflict = page.getByRole("menuitem", { name: /1 new conflict to resolve in Shift work/ });
+  await expect(conflict).toBeVisible();
+  await noSeriousA11yProblems(page, "Notifications");
+  await shot(page, "notifications");
+  await conflict.click();
+  await expect(page).toHaveURL(new RegExp(`/p/${pid}/conflicts$`));
+  await expect(page.getByRole("button", { name: "Notifications" })).toBeVisible();
+
   // PRISMA: the diagram, its numbers, and what Winnow cannot count.
   await page.goto(`/p/${pid}/report`);
   await expect(page.getByRole("heading", { name: "Report", level: 1 })).toBeVisible();

@@ -17,12 +17,20 @@ from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.models import COPY_COLUMNS, ImportBatch, ImportStatus, Project, ScreeningStage
+from app.models import (
+    COPY_COLUMNS,
+    ImportBatch,
+    ImportStatus,
+    NotificationKind,
+    Project,
+    ScreeningStage,
+)
 from app.models.base import uuid7
 from app.parsers import ParsedRecord, ParseProblem, parse
 from app.parsers.xml_reader import MalformedXMLError
 from app.schemas.projects import ProjectSettings
 from app.services import events
+from app.services.notifications import notify
 from app.storage import Storage
 
 log = structlog.get_logger(__name__)
@@ -155,6 +163,20 @@ async def run_import(
             if failure:
                 kept = [{"at": 0, "unit": "file", "reason": failure}, *kept]
             batch.errors = kept
+            if batch.created_by is not None:
+                project = await session.get(Project, project_id)
+                await notify(
+                    session,
+                    [batch.created_by],
+                    NotificationKind.IMPORT_FAILED if failure else NotificationKind.IMPORT_FINISHED,
+                    project_id=project_id,
+                    data={
+                        "project_title": project.title if project else "",
+                        "filename": batch.filename,
+                        "imported": imported,
+                        "problems": len(problems),
+                    },
+                )
             await session.commit()
     if not failure and imported and queue is not None:
         await _dedup_if_wanted(sessionmaker, queue, project_id)

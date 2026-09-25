@@ -17,7 +17,15 @@ from sqlalchemy.orm import aliased
 from app.config import Settings
 from app.email import messages
 from app.email.mailer import Mailer
-from app.models import Project, ProjectInvite, ProjectMember, ProjectRole, ScreeningStage, User
+from app.models import (
+    NotificationKind,
+    Project,
+    ProjectInvite,
+    ProjectMember,
+    ProjectRole,
+    ScreeningStage,
+    User,
+)
 from app.schemas.projects import (
     InviteCreate,
     InviteOut,
@@ -45,6 +53,7 @@ from app.services.errors import (
     NotFoundError,
     OwnerProtectedError,
 )
+from app.services.notifications import notify
 from app.services.pagination import decode_cursor, encode_cursor
 
 INVITE_TTL = timedelta(days=7)
@@ -307,6 +316,23 @@ class MemberService:
             entity_id=invite.id,
             after={"email": email, "role": invite.role.value},
         )
+        invitee = await self._db.scalar(
+            select(User.id).where(
+                func.lower(User.email) == email.lower(), User.deleted_at.is_(None)
+            )
+        )
+        if invitee is not None:
+            # Not tied to the review: the invitee cannot open it until they accept.
+            await notify(
+                self._db,
+                [invitee],
+                NotificationKind.INVITE,
+                data={
+                    "project_title": access.project.title,
+                    "by": access.user.name,
+                    "role": ROLE_NAMES[invite.role],
+                },
+            )
         await self._db.commit()
         await self._db.refresh(invite)
         link = f"{self._settings.public_origin}/invite/{token}"

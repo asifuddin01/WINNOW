@@ -115,3 +115,16 @@ def pdf_quarantined(to: str, *, project_title: str, signature: str, link: str) -
         "download it, and the record shows that its PDF was quarantined.\n\nIf you expected "
         f"this file to be safe, get a fresh copy from the publisher.\n\n{link}" + SIGNATURE,
     )
+
+
+def daily_digest(to: str, name: str, lines: list[str], link: str, settings_link: str) -> Email:
+    """Guide 8.17: once a day, what is unread; only for people who asked for it."""
+    count = len(lines)
+    listed = "\n".join(f"- {line}" for line in lines)
+    return Email(
+        to,
+        f"Winnow: {count} unread {'notification' if count == 1 else 'notifications'}",
+        f"Hi {name},\n\nWhat happened in your reviews since yesterday:\n\n{listed}\n\n"
+        f"Open Winnow: {link}\n\nTo stop these emails, turn off the daily digest in your "
+        f"account settings: {settings_link}" + SIGNATURE,
+    )

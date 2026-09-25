@@ -26,6 +26,7 @@ from app.models import (
     Label,
     Note,
     NoteVisibility,
+    NotificationKind,
     ProjectMember,
     ProjectRole,
     ReasonStage,
@@ -67,6 +68,7 @@ from app.services.errors import (
     NotFoundError,
 )
 from app.services.fulltext import fulltext_out
+from app.services.notifications import excerpt, mentioned, notify, resolvers
 from app.services.pagination import decode_cursor, encode_cursor
 from app.services.ranking import EXPLORE_EVERY, nudge
 from app.services.records import apply_search
@@ -422,7 +424,22 @@ class ScreeningService:
             Decision.created_at,
         )
         saved = (await self._db.execute(statement)).one()
+        column = Record.ta_final if stage is ScreeningStage.TITLE_ABSTRACT else Record.ft_final
+        before = await self._db.scalar(select(column).where(Record.id == record.id))
         await recompute(self._db, access.project_id, stage, settings, [record.id])
+        after = await self._db.scalar(select(column).where(Record.id == record.id))
+        if after is not None and after.value == "conflict" and before != after:
+            await notify(
+                self._db,
+                [
+                    person
+                    for person in await resolvers(self._db, access.project_id)
+                    if person != access.user.id
+                ],
+                NotificationKind.CONFLICTS,
+                project_id=access.project_id,
+                data={"project_title": access.project.title},
+            )
         audit.record(
             self._db,
             "decision.changed" if saved.created_at != saved.updated_at else "decision.made",
@@ -572,6 +589,34 @@ class ScreeningService:
             visibility=visibility,
         )
         self._db.add(note)
+        if visibility is NoteVisibility.TEAM and "@" in note.body:
+            members = (
+                (
+                    await self._db.execute(
+                        select(User.id, User.name)
+                        .join(ProjectMember, ProjectMember.user_id == User.id)
+                        .where(
+                            ProjectMember.project_id == access.project_id,
+                            User.id != access.user.id,
+                        )
+                    )
+                )
+                .tuples()
+                .all()
+            )
+            await notify(
+                self._db,
+                mentioned(note.body, list(members)),
+                NotificationKind.MENTION,
+                project_id=access.project_id,
+                data={
+                    "project_title": access.project.title,
+                    "by": access.user.name,
+                    "record_id": str(record.id),
+                    "record_title": record.title or "",
+                    "excerpt": excerpt(note.body),
+                },
+            )
         await self._db.commit()
         await self._db.refresh(note)
         return NoteOut(

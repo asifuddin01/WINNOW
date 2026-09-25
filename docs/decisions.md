@@ -934,3 +934,28 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
 - **Only what the person may do is offered**: pages and actions follow the same
   permissions as the sidebar.
 - **A record opens in the records table** (`?record=`), where its details already live.
+
+### Notifications (guide 8.17)
+- **Four kinds, as the guide lists them.** A new conflict tells those who may resolve it
+  (owners, admins and trusted reviewers), never the person whose decision made it. An
+  invitation tells an invitee who already has an account. "@Name" in a team note tells
+  that member. An import finished or failed tells whoever started it.
+- **Conflicts are counted, not repeated**: one unread notice per person and review ("3 new
+  conflicts"), counting up until it is read, so a busy morning is one line, not fifty.
+- **Written in the same transaction as what they announce**, so there is never a notice
+  about something that did not happen.
+- **Nothing blind mode hides.** A conflict notice says that disagreements exist, which
+  only resolvers are told; a mention comes from a team note everyone can read anyway; a
+  private note tells nobody.
+- **Leaving a review hides its notices.** An invitation is about no review (the invitee
+  cannot open it yet), so it carries the review's name, not its id, and does not link
+  there: the invitation email has the link, and the token never enters the notice.
+- **Mentions match a member's name after "@"**, ignoring case, not an @handle: Winnow has
+  no handles, and names are what people see.
+- **The bell asks for the unread count every minute and when the tab comes back**, rather
+  than holding a connection per person; notices are not urgent to the second.
+- **The daily digest is off by default** (guide 8.17), set per person under Account, sent
+  once a morning (06:05 UTC) with what is still unread from the last day, and nothing on
+  quiet days.
+- **The menu is not modal**: a modal menu hides the page from screen readers while its
+  links can still take focus, which axe reports as serious.

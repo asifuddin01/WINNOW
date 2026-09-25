@@ -20,6 +20,7 @@ from app.models.fulltext import (
     UnretrievableRecord,
 )
 from app.models.llm import LlmSuggestion
+from app.models.notification import Notification, NotificationKind
 from app.models.project import (
     ALL_STAGES,
     Project,
@@ -105,6 +106,8 @@ __all__ = [
     "LlmSuggestion",
     "Note",
     "NoteVisibility",
+    "Notification",
+    "NotificationKind",
     "PdfAnnotation",
     "PrismaManual",
     "Project",

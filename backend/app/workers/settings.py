@@ -25,6 +25,7 @@ from app.services.fulltext import BATCH_JOB, SCAN_JOB
 from app.services.restores import RESTORE_JOB
 from app.storage import create_storage
 from app.workers.dedup import run_dedup
+from app.workers.digests import send_digests
 from app.workers.exports import purge_expired, run_export, run_restore
 from app.workers.fulltext import SCAN_TRIES, discard_stale_batches, run_batch, run_scan
 from app.workers.imports import run_import
@@ -141,6 +142,12 @@ async def tidy_exports(ctx: dict[str, Any]) -> int:
     return await purge_expired(sessionmaker=ctx["sessionmaker"], storage=ctx["storage"])
 
 
+async def email_digests(ctx: dict[str, Any]) -> int:
+    return await send_digests(
+        sessionmaker=ctx["sessionmaker"], queue=ctx["redis"], settings=get_settings()
+    )
+
+
 async def startup(ctx: dict[str, Any]) -> None:
     settings = get_settings()
     configure_logging(settings)
@@ -186,6 +193,8 @@ class WorkerSettings:
     cron_jobs: ClassVar[list[CronJob]] = [
         cron(tidy_fulltext_batches, minute={17}, run_at_startup=False, keep_result=0),
         cron(tidy_exports, minute={47}, run_at_startup=False, keep_result=0),
+        # Once a day, early morning UTC, for those who asked (guide 8.17).
+        cron(email_digests, hour={6}, minute={5}, run_at_startup=False, keep_result=0),
     ]
     on_startup = startup
     on_shutdown = shutdown

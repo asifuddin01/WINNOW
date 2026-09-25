@@ -1,5 +1,6 @@
 import { SearchIcon } from "lucide-react";
 
+import { NotificationsMenu } from "@/components/layout/NotificationsMenu";
 import { Breadcrumbs } from "@/components/layout/PageTitle";
 import { ThemeMenu } from "@/components/layout/ThemeMenu";
 import { UserMenu } from "@/components/layout/UserMenu";
@@ -35,6 +36,7 @@ export function TopBar({ onSearch }: { onSearch?: () => void }) {
             </kbd>
           </Button>
         )}
+        <NotificationsMenu />
         <ThemeMenu />
         <UserMenu />
       </div>
