@@ -193,6 +193,16 @@ services:
       web:
         condition: service_healthy
 
+  # Guide 13's load test, only with `make load` (the "load" profile): k6 reaches the app
+  # through Caddy, with the sessions benchmarks/load_setup.py prepared.
+  k6:
+    image: grafana/k6:2.3.0
+    profiles: ["load"]
+    volumes:
+      - ./load:/scripts:ro
+      - ./backend/benchmarks/data:/load:ro
+    command: ["run", "/scripts/decide.js"]
+
 volumes:
   clamav:
   uploads:

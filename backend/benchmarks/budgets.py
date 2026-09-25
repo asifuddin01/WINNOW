@@ -35,13 +35,13 @@ from typing import Any
 import httpx
 from arq.connections import ArqRedis, RedisSettings, create_pool
 from arq.jobs import Job, JobStatus
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, insert, literal, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.cli import seed_large
 from app.config import get_settings
 from app.db import create_engine, create_sessionmaker
-from app.models import Project, User
+from app.models import Project, Record, RecordScore, ScreeningStage, User
 from app.security.passwords import Passwords
 from app.services.dedup import dedup_job_id
 from benchmarks.ranking import DATA
@@ -607,6 +607,23 @@ async def main(records: int, parts: set[str], keep: bool = False) -> list[Result
                     )
                 )
             )
+        # As just after a model has trained: every record scored, so the list's relevance
+        # order and the screening queue read their scored paths. (A real first model on
+        # 100,000 records takes longer than this run, which timed only unscored paths.)
+        async with sessions() as db:
+            await db.execute(
+                insert(RecordScore).from_select(
+                    ["record_id", "project_id", "stage", "score"],
+                    select(
+                        Record.id,
+                        Record.project_id,
+                        literal(ScreeningStage.TITLE_ABSTRACT),
+                        func.random(),
+                    ).where(Record.project_id == uuid.UUID(pid)),
+                )
+            )
+            await db.commit()
+        await settle(engine, "ANALYZE record_scores")
         if "list" in parts:
             results += await section("Records list", lambda: record_list(client, pid))
         if "screening" in parts:
