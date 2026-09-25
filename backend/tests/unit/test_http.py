@@ -146,3 +146,10 @@ async def test_openapi_documents_errors_as_problem_json(app: FastAPI) -> None:
     components = schema["components"]["schemas"]
     assert {"Problem", "ValidationProblem", "ValidationIssue"} <= components.keys()
     assert "HTTPValidationError" not in components
+
+
+async def test_every_schema_name_is_unique(app: FastAPI) -> None:
+    """Two models with one name get module-qualified names in OpenAPI, which silently
+    renames the frontend's generated types (Phase 8's PRISMA `ReasonOut` did)."""
+    names = app.openapi()["components"]["schemas"].keys()
+    assert [name for name in names if "__" in name] == []

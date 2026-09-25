@@ -31,7 +31,7 @@ class SourceOut(BaseModel):
     count: int
 
 
-class ReasonOut(BaseModel):
+class ReasonCount(BaseModel):
     reason: str
     count: int
 
@@ -56,7 +56,7 @@ class PrismaOut(BaseModel):
     reports_sought: int
     reports_not_retrieved: int
     reports_assessed: int
-    reports_excluded: list[ReasonOut]
+    reports_excluded: list[ReasonCount]
     reports_excluded_total: int
     studies_included: int
     # Still undecided (pending or in conflict) at each stage.

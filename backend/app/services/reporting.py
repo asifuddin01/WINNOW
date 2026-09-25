@@ -40,7 +40,7 @@ from app.schemas.reporting import (
     PrismaManualIn,
     PrismaManualOut,
     PrismaOut,
-    ReasonOut,
+    ReasonCount,
     ReviewerProgress,
     SourceOut,
     StageStats,
@@ -91,7 +91,7 @@ class ReportingService:
             reports_not_retrieved=flow.reports_not_retrieved,
             reports_assessed=flow.reports_assessed,
             reports_excluded=[
-                ReasonOut(reason=r.reason, count=r.count)
+                ReasonCount(reason=r.reason, count=r.count)
                 for r in flow.reports_excluded_with_reasons
             ],
             reports_excluded_total=flow.reports_excluded_total,
