@@ -611,3 +611,26 @@ deviations from the specification, both deliberate: `spreadsheet_safe` was not a
 because `app.spreadsheet.safe_cell` already does it; and `wide_rows` returns a `Wide`
 (headers and rows) rather than a pair. The two notes above for `app.prisma` and
 `app.rob` still stand.
+
+## 2026-09-25 — Claude Code: `app.dedup.blocking` caps its blocks
+
+The Phase 9 performance audit found the one way `app.dedup` can hold the worker for
+minutes. Every pair in a block is scored, and a block can hold thousands of records whose
+titles share their first three words: "A systematic review of …", "Erratum …", or a
+generated review of 100,000 near-identical titles, where one block meant 5 billion pairs.
+The owner has Claude Code covering Codex's queue while Codex is busy, so the fix went
+straight to `main`:
+
+- `blocks()` splits a block larger than `MAX_BLOCK` (200) by more of the title. Title
+  blocks go `title3:` → `title6:` → `title10:` → `title:` (whole) → `title-year:`; year
+  blocks go `year-title10:` → `year-title20:` → `year-title40:` → `year-title:`. A block
+  still too large after the last level is left out; records in it that share a DOI or
+  PubMed id are still paired by `_exact_pairs`. Small blocks keep their old keys, so
+  the existing tests stand.
+- `_candidate_pairs` treats every `title…` key as a title block and every `year-title…`
+  key as a year block. A record whose title block was dropped has no entry in
+  `title_block_by_id`, so its year-block pairs are all new.
+- Two new tests in `tests/unit/dedup/test_blocking.py`.
+
+Please build on this rather than restore the unbounded blocks. The worker also runs
+`cluster()` and `token_pairs()` in a thread now (`app/workers/dedup.py`).

@@ -6,13 +6,15 @@ blocking cannot see (block C), stores the clusters, and — when the project all
 merges the ones the algorithm is certain about.
 """
 
+import asyncio
+import time
 import uuid
 from dataclasses import dataclass
 from typing import Any
 
 import structlog
 from redis.asyncio import Redis
-from sqlalchemy import Row, and_, delete, func, insert, select
+from sqlalchemy import Row, and_, delete, false, func, insert, select
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import aliased
@@ -53,7 +55,9 @@ FIELDS = (
     Record.pages,
     Record.doi_norm,
     Record.pmid,
-    Record.abstract,
+    # Whether there is one, not the abstract itself: 100,000 abstracts were most of the
+    # time a pass took to load (18 s at the Phase 9 audit), for one yes or no each.
+    func.coalesce(Record.abstract.regexp_match(r"\S"), false()).label("abstract_present"),
     Record.created_at,
 )
 
@@ -79,7 +83,7 @@ def _for_dedup(row: Row[Any]) -> RecordForDedup:
         pages=row.pages,
         doi_norm=row.doi_norm,
         pmid=row.pmid,
-        abstract_present=bool(row.abstract and row.abstract.strip()),
+        abstract_present=row.abstract_present,
         imported_at=row.created_at,
     )
 
@@ -283,18 +287,32 @@ async def _one_pass(
     two writes are one transaction each, and the review screen is told over the event
     stream when there is something new to look at.
     """
+    phases: dict[str, float] = {}
+    clock = time.perf_counter()
+
+    def lap(name: str) -> None:
+        nonlocal clock
+        now = time.perf_counter()
+        phases[name] = round(now - clock, 2)
+        clock = now
+
     async with sessionmaker() as session:
         records = await load_records(session, project_id)
+    lap("load")
     # Blocks A and B key on the start of a title; these two catch the rest: the word block
     # always, and the database's trigram index while the review is small enough for it.
-    by_words = token_pairs(records)
+    # The pairwise work is CPU-bound and can take seconds: it runs in a thread, so the
+    # worker keeps answering its health check and starting other jobs meanwhile.
+    by_words = await asyncio.to_thread(token_pairs, records)
     by_trigram = (
         await trigram_pairs(sessionmaker, project_id)
         if 0 < len(records) <= TRIGRAM_MAX_RECORDS
         else []
     )
     extra = merged(by_words, by_trigram)
-    found = cluster(records, extra_pairs=extra) if len(records) > 1 else []
+    lap("pairs")
+    found = await asyncio.to_thread(cluster, records, extra_pairs=extra) if len(records) > 1 else []
+    lap("cluster")
     settings = await _settings(sessionmaker, project_id)
     if settings.dedup_auto_resolve:
         # Identical copies inside an uncertain group are not a question for anyone.
@@ -304,6 +322,7 @@ async def _one_pass(
         saved = await _replace_pending(session, project_id, found)
         settings = await _settings_of(session, project_id)
         await session.commit()
+    lap("save")
 
     auto_resolved = 0
     duplicates = 0
@@ -325,6 +344,7 @@ async def _one_pass(
             duplicates = await merge_clusters(session, chosen, resolved_by=None)
             auto_resolved = len(chosen)
             await session.commit()
+        lap("merge")
 
     result = DedupResult(
         records=len(records),
@@ -340,5 +360,6 @@ async def _one_pass(
         auto_resolved=result.auto_resolved,
         candidate_pairs=len(extra),
         trigram_pairs=len(by_trigram),
+        seconds=phases,
     )
     return result

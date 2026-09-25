@@ -9,7 +9,7 @@ import uuid
 from datetime import UTC, datetime
 
 from arq.connections import ArqRedis
-from sqlalchemy import Select, Uuid, column, delete, func, select, tuple_, update, values
+from sqlalchemy import Select, Uuid, column, delete, func, or_, select, update, values
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
@@ -115,7 +115,12 @@ async def merge_cluster(
         .values(is_primary=DupClusterMember.record_id == primary_id)
     )
     await session.execute(
-        update(Record).where(Record.id == primary_id).values(is_duplicate=False, duplicate_of=None)
+        update(Record)
+        .where(
+            Record.id == primary_id,
+            or_(Record.is_duplicate.is_(True), Record.duplicate_of.is_not(None)),
+        )
+        .values(is_duplicate=False, duplicate_of=None)
     )
     cluster_row.status = ClusterStatus.RESOLVED
     cluster_row.resolved_by = resolved_by
@@ -173,18 +178,29 @@ async def merge_clusters(
         )
         await migrate_work(session, [(row["rid"], row["primary"]) for row in secondaries])
     primaries = list(primary_by_cluster.values())
+    # Only the kept records that were themselves marked as copies: rewriting a row that
+    # would not change still writes a new version of it into every index (26 s for 5,000
+    # at the Phase 9 audit).
     await session.execute(
-        update(Record).where(Record.id.in_(primaries)).values(is_duplicate=False, duplicate_of=None)
+        update(Record)
+        .where(
+            Record.id.in_(primaries),
+            or_(Record.is_duplicate.is_(True), Record.duplicate_of.is_not(None)),
+        )
+        .values(is_duplicate=False, duplicate_of=None)
     )
+    # Each cluster's primary, set against a VALUES list like the records above: an IN of
+    # 5,000 (cluster, record) pairs took 22 s at the Phase 9 audit; this is one join.
+    kept = values(
+        column("cid", Uuid(as_uuid=True)),
+        column("kept", Uuid(as_uuid=True)),
+        name="kept",
+    ).data(chosen)
     await session.execute(
         update(DupClusterMember)
-        .where(DupClusterMember.cluster_id.in_(cluster_ids))
-        .values(is_primary=False)
-    )
-    await session.execute(
-        update(DupClusterMember)
-        .where(tuple_(DupClusterMember.cluster_id, DupClusterMember.record_id).in_(chosen))
-        .values(is_primary=True)
+        .where(DupClusterMember.cluster_id == kept.c.cid)
+        .values(is_primary=DupClusterMember.record_id == kept.c.kept)
+        .execution_options(synchronize_session=None)
     )
     await session.execute(
         update(DupCluster)

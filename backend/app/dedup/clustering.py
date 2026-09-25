@@ -113,18 +113,22 @@ def _candidate_pairs(
     known = {record.id for record in records}
     grouped = blocks(records)
     title_block_by_id: dict[uuid.UUID, str] = {}
+    # Title blocks (block A, split further when large) first, then year blocks (block
+    # B), skipping pairs a title block has already produced. A record whose title block
+    # was too large to keep has none, so its year-block pairs are all new.
     for key, member_ids in grouped.items():
-        if not key.startswith("title3:"):
+        if not key.startswith("title"):
             continue
         title_block_by_id.update(dict.fromkeys(member_ids, key))
         for left_id, right_id in combinations(member_ids, 2):
             yield _ordered_pair(left_id, right_id)
 
     for key, member_ids in grouped.items():
-        if not key.startswith("year-title10:"):
+        if not key.startswith("year-title"):
             continue
         for left_id, right_id in combinations(member_ids, 2):
-            if title_block_by_id[left_id] != title_block_by_id[right_id]:
+            left_block = title_block_by_id.get(left_id)
+            if left_block is None or left_block != title_block_by_id.get(right_id):
                 yield _ordered_pair(left_id, right_id)
 
     # Block C (guide 9.1): pairs the database found by trigram similarity, which catches
