@@ -9,9 +9,9 @@ The repository is at `/Users/mdasifuddin/Web/WINNOW` on this machine.
 ## Two agents, one repository
 
 Claude Code and Codex build Winnow at the same time. Claude Code builds the phases from
-Section 17 in order (Phases 0–2 are done; Phase 3, import and records, is next) and owns
-`main`. You build **self-contained, pure modules** from Section 9 that Claude Code wires
-into the app later.
+Section 17 in order (Phases 0–7 are done; Phase 8, extraction, risk of bias and reporting,
+is being built) and owns `main`. You build **self-contained, pure modules** that Claude Code
+wires into the app.
 
 - Work only in your own git worktree on a `codex/<topic>` branch:
   ```bash
@@ -53,8 +53,12 @@ backend/app/dedup/            # deduplication (Section 9.1)
 backend/app/stats/            # agreement: percent, Cohen's and Fleiss' kappa (9.3)
 backend/app/prisma/           # PRISMA 2020 counts and the SVG renderer (9.4, 8.14)
 backend/app/rob/              # risk-of-bias templates (RoB 2, ROBINS-I, NOS, QUADAS-2)
+backend/app/extraction/       # extraction forms: schemas, entries, differences, export rows (8.12)
+backend/app/exports/          # RIS and BibTeX writers, spreadsheet-safe cells (8.16)
+backend/app/reporting/        # the methods-text generator (8.15)
 backend/tests/unit/dedup/     backend/tests/unit/stats/
 backend/tests/unit/prisma/    backend/tests/unit/rob/
+backend/tests/unit/extraction/ backend/tests/unit/exports/ backend/tests/unit/reporting/
 backend/tests/fixtures/dedup/ # your fixtures only
 docs/codex-notes.md           # your notes, questions and hand-over reports
 docs/reviews/                 # review reports on other people's code (read-only reviews)
@@ -152,6 +156,91 @@ parses with `xml.etree.ElementTree` and contains no `<script>`.
 JSON templates for RoB 2, ROBINS-I, NOS and QUADAS-2 (domains, signalling questions, allowed
 judgements), a loader that validates them at import time, and `summary(assessments)` folding
 per-domain judgements into the traffic-light counts a plot needs. Data only — no plotting.
+
+### 5. `app/extraction/` — extraction forms (guide 8.12), branch `codex/extraction`
+
+The rules for a data-extraction form and what people type into it. Claude Code stores forms
+(`extraction_forms`: name, version, `schema` as JSON, published) and entries (one per
+form, record and person, `data` as JSON) and calls you to check and compare them.
+
+- `types.py`: `FieldType = Literal["short_text", "long_text", "number", "select",
+  "multi_select", "yes_no_unclear", "date", "table", "section"]`; frozen dataclasses
+  `Field(key, label, type, help=None, required=False, options=(), unit=None,
+  integer=False, minimum=None, maximum=None, columns=(), min_rows=0, max_rows=None)` and
+  `FormSchema(fields: tuple[Field, ...])`. A `table` field's `columns` are Fields of the
+  scalar types (not table or section); a `section` is a heading and holds no value.
+- `parse_schema(raw: object) -> FormSchema` and `schema_to_json(schema) -> dict` (round
+  trip). Refuse, with every problem listed (`SchemaError(problems: list[str])`): keys not
+  matching `[a-z][a-z0-9_]{0,39}` or repeated (table column keys unique within the
+  table), empty or repeated options, options on types that take none, a table without
+  columns, more than 200 fields, 100 options, 30 columns, labels over 300 characters or
+  help over 2,000.
+- `validate_entry(schema, data: object, *, complete: bool) -> dict[str, object]` returns
+  the normalised data or raises `EntryError(problems: dict[str, str])` keyed by field
+  (`"outcomes[2].mean"` for a table cell). Unknown keys are refused. Required fields are
+  enforced only when `complete=True` (submitting); drafts may be partial. Normalise: text
+  stripped, capped (short 500, long 20,000 characters); numbers as `int` when `integer`,
+  else `float`, finite, within minimum/maximum; select values must be one of the options;
+  multi-select a list in option order, no repeats; yes/no/unclear one of `"yes"`, `"no"`,
+  `"unclear"`; dates ISO `YYYY-MM-DD` and real; tables a list of row dicts, within
+  min/max rows, each cell validated like a scalar field. Empty values are dropped.
+- `differences(schema, a: dict, b: dict) -> list[Difference]` for the consensus view:
+  `Difference(path, label, a, b)` for every field whose normalised values differ, table
+  cells compared row by row (`path="outcomes[1].n"`), in form order. Two empty values do
+  not differ.
+- `long_rows(schema, entries: Sequence[EntryForExport]) -> list[dict[str, object]]` and
+  `wide_rows(...)` for export, where `EntryForExport(record_id, record_label, extractor,
+  data)` (extractor is a name, or `"consensus"`). Long: one row per value (record,
+  extractor, field key, field label, table row number or empty, column key, value, unit);
+  multi-select joined with `"; "`. Wide: one row per entry, a column per scalar field
+  key, table cells as `key[1].column` up to the largest row count present, then a header
+  list you return beside the rows. Sections produce nothing.
+- Tests: every field type accepted and refused, drafts versus complete, table limits,
+  differences on nested cells, long and wide round-ups on a small multi-arm trial
+  fixture. ≥ 95% coverage of the package.
+
+### 6. `app/exports/` — citation writers (guide 8.16), branch `codex/exports`
+
+- `types.py`: frozen `ExportRecord(id, title, abstract, authors: tuple[str, ...], year,
+  journal, volume, issue, pages, doi, pmid, pmcid, url, keywords: tuple[str, ...],
+  publication_type: tuple[str, ...], language, ta_status, ft_status, ta_reasons:
+  tuple[str, ...], ft_reasons: tuple[str, ...], labels: tuple[str, ...])`; statuses are
+  the strings Winnow stores (`included`, `excluded`, `pending`, `conflict`,
+  `not_eligible`, `not_retrievable`, `maybe`), any may be `None`.
+- `write_ris(records: Iterable[ExportRecord]) -> str`: `TY  - JOUR` (or `GEN` when no
+  journal), `TI`, one `AU` per author, `PY`, `JO`, `VL`, `IS`, `SP`/`EP` split from
+  pages, `DO`, `AN` (PMID), `UR`, `KW` per keyword, `LA`, `AB`, then Winnow's decisions in
+  `N1` ("Title/abstract: included" and the like, reasons after a colon) and in custom
+  fields `C1` (title/abstract status), `C2` (full-text status), `C3` (reasons, `; `),
+  `C4` (labels), `ER  - `. CRLF line ends are what reference managers expect; strip line
+  breaks and control characters from values.
+- `write_bibtex(records) -> str`: `@article` (or `@misc`), citation keys from first
+  author's surname + year + a/b/c on clashes (ASCII only), braces balanced and LaTeX
+  specials escaped, the same decision fields as `note` and `keywords`.
+- `spreadsheet_safe(value: object) -> str`: a cell that cannot run as a formula in Excel
+  or LibreOffice (prefix `'` to text starting with `=`, `+`, `-`, `@`, tab or carriage
+  return) — used by the CSV and XLSX exports.
+- Tests: round-trip the RIS through `app.parsers.ris` (read-only use of that module is
+  fine) and the BibTeX through `app.parsers.bibtex`, so what Winnow writes it can read;
+  special characters, missing fields, clashing keys, formula-looking titles.
+
+### 7. `app/reporting/` — methods text (guide 8.15), branch `codex/reporting`
+
+`methods_text(facts: MethodsFacts) -> str`: an editable paragraph (or two) describing
+how the review was screened, with real numbers, like guide 8.15's example ("Two reviewers
+independently screened 5,902 titles and abstracts; agreement was κ = 0.81 …").
+`MethodsFacts` (frozen, every field optional where the review may not have it): databases
+searched with their record counts and search dates, duplicates removed, records screened,
+reviewers per record at each stage, whether screening was blind, per-stage agreement
+(percent, Cohen's or Fleiss' kappa and its Landis–Koch band), conflicts and how they were
+resolved (a third reviewer, discussion), whether relevance ranking ordered the screening
+and whether screening stopped early by the stopping rule (with the rule), AI suggestions
+used (provider, model, how many), full texts sought, not retrieved, assessed, excluded
+with reasons (grouped counts), studies included, extraction done singly or in duplicate,
+and the risk-of-bias tool. Never state something the facts do not hold: a missing fact
+drops its sentence. Numbers with thousands separators; kappa to two decimals; British
+spelling. Tests: a full review, a minimal one, singular and plural wording, and a review
+with no full-text stage yet.
 
 ## Committing and handing over
 
