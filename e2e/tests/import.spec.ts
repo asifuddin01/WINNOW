@@ -104,7 +104,7 @@ test("a search export is previewed, imported and then searchable", async ({
   await expect(page.getByText("25 records")).toBeVisible();
 
   await page.getByLabel("Search", { exact: true }).fill('"night shifts" author:smith');
-  await page.getByRole("button", { name: "Search" }).click();
+  await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(page).toHaveURL(/q=/);
   const rows = page.getByRole("region", { name: "Records" }).getByRole("button");
   await expect(rows.first()).toBeVisible();
