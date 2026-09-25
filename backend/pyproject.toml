@@ -10,6 +10,7 @@ dependencies = [
     "argon2-cffi>=25.1.0",
     "arq>=0.28.0",
     "asyncpg>=0.31.0",
+    "cairosvg>=2.8",
     "cryptography>=50.0.1",
     "defusedxml>=0.7.1",
     "email-validator>=2.3.0",
@@ -86,6 +87,11 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 # scikit-learn and SciPy ship no type information (NumPy does); app/ranking wraps them.
 module = ["sklearn", "sklearn.*", "scipy", "scipy.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# CairoSVG ships no type information; app/images.py wraps it.
+module = ["cairosvg", "cairosvg.*"]
 ignore_missing_imports = true
 
 [tool.pydantic-mypy]

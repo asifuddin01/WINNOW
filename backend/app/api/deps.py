@@ -39,6 +39,7 @@ from app.services.members import MemberService
 from app.services.projects import ProjectService
 from app.services.ranking import RankingService
 from app.services.records import RecordService
+from app.services.reporting import ReportingService
 from app.services.screening import ScreeningService
 from app.services.setup import SetupService
 from app.services.two_factor import TwoFactorService
@@ -251,6 +252,13 @@ LlmDep = Annotated[LlmService, Depends(get_llm)]
 ConflictsDep = Annotated[ConflictService, Depends(get_conflicts)]
 MailerDep = Annotated[Mailer, Depends(get_mailer)]
 FulltextDep = Annotated[FulltextService, Depends(get_fulltext)]
+
+
+def get_reporting(db: SessionDep) -> ReportingService:
+    return ReportingService(db)
+
+
+ReportingDep = Annotated[ReportingService, Depends(get_reporting)]
 
 
 def _origin(url: str) -> str | None:

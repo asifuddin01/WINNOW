@@ -33,6 +33,7 @@ from app.models.record import (
     Record,
     TitleAbstractStatus,
 )
+from app.models.reporting import PrismaManual
 from app.models.screening import (
     ConflictResolution,
     Decision,
@@ -89,6 +90,7 @@ __all__ = [
     "Note",
     "NoteVisibility",
     "PdfAnnotation",
+    "PrismaManual",
     "Project",
     "ProjectInvite",
     "ProjectMember",

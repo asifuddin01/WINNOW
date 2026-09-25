@@ -65,6 +65,8 @@ jobs:
           enable-cache: true
           cache-dependency-glob: backend/uv.lock
       - run: uv sync --frozen
+      - name: Cairo and a font for PNG and PDF exports
+        run: sudo apt-get install --yes --no-install-recommends libcairo2 fonts-dejavu-core
       - name: Lint
         run: uv run ruff check . && uv run ruff format --check .
       - name: Typecheck

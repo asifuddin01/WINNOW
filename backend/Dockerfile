@@ -10,6 +10,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_PYTHON_DOWNLOADS=never \
     UV_PROJECT_ENVIRONMENT=/opt/venv \
     PATH=/opt/venv/bin:$PATH
+# Cairo and one font family, for PNG and PDF exports of the PRISMA diagram and the risk-of-
+# bias plots (CairoSVG): text in an exported image needs a real font to be drawn with.
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends libcairo2 fonts-dejavu-core \
+    && apt-get upgrade --yes \
+    && rm -rf /var/lib/apt/lists/*
 RUN groupadd --system --gid 1000 winnow \
     && useradd --system --uid 1000 --gid winnow --home-dir /app --shell /usr/sbin/nologin winnow \
     # Uploaded files live here; a fresh volume inherits this ownership when it is mounted.
