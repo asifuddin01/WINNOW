@@ -917,3 +917,20 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
 - The owner reassigned Codex's queue items 5–7 (extraction rules, citation writers, the
   methods text) to Claude Code on 2026-09-25 because Codex was busy. They follow the
   specifications in `AGENTS.md`, which now says so.
+
+## Phase 9 — Polish, hardening, launch
+
+### Command palette (guide 11.2)
+- **Ctrl+K or ⌘K anywhere, and a "Search or jump to…" button in the top bar** for mouse,
+  touch and anyone who does not know the shortcut. It never clashes with screening's
+  single-key shortcuts, which take no modifier.
+- **Built on Radix's dialog with the WAI-ARIA combobox pattern** (focus stays in the input,
+  the active result is `aria-activedescendant`, results are grouped options), rather
+  than a new dependency: the pieces were already in the bundle.
+- **Pages, actions and reviews are filtered in the browser; records are searched on the
+  server** with the records table's own search, from three characters, so a DOI, a PubMed
+  id or title words all work, and blind mode applies as it does in the table. Only the
+  current review is searched.
+- **Only what the person may do is offered**: pages and actions follow the same
+  permissions as the sidebar.
+- **A record opens in the records table** (`?record=`), where its details already live.

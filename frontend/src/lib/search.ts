@@ -1,3 +1,5 @@
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /** `?redirect=` on the sign-in page; anything else is ignored. Kept free of zod so the
  * route definitions that use it do not pull the form library into the first bundle. */
 export function redirectSearch(search: Record<string, unknown>): { redirect?: string } {
@@ -47,10 +49,12 @@ export function recordsSearch(search: Record<string, unknown>): {
   batch?: string;
   duplicates?: boolean;
   sort?: (typeof RECORD_SORTS)[number];
+  record?: string;
 } {
   const status = TA_STATUSES.find((value) => value === search.status);
   const sort = RECORD_SORTS.find((value) => value === search.sort);
   return {
+    ...(typeof search.record === "string" && UUID.test(search.record) && { record: search.record }),
     ...(typeof search.q === "string" && search.q ? { q: search.q.slice(0, 500) } : {}),
     ...(status ? { status } : {}),
     ...(typeof search.batch === "string" ? { batch: search.batch } : {}),
@@ -94,8 +98,6 @@ export function robSearch(search: Record<string, unknown>): { tool?: RobToolKey;
       /^[0-9a-f-]{36}$/i.test(search.study) && { study: search.study }),
   };
 }
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** The extraction pages: which form version, and which study is open. */
 export function extractionSearch(search: Record<string, unknown>): {

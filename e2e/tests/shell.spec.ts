@@ -96,6 +96,26 @@ test.describe("signed in", () => {
     await expect(page.locator("html")).toHaveClass(/dark/);
   });
 
+  test("the command palette jumps anywhere from the keyboard (guide 11.2)", async ({
+    page,
+    isMobile,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "My reviews" })).toBeVisible();
+    if (isMobile) {
+      await page.getByRole("button", { name: /Search or jump to/ }).click();
+    } else {
+      await page.keyboard.press("ControlOrMeta+k");
+    }
+    const input = page.getByRole("combobox", { name: /Search pages, reviews, records/ });
+    await expect(input).toBeFocused();
+    await expectNoSeriousViolations(page);
+    await input.fill("account");
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/\/account$/);
+    await expect(input).toBeHidden();
+  });
+
   test("keyboard users can skip to the content", async ({ page, isMobile }) => {
     test.skip(isMobile, "no hardware keyboard on the phone profile");
     await page.goto("/");

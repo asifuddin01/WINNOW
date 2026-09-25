@@ -39,7 +39,13 @@ function RecordsPage() {
   const navigate = useNavigate();
   const { data: project } = useQuery(projectQuery(pid));
   const [typed, setTyped] = useState(search.q ?? "");
-  const [selected, setSelected] = useState<string | null>(null);
+  // The command palette opens a record here with ?record=.
+  const [selected, setSelected] = useState<string | null>(search.record ?? null);
+  const [asked, setAsked] = useState(search.record);
+  if (search.record !== asked) {
+    setAsked(search.record);
+    if (search.record) setSelected(search.record);
+  }
 
   const query: RecordQuery = {
     q: search.q,
