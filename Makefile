@@ -15,7 +15,7 @@ API_NO_DEPS := $(COMPOSE) run --rm --no-deps api
 WEB := $(COMPOSE) run --rm --no-deps web
 
 .DEFAULT_GOAL := help
-.PHONY: help env dev up local down logs ps build migrate revision seed seed-large perf load \
+.PHONY: help env dev up local down logs ps build migrate revision seed seed-large perf load zap \
 	test test-backend test-frontend e2e lint typecheck format check api-types size clean create-admin
 
 help: ## List the targets
@@ -80,6 +80,12 @@ load: .env ## k6: 50 reviewers deciding every 3 s for 10 min (guide 13); makes a
 	$(API) python -m benchmarks.load_setup make $(if $(reviewers),--reviewers $(reviewers))
 	$(COMPOSE) --profile load run --rm -e DURATION=$(or $(duration),10m) k6; status=$$?; \
 		$(API) python -m benchmarks.load_setup clear; exit $$status
+
+zap: ## OWASP ZAP baseline against the running stack (guide 12); fails on a high-risk alert
+	mkdir -p zap-report && chmod 777 zap-report
+	docker run --rm --network winnow_default -v $(CURDIR)/zap-report:/zap/wrk:rw \
+		zaproxy/zap-stable:2.17.0 zap-baseline.py -t http://caddy:8080 -J zap.json -r zap.html -I
+	python3 security/zap_verdict.py zap-report/zap.json
 
 perf: .env ## Measure the budgets of guide 2.2 on the running stack; makes and deletes its own data
 	$(API) python -m benchmarks.budgets $(if $(json),--json $(json)) $(if $(parts),--parts $(parts))

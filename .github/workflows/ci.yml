@@ -148,6 +148,21 @@ jobs:
       - name: Run Playwright
         working-directory: e2e
         run: pnpm exec playwright test
+      # Guide 12 / Phase 9: OWASP ZAP's passive baseline over the running stack. It
+      # fails on any high-risk alert; every alert is printed as an annotation.
+      - name: OWASP ZAP baseline
+        run: |
+          mkdir -p zap-report && chmod 777 zap-report
+          docker run --rm --network host -v "$PWD/zap-report:/zap/wrk:rw" \
+            zaproxy/zap-stable:2.17.0 zap-baseline.py -t http://localhost:8080 \
+            -J zap.json -r zap.html -I
+          python3 security/zap_verdict.py zap-report/zap.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: zap-report
+          path: zap-report
+          retention-days: 14
       - name: Service logs
         if: failure()
         run: docker compose logs --no-color
