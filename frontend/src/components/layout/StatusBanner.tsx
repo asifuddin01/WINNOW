@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { CloudOffIcon, ServerCrashIcon } from "lucide-react";
 import { useSyncExternalStore } from "react";
+import { useTranslation } from "react-i18next";
 
 import { readinessQuery } from "@/api/health";
 
@@ -22,6 +23,7 @@ function useOnline(): boolean {
  * server cannot reach its database or Redis. Silent while everything works.
  */
 export function StatusBanner() {
+  const { t } = useTranslation();
   const online = useOnline();
   const readiness = useQuery({ ...readinessQuery, enabled: online });
 
@@ -29,12 +31,12 @@ export function StatusBanner() {
   if (!online) {
     message = {
       icon: CloudOffIcon,
-      text: "You are offline. Winnow will reconnect when your connection returns.",
+      text: t("status.offline"),
     };
   } else if (readiness.isError) {
     message = {
       icon: ServerCrashIcon,
-      text: "Winnow cannot reach its server right now. It will keep trying.",
+      text: t("status.unreachable"),
     };
   }
 

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeftIcon, SearchXIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { useInShell } from "@/components/layout/shell-context";
 import { StandalonePage } from "@/components/layout/StandalonePage";
@@ -13,6 +14,7 @@ interface NotFoundProps {
 }
 
 function NotFoundPanel({ title, detail }: NotFoundProps) {
+  const { t } = useTranslation();
   return (
     <section
       aria-labelledby="not-found-title"
@@ -22,16 +24,13 @@ function NotFoundPanel({ title, detail }: NotFoundProps) {
         <SearchXIcon className="size-6" aria-hidden="true" />
       </span>
       <h1 id="not-found-title" className="text-xl font-semibold tracking-tight">
-        {title ?? "Page not found"}
+        {title ?? t("notFound.title")}
       </h1>
-      <p className="mt-2 text-muted-foreground">
-        {detail ??
-          "This address does not match any page. It may have moved, or the link may be mistyped."}
-      </p>
+      <p className="mt-2 text-muted-foreground">{detail ?? t("notFound.body")}</p>
       <Button asChild className="mt-6">
         <Link to="/">
           <ArrowLeftIcon aria-hidden="true" />
-          Back to my reviews
+          {t("notFound.back")}
         </Link>
       </Button>
     </section>

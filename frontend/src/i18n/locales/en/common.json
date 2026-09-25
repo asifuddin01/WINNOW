@@ -1,0 +1,120 @@
+{
+  "shell": {
+    "main": "Main",
+    "home": "Winnow home",
+    "workspace": "Workspace",
+    "thisReview": "This review",
+    "review": "Review",
+    "skip": "Skip to content",
+    "search": "Search or jump to…",
+    "searchShort": "Search or jump to"
+  },
+  "nav": {
+    "myReviews": "My reviews",
+    "account": "Account",
+    "admin": "Instance admin",
+    "overview": "Overview",
+    "import": "Import",
+    "duplicates": "Duplicates",
+    "screen": "Screen",
+    "fullText": "Full text",
+    "conflicts": "Conflicts",
+    "extraction": "Extraction",
+    "rob": "Risk of bias",
+    "report": "Report",
+    "records": "Records",
+    "settings": "Settings"
+  },
+  "theme": {
+    "title": "Colour theme",
+    "current": "Colour theme: {{name}}",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "user": {
+    "menu": "Account menu for {{name}}",
+    "account": "Account and security",
+    "signOut": "Sign out"
+  },
+  "status": {
+    "offline": "You are offline. Winnow will reconnect when your connection returns.",
+    "unreachable": "Winnow cannot reach its server right now. It will keep trying."
+  },
+  "verify": {
+    "prompt": "Confirm your email address to join reviews. Check your inbox for the link.",
+    "sent": "We sent a new link to {{email}}.",
+    "sending": "Sending…",
+    "resend": "Send a new link"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "body": "This page hit an unexpected error. Reloading usually fixes it. If it keeps happening, include the error id when you report it.",
+    "reload": "Reload",
+    "copy": "Copy error id",
+    "copied": "Copied",
+    "id": "Error id:"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "This address does not match any page. It may have moved, or the link may be mistyped.",
+    "back": "Back to my reviews"
+  },
+  "palette": {
+    "title": "Go to a page, a review, a record or an action",
+    "label": "Search pages, reviews, records and actions",
+    "placeholderReview": "Type a page, an action, or a record's title or DOI…",
+    "placeholder": "Type a page, a review or an action…",
+    "results": "Results",
+    "groups": {
+      "Actions": "Actions",
+      "Pages": "Pages",
+      "Reviews": "Reviews",
+      "Records": "Records"
+    },
+    "continue": "Continue screening",
+    "import": "Import search results",
+    "export": "Export records",
+    "newReview": "New review",
+    "restore": "Restore a backup",
+    "toLight": "Switch to the light theme",
+    "toDark": "Switch to the dark theme",
+    "signOut": "Sign out",
+    "untitled": "Untitled record",
+    "searching": "Searching…",
+    "nothing": "Nothing matches.",
+    "count_one": "{{count}} result. ↑↓ to move, Enter to open, Esc to close.",
+    "count_other": "{{count}} results. ↑↓ to move, Enter to open, Esc to close.",
+    "countSearching": "{{count}} results; searching records…",
+    "sub": {
+      "stats": "Report: Statistics",
+      "methods": "Report: Methods text",
+      "exports": "Report: Exports",
+      "audit": "Report: Audit log",
+      "forms": "Extraction: Forms",
+      "consensus": "Extraction: Consensus",
+      "criteria": "Settings: Criteria",
+      "team": "Settings: Team"
+    }
+  },
+  "notices": {
+    "title": "Notifications",
+    "bell": "Notifications",
+    "bellUnread": "Notifications, {{count}} unread",
+    "markAll": "Mark all as read",
+    "loading": "Loading…",
+    "empty": "Nothing yet. Conflicts to resolve, mentions, invitations and finished imports appear here.",
+    "unread": "(unread)",
+    "digest": "Email digest settings",
+    "someone": "Someone",
+    "aReview": "a review",
+    "aFile": "a file",
+    "conflicts_one": "{{count}} new conflict to resolve in {{review}}",
+    "conflicts_other": "{{count}} new conflicts to resolve in {{review}}",
+    "invite": "{{who}} invited you to {{review}}. Accept from the invitation email.",
+    "mention": "{{who}} mentioned you in {{review}}: “{{excerpt}}”",
+    "importFinished_one": "Your import of {{file}} into {{review}} finished: {{count, number}} record",
+    "importFinished_other": "Your import of {{file}} into {{review}} finished: {{count, number}} records",
+    "importFailed": "Your import of {{file}} into {{review}} failed"
+  }
+}

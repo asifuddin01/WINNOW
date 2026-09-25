@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
 import { meQuery } from "@/api/auth";
 
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/sidebar";
 
 export function AppSidebar() {
+  const { t } = useTranslation();
   const { isMobile, setOpenMobile } = useSidebar();
   // Inside a review, its own pages come first; elsewhere there is no pid to read.
   const { pid } = useParams({ strict: false });
@@ -32,11 +34,11 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" aria-label="Main">
+    <Sidebar collapsible="icon" aria-label={t("shell.main")}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild tooltip="Winnow home">
+            <SidebarMenuButton size="lg" asChild tooltip={t("shell.home")}>
               <Link to="/" onClick={closeOnMobile}>
                 <BrandMark />
                 <Wordmark />
@@ -47,9 +49,9 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         {pid && <ProjectGroup pid={pid} onNavigate={closeOnMobile} />}
-        <nav aria-label="Workspace">
+        <nav aria-label={t("shell.workspace")}>
           <SidebarGroup>
-            <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+            <SidebarGroupLabel>{t("shell.workspace")}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {workspaceNav
@@ -78,9 +80,10 @@ function NavLink({
   onNavigate: () => void;
   count?: number | null;
 }) {
+  const { t } = useTranslation();
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton asChild tooltip={item.label}>
+      <SidebarMenuButton asChild tooltip={t(item.labelKey)}>
         <Link
           to={item.to}
           params={params}
@@ -89,7 +92,7 @@ function NavLink({
           activeProps={{ "data-active": true, "aria-current": "page" }}
         >
           <item.icon aria-hidden="true" />
-          <span>{item.label}</span>
+          <span>{t(item.labelKey)}</span>
           {count ? (
             <span className="ml-auto rounded-full bg-conflict px-1.5 text-xs font-semibold text-white tabular-nums dark:text-background">
               {count}
@@ -104,6 +107,7 @@ function NavLink({
 
 /** The pages of the review being looked at, titled with its name. */
 function ProjectGroup({ pid, onNavigate }: { pid: string; onNavigate: () => void }) {
+  const { t } = useTranslation();
   const { data: project } = useQuery(projectQuery(pid));
   const resolver = project?.permissions.includes("resolve_conflicts") ?? false;
   // Only for someone allowed to know: the count alone says reviewers disagreed.
@@ -115,9 +119,11 @@ function ProjectGroup({ pid, onNavigate }: { pid: string; onNavigate: () => void
     (item) => !item.requires || (project?.permissions.includes(item.requires) ?? false),
   );
   return (
-    <nav aria-label="This review">
+    <nav aria-label={t("shell.thisReview")}>
       <SidebarGroup>
-        <SidebarGroupLabel className="truncate">{project?.title ?? "Review"}</SidebarGroupLabel>
+        <SidebarGroupLabel className="truncate">
+          {project?.title ?? t("shell.review")}
+        </SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
             {items.map((item) => (

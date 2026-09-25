@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { afterEach, beforeEach, vi } from "vitest";
 
 import { forgetCsrfToken } from "@/api/csrf";
+import "@/i18n";
 import { mockApi } from "@/test/api";
 import { installDomStubs } from "@/test/dom";
 import { installMatchMedia } from "@/test/media";

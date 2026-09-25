@@ -28,6 +28,7 @@
     "@tanstack/react-virtual": "^3.14.13",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.3.0",
+    "i18next": "^26.4.2",
     "lucide-react": "^1.47.0",
     "openapi-fetch": "^0.17.0",
     "pdfjs-dist": "^6.3.289",
@@ -35,6 +36,7 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-hook-form": "^7.88.0",
+    "react-i18next": "^17.0.15",
     "sonner": "^2.0.8",
     "zod": "^4.6.5"
   },

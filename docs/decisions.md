@@ -990,3 +990,16 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   (with its job counts), the queue length is the arq queue's, the disk is where files are
   kept, the database size is PostgreSQL's own, and the last backup is what `make backup`
   records (item 11), or "none recorded".
+
+### Languages (guide 14)
+- **Set up, and the shell moved, not every page at once.** i18next and a typed English
+  catalogue are in place; the sidebar, top bar, command palette, notifications, menus,
+  banners and error pages speak from it. Pages move to their own namespace when each is
+  next changed (docs/i18n.md), which keeps this change reviewable and every page's tests
+  unchanged.
+- **The browser's language, no switcher yet**: a menu with one language would be noise.
+  The first of the browser's preferred languages Winnow speaks wins, else English, and
+  `<html lang>` follows it.
+- **English is bundled; other languages will load when chosen.** i18next and
+  react-i18next add 22.5 KB to the initial bundle (178.4 KB of the 200 KB budget);
+  bundling further catalogues would eat the rest.

@@ -1,5 +1,6 @@
 import { CheckIcon, CopyIcon, RotateCwIcon, TriangleAlertIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { ApiError } from "@/api/client";
 import { useInShell } from "@/components/layout/shell-context";
@@ -18,6 +19,7 @@ function errorIdFor(error: unknown): string {
 }
 
 function ErrorPanel({ error }: { error: unknown }) {
+  const { t } = useTranslation();
   const errorId = useMemo(() => errorIdFor(error), [error]);
   const [copied, setCopied] = useState(false);
 
@@ -44,12 +46,9 @@ function ErrorPanel({ error }: { error: unknown }) {
         <TriangleAlertIcon className="size-6" aria-hidden="true" />
       </span>
       <h1 id="error-title" className="text-xl font-semibold tracking-tight">
-        Something went wrong
+        {t("error.title")}
       </h1>
-      <p className="mt-2 text-muted-foreground">
-        This page hit an unexpected error. Reloading usually fixes it. If it keeps happening,
-        include the error id when you report it.
-      </p>
+      <p className="mt-2 text-muted-foreground">{t("error.body")}</p>
       <div className="mt-6 flex flex-wrap justify-center gap-2">
         <Button
           onClick={() => {
@@ -57,15 +56,15 @@ function ErrorPanel({ error }: { error: unknown }) {
           }}
         >
           <RotateCwIcon aria-hidden="true" />
-          Reload
+          {t("error.reload")}
         </Button>
         <Button variant="outline" onClick={() => void copy()}>
           {copied ? <CheckIcon aria-hidden="true" /> : <CopyIcon aria-hidden="true" />}
-          {copied ? "Copied" : "Copy error id"}
+          {copied ? t("error.copied") : t("error.copy")}
         </Button>
       </div>
       <p className="mt-4 text-xs text-muted-foreground">
-        Error id: <code className="font-mono select-all">{errorId}</code>
+        {t("error.id")} <code className="font-mono select-all">{errorId}</code>
       </p>
     </section>
   );

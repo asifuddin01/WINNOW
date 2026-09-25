@@ -1,4 +1,5 @@
 import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,26 +13,27 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { isTheme, useTheme, type Theme } from "@/lib/theme";
 
-const OPTIONS: { value: Theme; label: string; icon: typeof SunIcon }[] = [
-  { value: "light", label: "Light", icon: SunIcon },
-  { value: "dark", label: "Dark", icon: MoonIcon },
-  { value: "system", label: "System", icon: MonitorIcon },
+const OPTIONS: { value: Theme; icon: typeof SunIcon }[] = [
+  { value: "light", icon: SunIcon },
+  { value: "dark", icon: MoonIcon },
+  { value: "system", icon: MonitorIcon },
 ];
 
 export function ThemeMenu() {
+  const { t } = useTranslation();
   const { theme, resolvedTheme, setTheme } = useTheme();
-  const currentLabel = OPTIONS.find((option) => option.value === theme)?.label ?? "System";
+  const currentLabel = t(`theme.${theme}`);
   const TriggerIcon = resolvedTheme === "dark" ? MoonIcon : SunIcon;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={`Colour theme: ${currentLabel}`}>
+        <Button variant="ghost" size="icon" aria-label={t("theme.current", { name: currentLabel })}>
           <TriggerIcon aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-40">
-        <DropdownMenuLabel>Colour theme</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("theme.title")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup
           value={theme}
@@ -39,10 +41,10 @@ export function ThemeMenu() {
             if (isTheme(value)) setTheme(value);
           }}
         >
-          {OPTIONS.map(({ value, label, icon: Icon }) => (
+          {OPTIONS.map(({ value, icon: Icon }) => (
             <DropdownMenuRadioItem key={value} value={value}>
               <Icon aria-hidden="true" />
-              {label}
+              {t(`theme.${value}`)}
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>

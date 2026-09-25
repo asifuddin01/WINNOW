@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Dialog } from "radix-ui";
 import { useCallback, useDeferredValue, useId, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import { meQuery, signOut } from "@/api/auth";
@@ -38,18 +39,18 @@ interface Command {
 
 // Sub-pages the sidebar does not list, so the palette can reach every page.
 const SUB_PAGES = [
-  { to: "/p/$pid/report/stats", label: "Report: Statistics" },
-  { to: "/p/$pid/report/methods", label: "Report: Methods text" },
-  { to: "/p/$pid/report/exports", label: "Report: Exports" },
-  { to: "/p/$pid/report/audit", label: "Report: Audit log", requires: "edit_settings" },
-  { to: "/p/$pid/extraction/forms", label: "Extraction: Forms" },
+  { to: "/p/$pid/report/stats", labelKey: "palette.sub.stats" },
+  { to: "/p/$pid/report/methods", labelKey: "palette.sub.methods" },
+  { to: "/p/$pid/report/exports", labelKey: "palette.sub.exports" },
+  { to: "/p/$pid/report/audit", labelKey: "palette.sub.audit", requires: "edit_settings" },
+  { to: "/p/$pid/extraction/forms", labelKey: "palette.sub.forms" },
   {
     to: "/p/$pid/extraction/consensus",
-    label: "Extraction: Consensus",
+    labelKey: "palette.sub.consensus",
     requires: "resolve_conflicts",
   },
-  { to: "/p/$pid/settings/criteria", label: "Settings: Criteria" },
-  { to: "/p/$pid/settings/team", label: "Settings: Team" },
+  { to: "/p/$pid/settings/criteria", labelKey: "palette.sub.criteria" },
+  { to: "/p/$pid/settings/team", labelKey: "palette.sub.team" },
 ] as const;
 
 const MIN_SEARCH = 3;
@@ -74,6 +75,7 @@ export function CommandPalette({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -82,9 +84,7 @@ export function CommandPalette({
           className="fixed top-[12vh] left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg focus:outline-none"
           aria-describedby={undefined}
         >
-          <Dialog.Title className="sr-only">
-            Go to a page, a review, a record or an action
-          </Dialog.Title>
+          <Dialog.Title className="sr-only">{t("palette.title")}</Dialog.Title>
           {open && (
             <Palette
               close={() => {
@@ -99,6 +99,7 @@ export function CommandPalette({
 }
 
 function Palette({ close }: { close: () => void }) {
+  const { t } = useTranslation();
   const id = useId();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -132,7 +133,7 @@ function Palette({ close }: { close: () => void }) {
         list.push({
           id: "screen",
           group: "Actions",
-          label: "Continue screening",
+          label: t("palette.continue"),
           icon: ListChecksIcon,
           run: go("/p/$pid/screen/ta", p),
         });
@@ -141,7 +142,7 @@ function Palette({ close }: { close: () => void }) {
         list.push({
           id: "import",
           group: "Actions",
-          label: "Import search results",
+          label: t("palette.import"),
           icon: UploadIcon,
           run: go("/p/$pid/import", p),
         });
@@ -149,7 +150,7 @@ function Palette({ close }: { close: () => void }) {
       list.push({
         id: "export",
         group: "Actions",
-        label: "Export records",
+        label: t("palette.export"),
         icon: FileTextIcon,
         run: go("/p/$pid/report/exports", p),
       });
@@ -158,7 +159,7 @@ function Palette({ close }: { close: () => void }) {
         list.push({
           id: `page:${item.to}`,
           group: "Pages",
-          label: item.label,
+          label: t(item.labelKey),
           hint: project.title,
           icon: item.icon,
           run: go(item.to, p),
@@ -169,7 +170,7 @@ function Palette({ close }: { close: () => void }) {
         list.push({
           id: `page:${item.to}`,
           group: "Pages",
-          label: item.label,
+          label: t(item.labelKey),
           hint: project.title,
           icon: FolderOpenIcon,
           run: go(item.to, p),
@@ -177,18 +178,24 @@ function Palette({ close }: { close: () => void }) {
       }
     }
     list.push(
-      { id: "new", group: "Actions", label: "New review", icon: PlusIcon, run: go("/new") },
+      {
+        id: "new",
+        group: "Actions",
+        label: t("palette.newReview"),
+        icon: PlusIcon,
+        run: go("/new"),
+      },
       {
         id: "restore",
         group: "Actions",
-        label: "Restore a backup",
+        label: t("palette.restore"),
         icon: ArchiveRestoreIcon,
         run: go("/restore"),
       },
       {
         id: "theme",
         group: "Actions",
-        label: resolvedTheme === "dark" ? "Switch to the light theme" : "Switch to the dark theme",
+        label: resolvedTheme === "dark" ? t("palette.toLight") : t("palette.toDark"),
         icon: resolvedTheme === "dark" ? SunIcon : MoonIcon,
         run: () => {
           setTheme(resolvedTheme === "dark" ? "light" : "dark");
@@ -197,7 +204,7 @@ function Palette({ close }: { close: () => void }) {
       {
         id: "signout",
         group: "Actions",
-        label: "Sign out",
+        label: t("palette.signOut"),
         icon: LogOutIcon,
         run: async () => {
           try {
@@ -214,7 +221,7 @@ function Palette({ close }: { close: () => void }) {
       list.push({
         id: `page:${item.to}`,
         group: "Pages",
-        label: item.label,
+        label: t(item.labelKey),
         icon: item.icon,
         run: go(item.to),
       });
@@ -241,7 +248,7 @@ function Palette({ close }: { close: () => void }) {
         matching.push({
           id: `record:${record.id}`,
           group: "Records",
-          label: record.title ?? "Untitled record",
+          label: record.title ?? t("palette.untitled"),
           hint: [who, record.year, record.doi].filter(Boolean).join(" · "),
           icon: FileTextIcon,
           run: go("/p/$pid/records", { pid }, { record: record.id }),
@@ -251,6 +258,7 @@ function Palette({ close }: { close: () => void }) {
     return GROUPS.flatMap((group) => matching.filter((command) => command.group === group));
   }, [
     pid,
+    t,
     project,
     reviews,
     me,
@@ -280,13 +288,9 @@ function Palette({ close }: { close: () => void }) {
           aria-expanded="true"
           aria-controls={`${id}-list`}
           aria-activedescendant={commands[current] ? `${id}-${current}` : undefined}
-          aria-label="Search pages, reviews, records and actions"
+          aria-label={t("palette.label")}
           aria-autocomplete="list"
-          placeholder={
-            pid
-              ? "Type a page, an action, or a record's title or DOI…"
-              : "Type a page, a review or an action…"
-          }
+          placeholder={pid ? t("palette.placeholderReview") : t("palette.placeholder")}
           value={text}
           onChange={(event) => {
             setText(event.target.value);
@@ -308,7 +312,7 @@ function Palette({ close }: { close: () => void }) {
       <div
         id={`${id}-list`}
         role="listbox"
-        aria-label="Results"
+        aria-label={t("palette.results")}
         className="max-h-[60vh] overflow-y-auto p-1"
       >
         {GROUPS.map((group) => {
@@ -323,7 +327,7 @@ function Palette({ close }: { close: () => void }) {
                 role="presentation"
                 className="px-2 pt-2 pb-1 text-xs font-medium text-muted-foreground"
               >
-                {group}
+                {t(`palette.groups.${group}`)}
               </div>
               {members.map(({ command, index }) => {
                 const Icon = command.icon;
@@ -365,11 +369,11 @@ function Palette({ close }: { close: () => void }) {
       <p role="status" className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
         {commands.length === 0
           ? isFetching
-            ? "Searching…"
-            : "Nothing matches."
+            ? t("palette.searching")
+            : t("palette.nothing")
           : searching && isFetching
-            ? `${commands.length} results; searching records…`
-            : `${commands.length} results. ↑↓ to move, Enter to open, Esc to close.`}
+            ? t("palette.countSearching", { count: commands.length })
+            : t("palette.count", { count: commands.length })}
       </p>
     </div>
   );

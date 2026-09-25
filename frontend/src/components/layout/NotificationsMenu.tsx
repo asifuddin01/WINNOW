@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { BellIcon, CheckCheckIcon } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { markAllRead, markRead, noticeKeys, noticesQuery, unreadQuery } from "@/api/notifications";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import { cn } from "@/lib/utils";
 
 /** The bell (guide 8.17): unread notices, newest first; opening one marks it read. */
 export function NotificationsMenu() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -36,7 +38,7 @@ export function NotificationsMenu() {
           variant="ghost"
           size="icon"
           className="relative"
-          aria-label={count ? `Notifications, ${count} unread` : "Notifications"}
+          aria-label={count ? t("notices.bellUnread", { count }) : t("notices.bell")}
         >
           <BellIcon aria-hidden="true" />
           {count > 0 && (
@@ -51,16 +53,13 @@ export function NotificationsMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[min(24rem,calc(100vw-2rem))]">
         <DropdownMenuLabel className="text-sm font-semibold text-foreground">
-          Notifications
+          {t("notices.title")}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {isPending ? (
-          <p className="px-2 py-3 text-sm text-muted-foreground">Loading…</p>
+          <p className="px-2 py-3 text-sm text-muted-foreground">{t("notices.loading")}</p>
         ) : !page || page.items.length === 0 ? (
-          <p className="px-2 py-3 text-sm text-muted-foreground">
-            Nothing yet. Conflicts to resolve, mentions, invitations and finished imports appear
-            here.
-          </p>
+          <p className="px-2 py-3 text-sm text-muted-foreground">{t("notices.empty")}</p>
         ) : (
           <div className="max-h-[60vh] overflow-y-auto">
             {page.items.map((notice) => {
@@ -84,7 +83,7 @@ export function NotificationsMenu() {
                   <span className="grid min-w-0 gap-0.5">
                     <span className={cn("text-sm", !notice.read && "font-medium")}>
                       {text}
-                      {!notice.read && <span className="sr-only"> (unread)</span>}
+                      {!notice.read && <span className="sr-only"> {t("notices.unread")}</span>}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {timeAgo(notice.updated_at)}
@@ -104,12 +103,12 @@ export function NotificationsMenu() {
               void markAllRead().then(refresh);
             }}
           >
-            <CheckCheckIcon aria-hidden="true" /> Mark all as read
+            <CheckCheckIcon aria-hidden="true" /> {t("notices.markAll")}
           </DropdownMenuItem>
         )}
         <DropdownMenuItem asChild>
           <Link to="/account" hash="notifications" className="text-sm">
-            Email digest settings
+            {t("notices.digest")}
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>

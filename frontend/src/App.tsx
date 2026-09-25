@@ -1,3 +1,4 @@
+import "@/i18n";
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 

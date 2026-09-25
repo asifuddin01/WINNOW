@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { MailWarningIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { meQuery, resendVerification } from "@/api/auth";
 import { errorMessage } from "@/api/client";
@@ -7,12 +8,13 @@ import { Button } from "@/components/ui/button";
 
 /** Unconfirmed accounts can use Winnow but not join reviews (guide 8.1). */
 export function VerifyEmailBanner() {
+  const { t } = useTranslation();
   const { data: me } = useQuery(meQuery);
   const resend = useMutation({ mutationFn: resendVerification });
   if (!me || me.email_verified) return null;
 
-  let status = "Confirm your email address to join reviews. Check your inbox for the link.";
-  if (resend.isSuccess) status = `We sent a new link to ${me.email}.`;
+  let status: string = t("verify.prompt");
+  if (resend.isSuccess) status = t("verify.sent", { email: me.email });
   if (resend.isError) status = errorMessage(resend.error);
 
   return (
@@ -30,7 +32,7 @@ export function VerifyEmailBanner() {
             resend.mutate();
           }}
         >
-          {resend.isPending ? "Sending…" : "Send a new link"}
+          {resend.isPending ? t("verify.sending") : t("verify.resend")}
         </Button>
       )}
     </div>

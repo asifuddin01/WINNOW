@@ -1,35 +1,35 @@
 import type { Notice } from "@/api/notifications";
+import i18n from "@/i18n";
 
 /** A notice in words, and where it leads (null: nowhere to go in Winnow). */
 export function describeNotice(notice: Notice): { text: string; to: string | null } {
+  const { t } = i18n;
   const data = notice.data as Record<string, string | number | undefined>;
-  const review = String(data.project_title ?? "a review");
-  const who = String(data.by ?? "Someone");
+  const review = String(data.project_title ?? t("notices.aReview"));
+  const who = String(data.by ?? t("notices.someone"));
+  const file = String(data.filename ?? t("notices.aFile"));
   const pid = notice.project_id;
   switch (notice.kind) {
     case "conflicts":
       return {
-        text: `${notice.count} new ${notice.count === 1 ? "conflict" : "conflicts"} to resolve in ${review}`,
+        text: t("notices.conflicts", { count: notice.count, review }),
         to: pid ? `/p/${pid}/conflicts` : null,
       };
     case "invite":
-      return {
-        text: `${who} invited you to ${review}. Accept from the invitation email.`,
-        to: null,
-      };
+      return { text: t("notices.invite", { who, review }), to: null };
     case "mention":
       return {
-        text: `${who} mentioned you in ${review}: “${String(data.excerpt ?? "")}”`,
+        text: t("notices.mention", { who, review, excerpt: String(data.excerpt ?? "") }),
         to: pid && data.record_id ? `/p/${pid}/records?record=${String(data.record_id)}` : null,
       };
     case "import_finished":
       return {
-        text: `Your import of ${String(data.filename ?? "a file")} into ${review} finished: ${Number(data.imported ?? 0).toLocaleString()} records`,
+        text: t("notices.importFinished", { file, review, count: Number(data.imported ?? 0) }),
         to: pid ? `/p/${pid}/import` : null,
       };
     case "import_failed":
       return {
-        text: `Your import of ${String(data.filename ?? "a file")} into ${review} failed`,
+        text: t("notices.importFailed", { file, review }),
         to: pid ? `/p/${pid}/import` : null,
       };
   }

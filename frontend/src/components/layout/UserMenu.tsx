@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { LogOutIcon, UserRoundCogIcon } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import { meQuery, signOut } from "@/api/auth";
 import { errorMessage } from "@/api/client";
@@ -17,6 +18,7 @@ import {
 import { initials } from "@/lib/format";
 
 export function UserMenu() {
+  const { t } = useTranslation();
   const { data: me } = useQuery(meQuery);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -34,7 +36,7 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={`Account menu for ${me.name}`}>
+        <Button variant="ghost" size="icon" aria-label={t("user.menu", { name: me.name })}>
           <span className="flex size-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
             {initials(me.name)}
           </span>
@@ -49,12 +51,12 @@ export function UserMenu() {
         <DropdownMenuItem asChild>
           <Link to="/account">
             <UserRoundCogIcon aria-hidden="true" />
-            Account and security
+            {t("user.account")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => void onSignOut()}>
           <LogOutIcon aria-hidden="true" />
-          Sign out
+          {t("user.signOut")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
