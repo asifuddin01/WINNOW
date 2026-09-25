@@ -21,7 +21,7 @@ from app.config import Settings
 from app.email import messages
 from app.email.mailer import Mailer
 from app.llm.providers import is_configured as llm_configured
-from app.models import Project, ProjectMember, Record, User
+from app.models import Project, ProjectMember, User
 from app.schemas.admin import (
     AdminUserOut,
     AdminUserPage,
@@ -248,7 +248,8 @@ class AdminService:
             last_backup=_last_backup(backup),
             users=await self._count(User, User.deleted_at.is_(None)),
             reviews=await self._count(Project, Project.deleted_at.is_(None)),
-            records=await self._count(Record),
+            # Every review's, not only the admin's own: see the function's migration.
+            records=await self._db.scalar(select(func.instance_record_count())) or 0,
             version=__version__,
         )
 

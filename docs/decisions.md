@@ -989,7 +989,9 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
 - **Health is read, never guessed**: the worker is alive if its arq health check is fresh
   (with its job counts), the queue length is the arq queue's, the disk is where files are
   kept, the database size is PostgreSQL's own, and the last backup is what `make backup`
-  records (item 11), or "none recorded".
+  records (item 11), or "none recorded". The record total is the instance's, counted by
+  a database function that returns only that number: the admin's requests are still held
+  to their own reviews' records by row-level security.
 
 ### Languages (guide 14)
 - **Set up, and the shell moved, not every page at once.** i18next and a typed English

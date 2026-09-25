@@ -11,6 +11,7 @@ from app.models import AuditLog, User
 from tests.auth_helpers import enable_two_factor, login
 from tests.conftest import MemoryMailer, make_client
 from tests.project_helpers import OWNER, REVIEWER, api, create_project, get, person, post
+from tests.screening_helpers import add_records
 
 ADMIN_ROUTES = [
     ("GET", "/admin/users"),
@@ -149,13 +150,20 @@ async def test_registration_and_the_unpaywall_email_change_while_running(
 async def test_health_reports_queue_worker_disk_and_last_backup(
     db_app: FastAPI, db: AsyncSession, mailer: MemoryMailer
 ) -> None:
-    async with person(db_app, mailer, OWNER, ip="10.8.4.1") as admin:
+    async with (
+        person(db_app, mailer, OWNER, ip="10.8.4.1") as admin,
+        person(db_app, mailer, REVIEWER, ip="10.8.4.2") as grace,
+    ):
         await make_admin(db)
+        # A review the admin is not on: its records count all the same, although the
+        # admin's requests cannot read them (row-level security).
+        theirs = (await create_project(grace))["id"]
+        await add_records(db, theirs, 3)
         quiet = (await get(admin, "/admin/health")).json()
         assert quiet["queue"] == {"waiting": 0, "worker_alive": False, "worker_report": {}}
         assert quiet["last_backup"] is None
         assert quiet["database_bytes"] > 0
-        assert quiet["users"] == 1
+        assert (quiet["users"], quiet["reviews"], quiet["records"]) == (2, 1, 3)
 
         redis = db_app.state.redis
         await redis.set(
