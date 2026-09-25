@@ -259,6 +259,28 @@ async def build_review(db_app: FastAPI, db: AsyncSession, t: Any) -> None:
     assert (
         await api(t.owner, "PUT", f"/projects/{t.pid}/rob/{t.records[0]}", rob)
     ).status_code == 200
+    form = (
+        await post(
+            t.owner,
+            f"/projects/{t.pid}/extraction-forms",
+            {
+                "name": "Trial data",
+                "schema": {"fields": [{"key": "n", "label": "N", "type": "number"}]},
+            },
+        )
+    ).json()
+    await post(t.owner, f"/projects/{t.pid}/extraction-forms/{form['id']}/publish")
+    version = (
+        await post(t.owner, f"/projects/{t.pid}/extraction-forms/{form['id']}/versions")
+    ).json()
+    extracted = await api(
+        t.owner,
+        "PUT",
+        f"/projects/{t.pid}/extraction-forms/{form['id']}/entries/{t.records[0]}",
+        {"data": {"n": 120}, "status": "submitted"},
+    )
+    assert extracted.status_code == 200, extracted.text
+    assert version["version"] == 2
 
 
 async def _one(data: bytes) -> Any:
@@ -365,6 +387,20 @@ async def test_a_backup_restores_as_a_whole_new_review(
         assert await db_app.state.storage.read_bytes(pdf.file_key) == tiny_pdf("The included study")
         rob = (await get(other, f"/projects/{new}/rob/summary?tool=rob2")).json()
         assert len(rob["variants"][0]["studies"]) == 1
+        # Its extraction forms keep their versions, and the data extracted with them.
+        forms = (await get(other, f"/projects/{new}/extraction-forms")).json()
+        assert [
+            (f["version"], f["published"], f["family_id"] == forms[0]["id"]) for f in forms
+        ] == [
+            (1, True, True),
+            (2, False, True),
+        ]
+        restored_entry = (
+            await get(
+                other, f"/projects/{new}/extraction-forms/{forms[0]['id']}/entries/{pdf.record_id}"
+            )
+        ).json()
+        assert [e["data"] for e in restored_entry["entries"]] == [{"n": 120}]
         # Its history came with it, and it says it was restored.
         history = set(
             await db.scalars(select(AuditLog.action).where(AuditLog.project_id == new_pid))

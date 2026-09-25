@@ -19,6 +19,8 @@ from app.models.base import Base, Timestamps, UUIDPrimaryKey, pg_enum
 class ExportKind(enum.StrEnum):
     RECORDS = "records"
     BACKUP = "backup"
+    # Extracted data from one form version, long or wide (guide 8.12).
+    EXTRACTION = "extraction"
 
 
 class ExportFormat(enum.StrEnum):

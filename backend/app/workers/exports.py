@@ -44,6 +44,7 @@ from app.services import audit, events
 from app.services.audit import Actor
 from app.services.blinding import sees_others
 from app.services.errors import DomainError
+from app.services.export_extraction import extraction_table
 from app.services.export_records import RecordFilters, headers, record_rows
 from app.spreadsheet import safe_cell
 from app.storage import Storage, new_key
@@ -93,6 +94,8 @@ async def run_export(
 
                 path, rows = await write_backup(db, storage, access)
                 suffix = "backup.zip"
+            elif job.kind is ExportKind.EXTRACTION:
+                path, rows, suffix = await _write_extraction(db, access, job)
             else:
                 path, rows = await _write_records(db, redis, access, job)
                 suffix = (
@@ -173,6 +176,29 @@ async def _write_records(
     if job.format in (ExportFormat.RIS, ExportFormat.BIBTEX):
         return await _citations(job.format, rows, mine=blind)
     raise ExportFailedError(f"Records cannot be exported as {job.format.value}.")
+
+
+async def _write_extraction(
+    db: AsyncSession, access: ProjectAccess, job: ExportJob
+) -> tuple[Path, int, str]:
+    try:
+        table = await extraction_table(db, access, job.filters)
+    except DomainError as error:
+        raise ExportFailedError(error.detail) from error
+    columns = [(header, header) for header in table.headers]
+    batches = _once(table.rows)
+    path, rows = await (
+        _csv(columns, batches) if job.format is ExportFormat.CSV else _xlsx(columns, batches)
+    )
+    layout = str(job.filters.get("layout", "wide"))
+    suffix = (
+        f"extraction-{_slug(table.form.name)}-v{table.form.version}-{layout}.{job.format.value}"
+    )
+    return path, rows, suffix
+
+
+async def _once(rows: list[dict[str, object]]) -> AsyncIterator[list[dict[str, object]]]:
+    yield rows
 
 
 def _flat(value: object) -> object:

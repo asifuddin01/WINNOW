@@ -19,11 +19,21 @@ class RecordFiltersIn(BaseModel):
     duplicates: bool = False
 
 
+class ExtractionExportIn(BaseModel):
+    form_id: uuid.UUID
+    # Long: one row per value (R, Stata). Wide: one row per study and extractor (RevMan).
+    layout: Literal["long", "wide"] = "wide"
+    # Final: the consensus, or the only extraction where there is one; all: every
+    # extractor's submitted data and the consensus, each labelled.
+    which: Literal["final", "all"] = "final"
+
+
 class ExportIn(BaseModel):
     kind: ExportKind = ExportKind.RECORDS
-    # Records: csv, xlsx, ris or bibtex. A backup is always a ZIP.
+    # Records: csv, xlsx, ris or bibtex. Extracted data: csv or xlsx. A backup is a ZIP.
     format: ExportFormat = ExportFormat.CSV
     filters: RecordFiltersIn = Field(default_factory=RecordFiltersIn)
+    extraction: ExtractionExportIn | None = None
 
 
 class ExportOut(BaseModel):

@@ -12,7 +12,7 @@ from arq.connections import ArqRedis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import ExportFormat, ExportJob, ExportKind, JobStatus, ProjectRole
+from app.models import ExportFormat, ExportJob, ExportKind, ExtractionForm, JobStatus, ProjectRole
 from app.schemas.export import ExportIn, ExportOut
 from app.security.permissions import ProjectAccess
 from app.services import audit
@@ -71,16 +71,38 @@ class ExportService:
             if access.role is not ProjectRole.OWNER:
                 raise ForbiddenError("Only the review's owner can make a full backup.")
             fmt = ExportFormat.ZIP
+        elif body.kind is ExportKind.EXTRACTION:
+            if body.format not in (ExportFormat.CSV, ExportFormat.XLSX):
+                raise UnsupportedFormatError("Extracted data exports as CSV or XLSX.")
+            if body.extraction is None:
+                raise UnsupportedFormatError("Say which extraction form to export.")
+            form = await self._db.scalar(
+                select(ExtractionForm.id).where(
+                    ExtractionForm.id == body.extraction.form_id,
+                    ExtractionForm.project_id == access.project_id,
+                )
+            )
+            if form is None:
+                raise NotFoundError("That form is not in this review.")
+            fmt = body.format
         else:
             if body.format not in RECORD_FORMATS:
                 raise UnsupportedFormatError("Records export as CSV, XLSX, RIS or BibTeX.")
             fmt = body.format
+        options = (
+            body.filters.model_dump(mode="json")
+            if body.kind is ExportKind.RECORDS
+            else body.extraction.model_dump(mode="json")
+            if body.kind is ExportKind.EXTRACTION and body.extraction is not None
+            else {}
+        )
         row = ExportJob(
             project_id=access.project_id,
             requested_by=access.user.id,
             kind=body.kind,
             format=fmt,
-            filters=body.filters.model_dump(mode="json") if body.kind is ExportKind.RECORDS else {},
+            # A records export's filters, or an extraction export's form and layout.
+            filters=options,
             status=JobStatus.QUEUED,
         )
         self._db.add(row)

@@ -34,6 +34,7 @@ from app.services.conflicts import ConflictService
 from app.services.dedup import DedupService
 from app.services.errors import NotAuthenticatedError
 from app.services.exports import ExportService
+from app.services.extraction import ExtractionService
 from app.services.fulltext import FulltextService
 from app.services.imports import ImportService
 from app.services.llm import LlmService
@@ -278,6 +279,13 @@ def get_rob(db: SessionDep) -> RobService:
 
 
 RobDep = Annotated[RobService, Depends(get_rob)]
+
+
+def get_extraction(db: SessionDep) -> ExtractionService:
+    return ExtractionService(db)
+
+
+ExtractionDep = Annotated[ExtractionService, Depends(get_extraction)]
 
 
 def get_audit_log(db: SessionDep) -> AuditLogService:

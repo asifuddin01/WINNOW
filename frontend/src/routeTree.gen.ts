@@ -25,11 +25,15 @@ import { Route as AppPPidRouteImport } from './routes/_app/p/$pid'
 import { Route as AppPPidIndexRouteImport } from './routes/_app/p/$pid/index'
 import { Route as AppPPidConflictsRouteImport } from './routes/_app/p/$pid/conflicts'
 import { Route as AppPPidDuplicatesRouteImport } from './routes/_app/p/$pid/duplicates'
+import { Route as AppPPidExtractionRouteImport } from './routes/_app/p/$pid/extraction'
 import { Route as AppPPidImportRouteImport } from './routes/_app/p/$pid/import'
 import { Route as AppPPidRecordsRouteImport } from './routes/_app/p/$pid/records'
 import { Route as AppPPidReportRouteImport } from './routes/_app/p/$pid/report'
 import { Route as AppPPidRobRouteImport } from './routes/_app/p/$pid/rob'
 import { Route as AppPPidSettingsRouteImport } from './routes/_app/p/$pid/settings'
+import { Route as AppPPidExtractionIndexRouteImport } from './routes/_app/p/$pid/extraction/index'
+import { Route as AppPPidExtractionConsensusRouteImport } from './routes/_app/p/$pid/extraction/consensus'
+import { Route as AppPPidExtractionFormsRouteImport } from './routes/_app/p/$pid/extraction/forms'
 import { Route as AppPPidReportIndexRouteImport } from './routes/_app/p/$pid/report/index'
 import { Route as AppPPidReportAuditRouteImport } from './routes/_app/p/$pid/report/audit'
 import { Route as AppPPidReportExportsRouteImport } from './routes/_app/p/$pid/report/exports'
@@ -124,6 +128,11 @@ const AppPPidDuplicatesRoute = AppPPidDuplicatesRouteImport.update({
   path: '/duplicates',
   getParentRoute: () => AppPPidRoute,
 } as any)
+const AppPPidExtractionRoute = AppPPidExtractionRouteImport.update({
+  id: '/extraction',
+  path: '/extraction',
+  getParentRoute: () => AppPPidRoute,
+} as any)
 const AppPPidImportRoute = AppPPidImportRouteImport.update({
   id: '/import',
   path: '/import',
@@ -148,6 +157,22 @@ const AppPPidSettingsRoute = AppPPidSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => AppPPidRoute,
+} as any)
+const AppPPidExtractionIndexRoute = AppPPidExtractionIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppPPidExtractionRoute,
+} as any)
+const AppPPidExtractionConsensusRoute =
+  AppPPidExtractionConsensusRouteImport.update({
+    id: '/consensus',
+    path: '/consensus',
+    getParentRoute: () => AppPPidExtractionRoute,
+  } as any)
+const AppPPidExtractionFormsRoute = AppPPidExtractionFormsRouteImport.update({
+  id: '/forms',
+  path: '/forms',
+  getParentRoute: () => AppPPidExtractionRoute,
 } as any)
 const AppPPidReportIndexRoute = AppPPidReportIndexRouteImport.update({
   id: '/',
@@ -236,12 +261,15 @@ export interface FileRoutesByFullPath {
   '/p/$pid': typeof AppPPidRouteWithChildren
   '/p/$pid/conflicts': typeof AppPPidConflictsRoute
   '/p/$pid/duplicates': typeof AppPPidDuplicatesRoute
+  '/p/$pid/extraction': typeof AppPPidExtractionRouteWithChildren
   '/p/$pid/import': typeof AppPPidImportRoute
   '/p/$pid/records': typeof AppPPidRecordsRoute
   '/p/$pid/report': typeof AppPPidReportRouteWithChildren
   '/p/$pid/rob': typeof AppPPidRobRoute
   '/p/$pid/settings': typeof AppPPidSettingsRouteWithChildren
   '/p/$pid/': typeof AppPPidIndexRoute
+  '/p/$pid/extraction/consensus': typeof AppPPidExtractionConsensusRoute
+  '/p/$pid/extraction/forms': typeof AppPPidExtractionFormsRoute
   '/p/$pid/report/audit': typeof AppPPidReportAuditRoute
   '/p/$pid/report/exports': typeof AppPPidReportExportsRoute
   '/p/$pid/report/methods': typeof AppPPidReportMethodsRoute
@@ -254,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/p/$pid/settings/reasons': typeof AppPPidSettingsReasonsRoute
   '/p/$pid/settings/screening': typeof AppPPidSettingsScreeningRoute
   '/p/$pid/settings/team': typeof AppPPidSettingsTeamRoute
+  '/p/$pid/extraction/': typeof AppPPidExtractionIndexRoute
   '/p/$pid/report/': typeof AppPPidReportIndexRoute
   '/p/$pid/settings/': typeof AppPPidSettingsIndexRoute
 }
@@ -275,6 +304,8 @@ export interface FileRoutesByTo {
   '/p/$pid/records': typeof AppPPidRecordsRoute
   '/p/$pid/rob': typeof AppPPidRobRoute
   '/p/$pid': typeof AppPPidIndexRoute
+  '/p/$pid/extraction/consensus': typeof AppPPidExtractionConsensusRoute
+  '/p/$pid/extraction/forms': typeof AppPPidExtractionFormsRoute
   '/p/$pid/report/audit': typeof AppPPidReportAuditRoute
   '/p/$pid/report/exports': typeof AppPPidReportExportsRoute
   '/p/$pid/report/methods': typeof AppPPidReportMethodsRoute
@@ -287,6 +318,7 @@ export interface FileRoutesByTo {
   '/p/$pid/settings/reasons': typeof AppPPidSettingsReasonsRoute
   '/p/$pid/settings/screening': typeof AppPPidSettingsScreeningRoute
   '/p/$pid/settings/team': typeof AppPPidSettingsTeamRoute
+  '/p/$pid/extraction': typeof AppPPidExtractionIndexRoute
   '/p/$pid/report': typeof AppPPidReportIndexRoute
   '/p/$pid/settings': typeof AppPPidSettingsIndexRoute
 }
@@ -307,12 +339,15 @@ export interface FileRoutesById {
   '/_app/p/$pid': typeof AppPPidRouteWithChildren
   '/_app/p/$pid/conflicts': typeof AppPPidConflictsRoute
   '/_app/p/$pid/duplicates': typeof AppPPidDuplicatesRoute
+  '/_app/p/$pid/extraction': typeof AppPPidExtractionRouteWithChildren
   '/_app/p/$pid/import': typeof AppPPidImportRoute
   '/_app/p/$pid/records': typeof AppPPidRecordsRoute
   '/_app/p/$pid/report': typeof AppPPidReportRouteWithChildren
   '/_app/p/$pid/rob': typeof AppPPidRobRoute
   '/_app/p/$pid/settings': typeof AppPPidSettingsRouteWithChildren
   '/_app/p/$pid/': typeof AppPPidIndexRoute
+  '/_app/p/$pid/extraction/consensus': typeof AppPPidExtractionConsensusRoute
+  '/_app/p/$pid/extraction/forms': typeof AppPPidExtractionFormsRoute
   '/_app/p/$pid/report/audit': typeof AppPPidReportAuditRoute
   '/_app/p/$pid/report/exports': typeof AppPPidReportExportsRoute
   '/_app/p/$pid/report/methods': typeof AppPPidReportMethodsRoute
@@ -325,6 +360,7 @@ export interface FileRoutesById {
   '/_app/p/$pid/settings/reasons': typeof AppPPidSettingsReasonsRoute
   '/_app/p/$pid/settings/screening': typeof AppPPidSettingsScreeningRoute
   '/_app/p/$pid/settings/team': typeof AppPPidSettingsTeamRoute
+  '/_app/p/$pid/extraction/': typeof AppPPidExtractionIndexRoute
   '/_app/p/$pid/report/': typeof AppPPidReportIndexRoute
   '/_app/p/$pid/settings/': typeof AppPPidSettingsIndexRoute
 }
@@ -345,12 +381,15 @@ export interface FileRouteTypes {
     | '/p/$pid'
     | '/p/$pid/conflicts'
     | '/p/$pid/duplicates'
+    | '/p/$pid/extraction'
     | '/p/$pid/import'
     | '/p/$pid/records'
     | '/p/$pid/report'
     | '/p/$pid/rob'
     | '/p/$pid/settings'
     | '/p/$pid/'
+    | '/p/$pid/extraction/consensus'
+    | '/p/$pid/extraction/forms'
     | '/p/$pid/report/audit'
     | '/p/$pid/report/exports'
     | '/p/$pid/report/methods'
@@ -363,6 +402,7 @@ export interface FileRouteTypes {
     | '/p/$pid/settings/reasons'
     | '/p/$pid/settings/screening'
     | '/p/$pid/settings/team'
+    | '/p/$pid/extraction/'
     | '/p/$pid/report/'
     | '/p/$pid/settings/'
   fileRoutesByTo: FileRoutesByTo
@@ -384,6 +424,8 @@ export interface FileRouteTypes {
     | '/p/$pid/records'
     | '/p/$pid/rob'
     | '/p/$pid'
+    | '/p/$pid/extraction/consensus'
+    | '/p/$pid/extraction/forms'
     | '/p/$pid/report/audit'
     | '/p/$pid/report/exports'
     | '/p/$pid/report/methods'
@@ -396,6 +438,7 @@ export interface FileRouteTypes {
     | '/p/$pid/settings/reasons'
     | '/p/$pid/settings/screening'
     | '/p/$pid/settings/team'
+    | '/p/$pid/extraction'
     | '/p/$pid/report'
     | '/p/$pid/settings'
   id:
@@ -415,12 +458,15 @@ export interface FileRouteTypes {
     | '/_app/p/$pid'
     | '/_app/p/$pid/conflicts'
     | '/_app/p/$pid/duplicates'
+    | '/_app/p/$pid/extraction'
     | '/_app/p/$pid/import'
     | '/_app/p/$pid/records'
     | '/_app/p/$pid/report'
     | '/_app/p/$pid/rob'
     | '/_app/p/$pid/settings'
     | '/_app/p/$pid/'
+    | '/_app/p/$pid/extraction/consensus'
+    | '/_app/p/$pid/extraction/forms'
     | '/_app/p/$pid/report/audit'
     | '/_app/p/$pid/report/exports'
     | '/_app/p/$pid/report/methods'
@@ -433,6 +479,7 @@ export interface FileRouteTypes {
     | '/_app/p/$pid/settings/reasons'
     | '/_app/p/$pid/settings/screening'
     | '/_app/p/$pid/settings/team'
+    | '/_app/p/$pid/extraction/'
     | '/_app/p/$pid/report/'
     | '/_app/p/$pid/settings/'
   fileRoutesById: FileRoutesById
@@ -562,6 +609,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPPidDuplicatesRouteImport
       parentRoute: typeof AppPPidRoute
     }
+    '/_app/p/$pid/extraction': {
+      id: '/_app/p/$pid/extraction'
+      path: '/extraction'
+      fullPath: '/p/$pid/extraction'
+      preLoaderRoute: typeof AppPPidExtractionRouteImport
+      parentRoute: typeof AppPPidRoute
+    }
     '/_app/p/$pid/import': {
       id: '/_app/p/$pid/import'
       path: '/import'
@@ -596,6 +650,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/p/$pid/settings'
       preLoaderRoute: typeof AppPPidSettingsRouteImport
       parentRoute: typeof AppPPidRoute
+    }
+    '/_app/p/$pid/extraction/': {
+      id: '/_app/p/$pid/extraction/'
+      path: '/'
+      fullPath: '/p/$pid/extraction/'
+      preLoaderRoute: typeof AppPPidExtractionIndexRouteImport
+      parentRoute: typeof AppPPidExtractionRoute
+    }
+    '/_app/p/$pid/extraction/consensus': {
+      id: '/_app/p/$pid/extraction/consensus'
+      path: '/consensus'
+      fullPath: '/p/$pid/extraction/consensus'
+      preLoaderRoute: typeof AppPPidExtractionConsensusRouteImport
+      parentRoute: typeof AppPPidExtractionRoute
+    }
+    '/_app/p/$pid/extraction/forms': {
+      id: '/_app/p/$pid/extraction/forms'
+      path: '/forms'
+      fullPath: '/p/$pid/extraction/forms'
+      preLoaderRoute: typeof AppPPidExtractionFormsRouteImport
+      parentRoute: typeof AppPPidExtractionRoute
     }
     '/_app/p/$pid/report/': {
       id: '/_app/p/$pid/report/'
@@ -698,6 +773,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppPPidExtractionRouteChildren {
+  AppPPidExtractionConsensusRoute: typeof AppPPidExtractionConsensusRoute
+  AppPPidExtractionFormsRoute: typeof AppPPidExtractionFormsRoute
+  AppPPidExtractionIndexRoute: typeof AppPPidExtractionIndexRoute
+}
+
+const AppPPidExtractionRouteChildren: AppPPidExtractionRouteChildren = {
+  AppPPidExtractionConsensusRoute: AppPPidExtractionConsensusRoute,
+  AppPPidExtractionFormsRoute: AppPPidExtractionFormsRoute,
+  AppPPidExtractionIndexRoute: AppPPidExtractionIndexRoute,
+}
+
+const AppPPidExtractionRouteWithChildren =
+  AppPPidExtractionRoute._addFileChildren(AppPPidExtractionRouteChildren)
+
 interface AppPPidReportRouteChildren {
   AppPPidReportAuditRoute: typeof AppPPidReportAuditRoute
   AppPPidReportExportsRoute: typeof AppPPidReportExportsRoute
@@ -745,6 +835,7 @@ const AppPPidSettingsRouteWithChildren = AppPPidSettingsRoute._addFileChildren(
 interface AppPPidRouteChildren {
   AppPPidConflictsRoute: typeof AppPPidConflictsRoute
   AppPPidDuplicatesRoute: typeof AppPPidDuplicatesRoute
+  AppPPidExtractionRoute: typeof AppPPidExtractionRouteWithChildren
   AppPPidImportRoute: typeof AppPPidImportRoute
   AppPPidRecordsRoute: typeof AppPPidRecordsRoute
   AppPPidReportRoute: typeof AppPPidReportRouteWithChildren
@@ -758,6 +849,7 @@ interface AppPPidRouteChildren {
 const AppPPidRouteChildren: AppPPidRouteChildren = {
   AppPPidConflictsRoute: AppPPidConflictsRoute,
   AppPPidDuplicatesRoute: AppPPidDuplicatesRoute,
+  AppPPidExtractionRoute: AppPPidExtractionRouteWithChildren,
   AppPPidImportRoute: AppPPidImportRoute,
   AppPPidRecordsRoute: AppPPidRecordsRoute,
   AppPPidReportRoute: AppPPidReportRouteWithChildren,

@@ -4,7 +4,7 @@ Each carries the HTTP status and a stable `code` the frontend can switch on. Mes
 written for the person reading them and never reveal whether an account exists.
 """
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 
 class DomainError(Exception):
@@ -12,9 +12,11 @@ class DomainError(Exception):
     code: ClassVar[str] = "invalid_request"
     message: ClassVar[str] = "The request could not be completed."
 
-    def __init__(self, detail: str | None = None) -> None:
+    def __init__(self, detail: str | None = None, **extensions: Any) -> None:
         super().__init__(detail or self.message)
         self.detail = detail or self.message
+        # Extra members of the problem response (RFC 9457 3.2), e.g. problems per field.
+        self.extensions = extensions
 
 
 class InvalidCredentialsError(DomainError):

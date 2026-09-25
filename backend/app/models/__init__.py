@@ -4,6 +4,12 @@ from app.models.audit import AuditLog
 from app.models.base import Base
 from app.models.dedup import ClusterStatus, DupCluster, DupClusterMember
 from app.models.export import ExportFormat, ExportJob, ExportKind, JobStatus, RestoreJob
+from app.models.extraction import (
+    EntryStatus,
+    ExtractionConsensus,
+    ExtractionEntry,
+    ExtractionForm,
+)
 from app.models.fulltext import (
     BatchStatus,
     Fulltext,
@@ -75,10 +81,14 @@ __all__ = [
     "DupClusterMember",
     "EmailToken",
     "EmailTokenPurpose",
+    "EntryStatus",
     "ExclusionReason",
     "ExportFormat",
     "ExportJob",
     "ExportKind",
+    "ExtractionConsensus",
+    "ExtractionEntry",
+    "ExtractionForm",
     "FileFormat",
     "FinalDecision",
     "FullTextStatus",

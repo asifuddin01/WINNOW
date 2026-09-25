@@ -30,6 +30,9 @@ from app.models import (
     DupCluster,
     DupClusterMember,
     ExclusionReason,
+    ExtractionConsensus,
+    ExtractionEntry,
+    ExtractionForm,
     Fulltext,
     ImportBatch,
     Keyword,
@@ -129,6 +132,29 @@ TABLES: tuple[TableSpec, ...] = (
     TableSpec(
         table_of(RobAssessment),
         {"project_id": "project", "record_id": "records", "user_id": "people"},
+    ),
+    # A form's versions share a family: the first version's id, so it maps like a row.
+    TableSpec(
+        table_of(ExtractionForm),
+        {"project_id": "project", "family_id": "extraction_forms", "created_by": "people"},
+    ),
+    TableSpec(
+        table_of(ExtractionEntry),
+        {
+            "project_id": "project",
+            "form_id": "extraction_forms",
+            "record_id": "records",
+            "user_id": "people",
+        },
+    ),
+    TableSpec(
+        table_of(ExtractionConsensus),
+        {
+            "project_id": "project",
+            "form_id": "extraction_forms",
+            "record_id": "records",
+            "resolved_by": "people",
+        },
     ),
     # The review's history. Its ids are the log's own, so they are not carried.
     TableSpec(table_of(AuditLog), {"project_id": "project", "user_id": "people"}, own_id=False),

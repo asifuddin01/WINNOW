@@ -1,5 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArchiveIcon, DownloadIcon, FileSpreadsheetIcon, LoaderIcon } from "lucide-react";
+import {
+  ArchiveIcon,
+  ClipboardListIcon,
+  DownloadIcon,
+  FileSpreadsheetIcon,
+  LoaderIcon,
+} from "lucide-react";
 import { useId, useState, type ReactNode, type SyntheticEvent } from "react";
 
 import {
@@ -11,6 +17,7 @@ import {
   type ExportIn,
   type ExportJob,
 } from "@/api/exports";
+import { formsQuery } from "@/api/extraction";
 import { facetsQuery } from "@/api/records";
 import { SelectField } from "@/components/forms/SelectField";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useProjectMutation } from "@/features/projects/use-project-mutation";
 import { fileSize, timeAgo } from "@/lib/format";
 
-type Kind = "records" | "backup";
+type Kind = "records" | "backup" | "extraction";
 type RecordFormat = "csv" | "xlsx" | "ris" | "bibtex";
 
 const FORMATS: { value: RecordFormat; label: string }[] = [
@@ -69,6 +76,12 @@ function ExportForm({ pid, isOwner }: { pid: string; isOwner: boolean }) {
   const id = useId();
   const { data: facets } = useQuery(facetsQuery(pid));
   const [kind, setKind] = useState<Kind>("records");
+  const { data: forms } = useQuery(formsQuery(pid));
+  const published = (forms ?? []).filter((form) => form.published);
+  const [formId, setFormId] = useState<string | null>(null);
+  const [layout, setLayout] = useState<"wide" | "long">("wide");
+  const [which, setWhich] = useState<"final" | "all">("final");
+  const [sheet, setSheet] = useState<"csv" | "xlsx">("csv");
   const [format, setFormat] = useState<RecordFormat>("csv");
   const [status, setStatus] = useState<string>(ANY);
   const [fullText, setFullText] = useState<string>(ANY);
@@ -81,23 +94,26 @@ function ExportForm({ pid, isOwner }: { pid: string; isOwner: boolean }) {
 
   const onSubmit = (event: SyntheticEvent) => {
     event.preventDefault();
+    const form = formId ?? published.at(-1)?.id;
     make.mutate(
       kind === "backup"
         ? { kind: "backup", format: "zip" }
-        : {
-            kind: "records",
-            format,
-            filters: {
-              q: "",
-              status:
-                status === ANY ? null : (status as NonNullable<ExportIn["filters"]>["status"]),
-              full_text:
-                fullText === ANY
-                  ? null
-                  : (fullText as NonNullable<ExportIn["filters"]>["full_text"]),
-              duplicates,
+        : kind === "extraction" && form
+          ? { kind: "extraction", format: sheet, extraction: { form_id: form, layout, which } }
+          : {
+              kind: "records",
+              format,
+              filters: {
+                q: "",
+                status:
+                  status === ANY ? null : (status as NonNullable<ExportIn["filters"]>["status"]),
+                full_text:
+                  fullText === ANY
+                    ? null
+                    : (fullText as NonNullable<ExportIn["filters"]>["full_text"]),
+                duplicates,
+              },
             },
-          },
     );
   };
 
@@ -137,6 +153,18 @@ function ExportForm({ pid, isOwner }: { pid: string; isOwner: boolean }) {
           title="Records"
           detail="The records and your review's decisions, reasons and labels, as the records table shows them."
         />
+        {published.length > 0 && (
+          <Choice
+            name={`${id}-kind`}
+            checked={kind === "extraction"}
+            onChange={() => {
+              setKind("extraction");
+            }}
+            icon={<ClipboardListIcon aria-hidden="true" className="size-5" />}
+            title="Extracted data"
+            detail="One form's data, long (one row per value) or wide (one row per study), for R, Stata or RevMan."
+          />
+        )}
         {isOwner && (
           <Choice
             name={`${id}-kind`}
@@ -177,6 +205,45 @@ function ExportForm({ pid, isOwner }: { pid: string; isOwner: boolean }) {
             />
             Include records merged as duplicates, with the record each was merged into
           </label>
+        </div>
+      ) : kind === "extraction" ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <SelectField
+            label="Form"
+            value={formId ?? published.at(-1)?.id ?? ""}
+            options={published.map((form) => ({
+              value: form.id,
+              label: `${form.name}, version ${form.version}`,
+            }))}
+            onChange={setFormId}
+          />
+          <SelectField
+            label="Format"
+            value={sheet}
+            options={[
+              { value: "csv", label: "CSV" },
+              { value: "xlsx", label: "Excel (XLSX)" },
+            ]}
+            onChange={setSheet}
+          />
+          <SelectField
+            label="Layout"
+            value={layout}
+            options={[
+              { value: "wide", label: "Wide: a row per study (RevMan, spreadsheets)" },
+              { value: "long", label: "Long: a row per value (R, Stata)" },
+            ]}
+            onChange={setLayout}
+          />
+          <SelectField
+            label="Which data"
+            value={which}
+            options={[
+              { value: "final", label: "Final: the consensus, or the only extraction" },
+              { value: "all", label: "All: every extractor and the consensus" },
+            ]}
+            onChange={setWhich}
+          />
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">
@@ -242,7 +309,10 @@ const STATUS_WORDS: Record<ExportJob["status"], string> = {
 };
 
 function JobRow({ pid, job }: { pid: string; job: ExportJob }) {
-  const what = job.kind === "backup" ? "Full backup" : `Records (${FORMAT_NAMES[job.format]})`;
+  const what =
+    job.kind === "backup"
+      ? "Full backup"
+      : `${job.kind === "extraction" ? "Extracted data" : "Records"} (${FORMAT_NAMES[job.format]})`;
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card p-3">
       <div className="grid min-w-0 flex-1 gap-0.5">

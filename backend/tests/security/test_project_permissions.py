@@ -59,6 +59,8 @@ REVIEWER_WRITES = VIEWER_WRITES | {
     ("POST", "/api/v1/projects/{pid}/records/{rid}/fulltext/fetch-oa"),
     ("POST", "/api/v1/projects/{pid}/records/{rid}/fulltext/not-retrievable"),
     ("DELETE", "/api/v1/projects/{pid}/records/{rid}/fulltext/not-retrievable"),
+    # Extracting data from a study is a reviewer's own work (guide 8.12), like assessing it.
+    ("PUT", "/api/v1/projects/{pid}/extraction-forms/{fid}/entries/{rid}"),
     ("POST", "/api/v1/projects/{pid}/fulltext/{fid}/annotations"),
     ("PATCH", "/api/v1/projects/{pid}/fulltext/{fid}/annotations/{aid}"),
     ("DELETE", "/api/v1/projects/{pid}/fulltext/{fid}/annotations/{aid}"),

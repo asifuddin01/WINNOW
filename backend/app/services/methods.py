@@ -6,6 +6,7 @@ a blinded reader's text leaves those sentences out.
 """
 
 from datetime import date
+from typing import Literal
 
 from sqlalchemy import exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +15,8 @@ from app import rob
 from app.models import (
     ConflictResolution,
     Decision,
+    EntryStatus,
+    ExtractionEntry,
     ImportBatch,
     ImportStatus,
     LlmSuggestion,
@@ -99,6 +102,7 @@ class MethodsService:
             if flow
             else (),
             studies_included=flow.studies_included if flow else None,
+            extraction=await self._extraction(access) if told else None,
             rob_tools=tools,
             rob_duplicate=duplicate if told else None,
         )
@@ -172,6 +176,22 @@ class MethodsService:
             .order_by(LlmSuggestion.model)
         )
         return AiUse(records=records, models=tuple(models))
+
+    async def _extraction(self, access: ProjectAccess) -> Literal["single", "duplicate"] | None:
+        """Whether data was extracted once per study, or by two people (any study will do)."""
+        per_study = (
+            select(func.count().label("people"))
+            .where(
+                ExtractionEntry.project_id == access.project_id,
+                ExtractionEntry.status.in_([EntryStatus.SUBMITTED, EntryStatus.VERIFIED]),
+            )
+            .group_by(ExtractionEntry.form_id, ExtractionEntry.record_id)
+            .subquery()
+        )
+        most = await self._db.scalar(select(func.max(per_study.c.people)))
+        if not most:
+            return None
+        return "duplicate" if most > 1 else "single"
 
     async def _rob(self, access: ProjectAccess) -> tuple[tuple[str, ...], bool]:
         """The tools studies were assessed with, and whether any study was assessed by

@@ -94,3 +94,16 @@ export function robSearch(search: Record<string, unknown>): { tool?: RobToolKey;
       /^[0-9a-f-]{36}$/i.test(search.study) && { study: search.study }),
   };
 }
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** The extraction pages: which form version, and which study is open. */
+export function extractionSearch(search: Record<string, unknown>): {
+  form?: string;
+  study?: string;
+} {
+  return {
+    ...(typeof search.form === "string" && UUID.test(search.form) && { form: search.form }),
+    ...(typeof search.study === "string" && UUID.test(search.study) && { study: search.study }),
+  };
+}

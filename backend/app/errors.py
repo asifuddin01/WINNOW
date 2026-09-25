@@ -96,7 +96,11 @@ async def _problem_error(request: Request, error: Exception) -> JSONResponse:
 async def _domain_error(request: Request, error: Exception) -> JSONResponse:
     exc = cast("DomainError", error)
     problem = Problem(
-        title=HTTPStatus(exc.status).phrase, status=exc.status, detail=exc.detail, code=exc.code
+        title=HTTPStatus(exc.status).phrase,
+        status=exc.status,
+        detail=exc.detail,
+        code=exc.code,
+        **exc.extensions,
     )
     return problem_response(request, problem)
 
