@@ -5,17 +5,33 @@
 Winnow is a free, open, self-hostable platform for systematic, scoping and rapid reviews:
 import → deduplicate → screen → resolve → full text → extract → appraise → report (PRISMA 2020).
 
-> **Status:** Phase 8 (extraction, risk of bias, reporting). Accounts and the security
-> core, reviews with their team and setup, importing up to 20 search exports at once, the
-> records table, merging duplicates, title-and-abstract screening with blind mode and
-> conflict resolution, relevance ranking with a stopping helper, optional AI suggestions,
-> full-text screening with scanned PDFs and a viewer, versioned extraction forms with dual
-> extraction and consensus, risk of bias (RoB 2, ROBINS-I, NOS, QUADAS-2) with its plots,
-> the PRISMA 2020 diagram, agreement statistics, the methods text, exports (CSV, XLSX,
-> RIS, BibTeX), full backup and restore, and the audit log are in place; hardening and
-> deployment arrive in Phase 9. See [CHANGELOG.md](CHANGELOG.md), the
-> [ranking benchmark](docs/ranking-benchmark.md) and the
-> build plan in [WINNOW_BUILD_GUIDE.md](WINNOW_BUILD_GUIDE.md), Section 17.
+> **Status:** Phase 9, launch readiness. Winnow covers the whole review:
+>
+> - Import up to 20 search exports at once, then merge duplicates.
+> - Screen titles and abstracts, blind or not, in relevance order, with a stopping helper
+>   and optional AI suggestions.
+> - Resolve conflicts.
+> - Screen full texts, with scanned PDFs.
+> - Extract data with versioned forms, twice where needed, and reach consensus.
+> - Assess risk of bias with RoB 2, ROBINS-I, NOS or QUADAS-2.
+> - Report: the PRISMA 2020 diagram, agreement statistics, the methods text, exports, and
+>   a full backup that restores anywhere.
+>
+> Phase 9 added:
+>
+> - The command palette, notifications, presence and the instance admin panel.
+> - A production stack with HTTPS, and encrypted instance backups whose restore is tested.
+> - Audits against the guide's targets: accessibility (WCAG 2.2 AA), speed, a
+>   50-reviewer load test and an OWASP ZAP scan.
+>
+> **Start here:**
+>
+> - [docs/user-guide.md](docs/user-guide.md): using Winnow
+> - [docs/deploy.md](docs/deploy.md): running it on a server
+> - [docs/performance.md](docs/performance.md) and
+>   [docs/accessibility.md](docs/accessibility.md): the audits
+> - [CHANGELOG.md](CHANGELOG.md), and the build plan in
+>   [WINNOW_BUILD_GUIDE.md](WINNOW_BUILD_GUIDE.md), Section 17
 
 ## Run it
 
@@ -91,7 +107,10 @@ Health: `GET /api/v1/healthz` (process is up) and `GET /api/v1/readyz` (database
 backend/    FastAPI app (app/), Alembic migrations, tests (unit/, integration/, security/)
 frontend/   React + TypeScript + Tailwind + shadcn/ui, TanStack Router and Query
 e2e/        Playwright tests
-docs/       decisions.md and, later, user, admin and security guides
+docs/       the user guide, deployment, the audits, decisions.md
+ops/        instance backups, restore and the restore test
+load/       the k6 load test
+security/   the ZAP baseline's verdict
 ```
 
 Project conventions live in [CLAUDE.md](CLAUDE.md); design decisions and their reasons in
