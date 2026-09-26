@@ -33,6 +33,11 @@ All notable changes, one section per build phase (guide Section 17).
   - An end-to-end accessibility sweep: 43 pages × 4 breakpoints × 2 themes.
 - Documentation: docs/user-guide.md, docs/deploy.md, docs/performance.md,
   docs/accessibility.md.
+- Optional items:
+  - Sign in with ORCID, for accounts that link their iD from Account. It uses OpenID
+    Connect with a nonce, and the second factor still applies.
+  - Zotero RDF import: references with their journal or book, DOIs and PubMed ids from
+    "Extra", organisations as authors. Attachments, notes and collections are skipped.
 
 ### Fixed
 - Conflict notices failed once PostgreSQL planned their insert generically, after five

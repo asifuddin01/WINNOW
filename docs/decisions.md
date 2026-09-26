@@ -1091,3 +1091,38 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
 - **The restore test runs as its own compose project** (`winnow-restoretest`). It destroys
   its volumes as part of the test and never touches anyone's data. CI runs it monthly and
   when the backup code or the schema changes.
+
+### Sign in with ORCID (guide 8.1, optional)
+- **An ORCID iD signs in only to an account whose owner linked it,** from Account while
+  signed in. ORCID shares no email address, so it can neither find an existing account
+  nor create a new one that email confirmation, invitations and password resets depend
+  on. Asking for an email address after ORCID would add a second sign-up path for little
+  gain. A sign-in with an iD nobody linked says so, and how to link one.
+- **OpenID Connect with a nonce, and no PKCE,** which ORCID does not offer. The state is
+  bound to the browser by a cookie, as for Google. The nonce in the signed ID token ties
+  the code to the sign-in this browser started, so a code taken from someone else's
+  sign-in does not work here.
+- **A link finishes only in the session that started it.** On a shared computer, someone
+  who signs in while ORCID's page is open must not end up with their iD on the first
+  person's account.
+- **One iD per account and one account per iD.** Linking a second iD replaces the first;
+  an iD already linked elsewhere is refused.
+- **Google and ORCID share the code after the provider answers:** the second factor still
+  applies, a disabled account stays out, and the session rotates. Each provider keeps its
+  own start, callback and two-factor endpoint, and a sign-in started with one cannot be
+  finished at the other.
+- **`ORCID_BASE_URL` chooses orcid.org or ORCID's sandbox,** and nothing else, so a typo
+  cannot send sign-ins to another site.
+
+### Zotero RDF import (guide 8.3, optional)
+- **Every top-level node with a Zotero item type is a reference,** except attachments and
+  notes. Collections, journals, books and notes have no item type and are skipped.
+- **The journal or book a reference belongs to is read nested or pointed at.** Zotero
+  nests it, but RDF allows a separate node anywhere in the file; a first pass collects
+  those only when the file points at any.
+- **Identifiers are read where Zotero puts them:** a DOI on the journal node, or in
+  "Extra" for item types without a DOI field; PubMed ids in "Extra", or from a PubMed
+  link.
+- **A name with no given name is Zotero's single-field name** (an organisation) and is
+  kept as written, not turned into "Organization, World Health".
+
