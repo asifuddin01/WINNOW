@@ -1,0 +1,186 @@
+# Production stack (guide 16): one server, `make prod-up` (or `docker compose -f
+# docker-compose.prod.yml up -d --build`). docs/deploy.md walks through it.
+#
+# Only Caddy is published: 80 and 443, TCP and UDP (HTTP/3). It obtains and renews HTTPS
+# for SITE_ADDRESS by itself. Secrets come from .env, which never leaves the server.
+name: winnow-prod
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-backend: &backend
+  build:
+    context: ./backend
+    target: prod
+  image: winnow-api:local
+  # The server's secrets; another file for a trial run (docs/deploy.md).
+  env_file: ${WINNOW_ENV_FILE:-.env}
+  environment:
+    WINNOW_ENV: production
+    CLAMAV_HOST: ${CLAMAV_HOST-clamav}
+  volumes:
+    - uploads:/data/uploads
+  restart: unless-stopped
+  logging: *logging
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  db:
+    image: postgres:16-alpine
+    # Docker's default 64 MB of /dev/shm is too little for PostgreSQL's parallel workers.
+    shm_size: 256mb
+    # For the guide's smallest server (2 vCPU, 4 GB, SSD), which also runs ClamAV and the
+    # worker. Raise PG_SHARED_BUFFERS to a quarter of the memory on a bigger one.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${PG_SHARED_BUFFERS:-512MB}
+      - -c
+      - effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-1536MB}
+      - -c
+      - work_mem=8MB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - max_wal_size=2GB
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-winnow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-winnow}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    logging: *logging
+
+  redis:
+    image: redis:7-alpine
+    # Queued jobs and sessions survive a restart.
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    logging: *logging
+
+  clamav:
+    image: clamav/clamav-debian:1.4
+    environment:
+      CLAMD_CONF_StreamMaxLength: 100M
+      CLAMD_CONF_ConcurrentDatabaseReload: "no"
+    volumes:
+      - clamav:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 40
+      start_period: 300s
+    restart: unless-stopped
+    logging: *logging
+
+  # One-shot: brings the database to the latest migration before the API starts.
+  migrate:
+    <<: *backend
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+
+  api:
+    <<: *backend
+    environment:
+      WINNOW_ENV: production
+      CLAMAV_HOST: ${CLAMAV_HOST-clamav}
+      # Guide 13: two Uvicorn workers per core (uvicorn reads WEB_CONCURRENCY).
+      WEB_CONCURRENCY: ${API_WORKERS:-4}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    <<: *backend
+    command: ["arq", "app.workers.settings.WorkerSettings"]
+    # Background work yields the CPU to people waiting on the API.
+    cpu_shares: 256
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import os, sys, redis; sys.exit(0 if redis.Redis.from_url(os.environ['REDIS_URL']).exists('arq:queue:health-check') else 1)"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: ./frontend
+      target: prod
+    image: winnow-web:local
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    logging: *logging
+
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS in .env, e.g. winnow.example.org}
+      WEB_UPSTREAM: web:8080
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+      - "${HTTPS_PORT:-443}:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    restart: unless-stopped
+    logging: *logging
+
+volumes:
+  pgdata:
+  redisdata:
+  uploads:
+  clamav:
+  caddy_data:
+  caddy_config:

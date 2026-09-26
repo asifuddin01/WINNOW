@@ -1,8 +1,8 @@
-# Edge proxy (guide 4, 12.5). Development serves plain HTTP on :8080; production (Phase 9)
-# sets SITE_ADDRESS to a domain and Caddy obtains HTTPS automatically.
+# Edge proxy (guide 4, 12.5). Development serves plain HTTP on :8080 (an address without a
+# host name never gets HTTPS); production sets SITE_ADDRESS to a domain and Caddy obtains
+# and renews its certificate automatically (docker-compose.prod.yml).
 {
 	admin off
-	auto_https off
 }
 
 {$SITE_ADDRESS::8080} {
@@ -57,9 +57,10 @@
 	# the development stack adds 'unsafe-inline' for Vite's hot-reload preamble.
 	handle {
 		header Content-Security-Policy "default-src 'self'; script-src {$CSP_SCRIPT_SRC:'self'}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self' blob:"
-		# Vite only answers hosts it knows; present ourselves as its service name so any
-		# address that reaches Caddy (localhost, a LAN IP for phone testing) works.
-		reverse_proxy web:5173 {
+		# The built app in production (nginx, web:8080); Vite in development, which only
+		# answers hosts it knows, so present ourselves as its service name: any address
+		# that reaches Caddy (localhost, a LAN IP for phone testing) then works.
+		reverse_proxy {$WEB_UPSTREAM:web:5173} {
 			header_up Host {upstream_hostport}
 		}
 	}

@@ -15,7 +15,7 @@ API_NO_DEPS := $(COMPOSE) run --rm --no-deps api
 WEB := $(COMPOSE) run --rm --no-deps web
 
 .DEFAULT_GOAL := help
-.PHONY: help env dev up local down logs ps build migrate revision seed seed-large perf load zap \
+.PHONY: help env dev up local down logs ps build migrate revision seed seed-large perf load zap prod-up prod-down prod-logs prod-create-admin \
 	test test-backend test-frontend e2e lint typecheck format check api-types size clean create-admin
 
 help: ## List the targets
@@ -80,6 +80,21 @@ load: .env ## k6: 50 reviewers deciding every 3 s for 10 min (guide 13); makes a
 	$(API) python -m benchmarks.load_setup make $(if $(reviewers),--reviewers $(reviewers))
 	$(COMPOSE) --profile load run --rm -e DURATION=$(or $(duration),10m) k6; status=$$?; \
 		$(API) python -m benchmarks.load_setup clear; exit $$status
+
+PROD := $(COMPOSE) -f docker-compose.prod.yml
+
+prod-up: ## Production: build and start docker-compose.prod.yml, wait until healthy (docs/deploy.md)
+	$(PROD) up -d --build --wait
+
+prod-create-admin: ## Production: the first administrator (asks for the password): make prod-create-admin email=… name="…"
+	@test -n "$(email)" -a -n "$(name)" || (echo 'Usage: make prod-create-admin email=you@example.org name="Your Name"' && exit 1)
+	$(PROD) run --rm api python -m app.cli create-admin --email "$(email)" --name "$(name)"
+
+prod-down: ## Production: stop the stack (data volumes are kept)
+	$(PROD) down
+
+prod-logs: ## Production: follow the logs
+	$(PROD) logs -f --tail=100
 
 zap: ## OWASP ZAP baseline against the running stack (guide 12); fails on a high-risk alert
 	mkdir -p zap-report && chmod 777 zap-report
