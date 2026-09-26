@@ -121,6 +121,19 @@ async def test_upload_preview_confirm_and_read(
         assert "nurs" in vector  # stemmed, weighted A for the title
 
 
+async def test_a_zotero_rdf_library_imports(
+    db_app: FastAPI, db: AsyncSession, mailer: MemoryMailer
+) -> None:
+    async with person(db_app, mailer, OWNER) as owner:
+        pid = (await create_project(owner))["id"]
+        batch = await upload(owner, pid, "zotero.rdf")
+        assert batch["file_format"] == "zotero_rdf"
+        confirmed = await post(owner, f"/projects/{pid}/imports/{batch['id']}/confirm", {})
+        assert confirmed.status_code == 200
+        # Three references; the attachment, note and collection are not records.
+        assert await run(db_app, batch["id"]) == {"imported": 3, "problems": 1}
+
+
 async def test_a_file_bigger_than_a_chunk_arrives_whole(
     db_app: FastAPI, mailer: MemoryMailer, monkeypatch: pytest.MonkeyPatch
 ) -> None:

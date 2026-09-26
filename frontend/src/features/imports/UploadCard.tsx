@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { DATABASE_OPTIONS, databaseFor } from "@/features/imports/databases";
 import { cn } from "@/lib/utils";
 
-const ACCEPTED = ".ris,.bib,.bibtex,.nbib,.xml,.csv,.tsv,.txt";
+const ACCEPTED = ".ris,.bib,.bibtex,.nbib,.xml,.rdf,.csv,.tsv,.txt";
 
 interface Chosen {
   file: File;
@@ -104,8 +104,8 @@ export function UploadCard({
         </span>
         <p className="text-sm font-medium">Drop your search exports here, or choose files</p>
         <p className="max-w-md text-xs text-muted-foreground">
-          Up to {limit} files at once. RIS, BibTeX, PubMed NBIB, PubMed XML, EndNote XML or CSV —
-          Winnow works out which one each file is from the file itself.
+          Up to {limit} files at once. RIS, BibTeX, PubMed NBIB, PubMed XML, EndNote XML, Zotero RDF
+          or CSV — Winnow works out which one each file is from the file itself.
         </p>
         <input
           ref={input}

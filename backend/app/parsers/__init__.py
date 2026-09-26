@@ -6,7 +6,7 @@ entry never stops an import. The upload cap (MAX_UPLOAD_MB) bounds how much text
 
 from collections.abc import Iterator
 
-from app.parsers import bibtex, csv_parser, endnote_xml, nbib, pubmed_xml, ris
+from app.parsers import bibtex, csv_parser, endnote_xml, nbib, pubmed_xml, ris, zotero_rdf
 from app.parsers.common import ParsedRecord, ParseItem, ParseProblem
 
 # Value → the module that reads it. The values match the FileFormat column.
@@ -17,6 +17,7 @@ FORMATS = {
     "pubmed_xml": pubmed_xml,
     "endnote_xml": endnote_xml,
     "csv": csv_parser,
+    "zotero_rdf": zotero_rdf,
 }
 EXTENSIONS = {
     ".ris": "ris",
@@ -25,6 +26,7 @@ EXTENSIONS = {
     ".nbib": "nbib",
     ".csv": "csv",
     ".tsv": "csv",
+    ".rdf": "zotero_rdf",
 }
 SNIFF = 8 * 1024
 
@@ -39,6 +41,8 @@ def detect(filename: str, text: str) -> str | None:
     if stripped.startswith("<"):
         if "PubmedArticle" in head or "MedlineCitation" in head:
             return "pubmed_xml"
+        if "zotero.org/namespaces/export" in head or "purl.org/net/biblio" in head:
+            return "zotero_rdf"
         if "<records" in head or "EndNote" in head or "<xml>" in stripped[:200]:
             return "endnote_xml"
         return None

@@ -33,6 +33,7 @@ class FileFormat(enum.StrEnum):
     PUBMED_XML = "pubmed_xml"
     ENDNOTE_XML = "endnote_xml"
     CSV = "csv"
+    ZOTERO_RDF = "zotero_rdf"
 
 
 class ImportStatus(enum.StrEnum):

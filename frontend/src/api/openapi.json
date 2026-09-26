@@ -16168,7 +16168,8 @@
           "nbib",
           "pubmed_xml",
           "endnote_xml",
-          "csv"
+          "csv",
+          "zotero_rdf"
         ],
         "title": "FileFormat"
       },

@@ -1,4 +1,4 @@
-"""Streaming, safe XML reading for the two XML formats (guide 12.3).
+"""Streaming, safe XML reading for the XML formats (guide 12.3).
 
 An export is an untrusted file: entity declarations can point at the server's own disk or
 expand into gigabytes. defusedxml refuses entities and external references while still
@@ -32,5 +32,26 @@ def records_of(text: str, tag: str) -> Iterator[tuple[int, Element]]:
             ordinal += 1
             yield ordinal, element
             element.clear()
+    except ParseError as error:
+        raise MalformedXMLError(str(error)) from error
+
+
+def children_of_root(text: str) -> Iterator[Element]:
+    """Yield every direct child of the root element, freeing each one afterwards.
+
+    For formats whose records are not one tag but whatever sits at the top level (RDF).
+    """
+    depth = 0
+    try:
+        for event, element in iterparse(
+            io.StringIO(text), events=("start", "end"), forbid_dtd=False
+        ):
+            if event == "start":
+                depth += 1
+                continue
+            depth -= 1
+            if depth == 1:
+                yield element
+                element.clear()
     except ParseError as error:
         raise MalformedXMLError(str(error)) from error

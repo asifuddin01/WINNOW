@@ -3546,7 +3546,7 @@ export interface components {
          * FileFormat
          * @enum {string}
          */
-        FileFormat: "ris" | "bib" | "nbib" | "pubmed_xml" | "endnote_xml" | "csv";
+        FileFormat: "ris" | "bib" | "nbib" | "pubmed_xml" | "endnote_xml" | "csv" | "zotero_rdf";
         /**
          * FinalDecision
          * @enum {string}

@@ -1,0 +1,127 @@
+<rdf:RDF
+ xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+ xmlns:z="http://www.zotero.org/namespaces/export#"
+ xmlns:dc="http://purl.org/dc/elements/1.1/"
+ xmlns:vcard="http://nwalsh.com/rdf/vCard#"
+ xmlns:foaf="http://xmlns.com/foaf/0.1/"
+ xmlns:bib="http://purl.org/net/biblio#"
+ xmlns:dcterms="http://purl.org/dc/terms/"
+ xmlns:prism="http://prismstandard.org/namespaces/1.2/basic/"
+ xmlns:link="http://purl.org/rss/1.0/modules/link/">
+    <z:Collection rdf:about="#collection_3">
+        <dc:title>Night shift review</dc:title>
+        <dcterms:hasPart rdf:resource="https://onlinelibrary.wiley.com/doi/10.1111/jan.13894"/>
+        <dcterms:hasPart rdf:resource="#item_14"/>
+    </z:Collection>
+    <bib:Article rdf:about="https://onlinelibrary.wiley.com/doi/10.1111/jan.13894">
+        <z:itemType>journalArticle</z:itemType>
+        <dcterms:isPartOf>
+            <bib:Journal>
+                <prism:volume>75</prism:volume>
+                <dc:title>Journal of Advanced Nursing</dc:title>
+                <dc:identifier>DOI 10.1111/jan.13894</dc:identifier>
+                <prism:number>4</prism:number>
+                <dcterms:alternative>J Adv Nurs</dcterms:alternative>
+                <dc:identifier>ISSN 1365-2648</dc:identifier>
+            </bib:Journal>
+        </dcterms:isPartOf>
+        <bib:authors>
+            <rdf:Seq>
+                <rdf:li>
+                    <foaf:Person>
+                        <foaf:surname>Smith</foaf:surname>
+                        <foaf:givenName>Jane A.</foaf:givenName>
+                    </foaf:Person>
+                </rdf:li>
+                <rdf:li>
+                    <foaf:Person>
+                        <foaf:surname>Chowdhury</foaf:surname>
+                        <foaf:givenName>Sara</foaf:givenName>
+                    </foaf:Person>
+                </rdf:li>
+                <rdf:li>
+                    <foaf:Person>
+                        <foaf:surname>Müller</foaf:surname>
+                        <foaf:givenName>Jürgen</foaf:givenName>
+                    </foaf:Person>
+                </rdf:li>
+            </rdf:Seq>
+        </bib:authors>
+        <link:link rdf:resource="#item_12"/>
+        <link:link rdf:resource="#item_13"/>
+        <dc:subject>
+           <z:AutomaticTag>
+              <rdf:value>Humans</rdf:value>
+           </z:AutomaticTag>
+        </dc:subject>
+        <dc:subject>nurses</dc:subject>
+        <dc:subject>shift work</dc:subject>
+        <dc:title>Rotating night shifts and sleep quality among hospital nurses: a cross-sectional study</dc:title>
+        <dcterms:abstract>&lt;p&gt;Aims: To assess sleep quality in nurses working rotating night shifts.&lt;/p&gt;&lt;p&gt;Design: Cross-sectional survey of 812 nurses.&lt;/p&gt;</dcterms:abstract>
+        <dc:date>2019-04</dc:date>
+        <z:language>eng</z:language>
+        <z:shortTitle>Rotating night shifts</z:shortTitle>
+        <z:libraryCatalog>PubMed</z:libraryCatalog>
+        <dc:identifier>
+            <dcterms:URI>
+               <rdf:value>https://onlinelibrary.wiley.com/doi/10.1111/jan.13894</rdf:value>
+            </dcterms:URI>
+        </dc:identifier>
+        <dc:description>PMID: 31234567
+PMCID: PMC6543210</dc:description>
+        <bib:pages>812-824</bib:pages>
+    </bib:Article>
+    <z:Attachment rdf:about="#item_12">
+        <z:itemType>attachment</z:itemType>
+        <dc:title>Full Text PDF</dc:title>
+        <link:type>application/pdf</link:type>
+    </z:Attachment>
+    <bib:Memo rdf:about="#item_13">
+        <rdf:value>&lt;p&gt;Check the response rate&lt;/p&gt;</rdf:value>
+    </bib:Memo>
+    <bib:BookSection rdf:about="#item_14">
+        <z:itemType>bookSection</z:itemType>
+        <dcterms:isPartOf rdf:resource="urn:isbn:978-0-19-883551-9"/>
+        <bib:authors>
+            <rdf:Seq>
+                <rdf:li>
+                    <foaf:Person>
+                        <foaf:surname>World Health Organization</foaf:surname>
+                    </foaf:Person>
+                </rdf:li>
+            </rdf:Seq>
+        </bib:authors>
+        <bib:editors>
+            <rdf:Seq>
+                <rdf:li>
+                    <foaf:Person>
+                        <foaf:surname>Okafor</foaf:surname>
+                        <foaf:givenName>Chidi</foaf:givenName>
+                    </foaf:Person>
+                </rdf:li>
+            </rdf:Seq>
+        </bib:editors>
+        <dc:title>Napping strategies for night shift workers</dc:title>
+        <dc:date>2020</dc:date>
+        <bib:pages>45-67</bib:pages>
+    </bib:BookSection>
+    <bib:Book rdf:about="urn:isbn:978-0-19-883551-9">
+        <dc:title>Sleep and Shift Work in Healthcare</dc:title>
+        <dc:identifier>ISBN 978-0-19-883551-9</dc:identifier>
+    </bib:Book>
+    <bib:Article rdf:about="#item_15">
+        <z:itemType>preprint</z:itemType>
+        <dc:title>Melatonin for shift-work sleep disorder: a randomised trial</dc:title>
+        <dc:date>2020-01-02</dc:date>
+        <dc:identifier>
+            <dcterms:URI>
+               <rdf:value>https://pubmed.ncbi.nlm.nih.gov/32000000/</rdf:value>
+            </dcterms:URI>
+        </dc:identifier>
+        <dc:description>DOI: 10.1101/2020.01.01.123456</dc:description>
+    </bib:Article>
+    <rdf:Description rdf:about="#item_16">
+        <z:itemType>document</z:itemType>
+        <dcterms:abstract>An abstract with nothing to identify it by.</dcterms:abstract>
+    </rdf:Description>
+</rdf:RDF>

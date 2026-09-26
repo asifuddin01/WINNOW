@@ -11,6 +11,7 @@ import pytest
 
 from app.parsers import ParsedRecord, ParseProblem, detect, parse
 from app.parsers.common import normalise_author, normalise_doi, normalise_title, normalise_year
+from app.parsers.xml_reader import MalformedXMLError
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures" / "parsers"
 
@@ -39,6 +40,7 @@ def problems(name: str, file_format: str) -> list[ParseProblem]:
         ("pubmed.xml", "pubmed_xml"),
         ("endnote.xml", "endnote_xml"),
         ("zotero.bib", "bib"),
+        ("zotero.rdf", "zotero_rdf"),
         ("scopus.csv", "csv"),
     ],
 )
@@ -118,6 +120,60 @@ def test_zotero_bibtex_export() -> None:
     assert first.keywords == ["nurses", "shift work", "sleep quality"]
     assert second.title == "Napping strategies for night shift workers"
     assert second.publication_type == ["incollection"]
+
+
+def test_zotero_rdf_export() -> None:
+    article, chapter, preprint = records("zotero.rdf", "zotero_rdf")
+    assert article.title == (
+        "Rotating night shifts and sleep quality among hospital nurses: a cross-sectional study"
+    )
+    assert article.authors == ["Smith, Jane A.", "Chowdhury, Sara", "Müller, Jürgen"]
+    # Zotero writes the journal, its volume and issue, and the DOI on the nested journal.
+    assert article.journal == "Journal of Advanced Nursing"
+    assert (article.volume, article.issue, article.pages) == ("75", "4", "812-824")
+    assert article.doi == "10.1111/jan.13894"
+    # PubMed ids live in "Extra".
+    assert (article.pmid, article.pmcid) == ("31234567", "PMC6543210")
+    assert article.year == 2019
+    assert article.abstract is not None
+    assert article.abstract.startswith("Aims: To assess sleep quality")
+    assert "\n\nDesign:" in article.abstract
+    assert article.keywords == ["Humans", "nurses", "shift work"]
+    assert article.language == "eng"
+    assert article.url == "https://onlinelibrary.wiley.com/doi/10.1111/jan.13894"
+    assert article.publication_type == ["Journal article"]
+
+    # The book is a separate node, after the chapter that points at it; editors are not
+    # authors.
+    assert chapter.title == "Napping strategies for night shift workers"
+    assert chapter.authors == ["World Health Organization"]
+    assert chapter.journal == "Sleep and Shift Work in Healthcare"
+    assert chapter.isbn == "978-0-19-883551-9"
+    assert chapter.publication_type == ["Book section"]
+
+    # A DOI kept in "Extra", and a PubMed id read from a PubMed link.
+    assert preprint.doi == "10.1101/2020.01.01.123456"
+    assert preprint.pmid == "32000000"
+    assert preprint.journal is None
+
+
+def test_zotero_rdf_skips_attachments_notes_and_collections() -> None:
+    (problem,) = problems("zotero.rdf", "zotero_rdf")
+    # The fourth reference, counting only references.
+    assert (problem.where(), problem.reason) == ("record 4", "no title, DOI or PubMed id")
+
+
+def test_zotero_rdf_without_pointers_reads_in_one_pass() -> None:
+    text = read("zotero.rdf").replace(
+        '<dcterms:isPartOf rdf:resource="urn:isbn:978-0-19-883551-9"/>', ""
+    )
+    titles = [r.title for r in parse("zotero_rdf", text) if isinstance(r, ParsedRecord)]
+    assert titles[1] == "Napping strategies for night shift workers"
+
+
+def test_a_zotero_rdf_file_that_breaks_off_is_reported() -> None:
+    with pytest.raises(MalformedXMLError):
+        list(parse("zotero_rdf", read("zotero.rdf")[:3000]))
 
 
 def test_scopus_csv_export() -> None:
@@ -223,3 +279,5 @@ def test_xml_entities_pointing_at_the_server_are_refused() -> None:
     )
     with pytest.raises(Exception, match="Entit"):
         list(parse_endnote(payload))
+    with pytest.raises(Exception, match="Entit"):
+        list(parse("zotero_rdf", payload.replace("<records>", "<rdf:RDF>")))

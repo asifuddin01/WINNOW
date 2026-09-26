@@ -73,6 +73,7 @@ conflicts, and which stages each person screens.
 | PubMed MEDLINE (`.nbib`) and PubMed XML | PubMed |
 | BibTeX | Reference managers |
 | EndNote XML | EndNote |
+| Zotero RDF | Zotero, with everything its library holds |
 | CSV | You say which column is which |
 
 **Adding files.** Drop up to 20 files at once. Each becomes a separate import you
