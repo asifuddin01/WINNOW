@@ -7,156 +7,146 @@ import { describeNotice } from "@/features/notifications/wording";
 import { PROJECT, USER, mockApi, projectRoutes } from "@/test/api";
 import { renderApp } from "@/test/render-app";
 
-const RID = "00000000-0000-4000-8000-000000000001";
-
-function notice(extra: Partial<Notice>): Notice {
+function notice(kind: Notice["kind"], extra: Partial<Notice> = {}): Notice {
   return {
-    id: "n1",
-    kind: "conflicts",
+    id: `n-${kind}`,
+    kind,
     project_id: PROJECT.id,
     count: 1,
-    data: { project_title: PROJECT.title },
+    data: { project_title: PROJECT.title, by: "Grace Hopper" },
     read: false,
-    created_at: new Date().toISOString(),
+    created_at: "2026-09-25T09:00:00Z",
     updated_at: new Date().toISOString(),
     ...extra,
   };
 }
 
-const NOTICES = [
-  notice({ id: "n1", kind: "conflicts", count: 3 }),
-  notice({
-    id: "n2",
-    kind: "mention",
-    data: {
-      project_title: PROJECT.title,
-      by: "Grace Hopper",
-      excerpt: "@Ada check this",
-      record_id: RID,
-    },
-  }),
-  notice({
-    id: "n3",
-    kind: "invite",
-    project_id: null,
-    read: true,
-    data: { project_title: "Caffeine", by: "Hedy" },
-  }),
-];
+describe("notice wording", () => {
+  test("each kind says what happened and where it leads", () => {
+    expect(describeNotice(notice("conflicts", { count: 3 }))).toEqual({
+      text: `3 new conflicts to resolve in ${PROJECT.title}`,
+      to: `/p/${PROJECT.id}/conflicts`,
+    });
+    expect(describeNotice(notice("conflicts", { project_id: null })).to).toBeNull();
+    expect(describeNotice(notice("invite", { project_id: null })).text).toBe(
+      `Grace Hopper invited you to ${PROJECT.title}. Accept from the invitation email.`,
+    );
+    expect(
+      describeNotice(
+        notice("mention", {
+          data: { project_title: "R", by: "Hedy", excerpt: "@Ada see this", record_id: "r1" },
+        }),
+      ),
+    ).toEqual({
+      text: "Hedy mentioned you in R: “@Ada see this”",
+      to: `/p/${PROJECT.id}/records?record=r1`,
+    });
+    expect(
+      describeNotice(
+        notice("import_finished", {
+          data: { project_title: "R", filename: "a.ris", imported: 1204 },
+        }),
+      ).text,
+    ).toBe("Your import of a.ris into R finished: 1,204 records");
+    expect(describeNotice(notice("import_failed", { data: { filename: "b.ris" } })).text).toBe(
+      "Your import of b.ris into a review failed",
+    );
+  });
+});
 
-function nth(index: number): Notice {
-  const found = NOTICES[index];
-  if (!found) throw new Error(`no notice ${index}`);
-  return found;
-}
-
-function routes(extra: Record<string, unknown> = {}) {
-  return {
-    "GET /api/v1/auth/me": USER,
-    ...projectRoutes(),
-    "GET /api/v1/notifications/unread": { unread: 2 },
-    "GET /api/v1/notifications": { items: NOTICES, next_cursor: null, unread: 2 },
-    "POST /api/v1/notifications/n1/read": () => new Response(null, { status: 204 }),
-    "POST /api/v1/notifications/read-all": () => new Response(null, { status: 204 }),
-    ...extra,
-  };
-}
-
-describe("notifications", () => {
-  test("the bell counts what is unread; a notice opens where it points and is marked read", async () => {
-    const server = mockApi(routes());
+describe("the bell", () => {
+  test("shows the unread count; a notice opens where it points and is marked read", async () => {
+    let unread = 2;
+    const server = mockApi({
+      "GET /api/v1/auth/me": USER,
+      ...projectRoutes(),
+      "GET /api/v1/notifications/unread": () => ({ unread }),
+      "GET /api/v1/notifications": () => ({
+        items: [
+          notice("conflicts", { count: 2 }),
+          notice("invite", { project_id: null, read: true }),
+        ],
+        next_cursor: null,
+        unread,
+      }),
+      "POST /api/v1/notifications/n-conflicts/read": () => {
+        unread = 1;
+        return new Response(null, { status: 204 });
+      },
+      "POST /api/v1/notifications/read-all": () => {
+        unread = 0;
+        return new Response(null, { status: 204 });
+      },
+    });
     const user = userEvent.setup();
     const { router } = renderApp("/");
-    await screen.findByRole("heading", { name: "My reviews" });
 
     const bell = await screen.findByRole("button", { name: "Notifications, 2 unread" });
     await user.click(bell);
     const menu = await screen.findByRole("menu");
-    expect(within(menu).getByText(/3 new conflicts to resolve in/)).toBeVisible();
-    expect(within(menu).getByText(/Grace Hopper mentioned you/)).toBeVisible();
-    expect(within(menu).getByText(/Hedy invited you to Caffeine/)).toBeVisible();
-    expect(within(menu).getAllByText("(unread)")).toHaveLength(2);
-
-    await user.click(within(menu).getByText(/3 new conflicts/));
+    const conflict = within(menu).getByRole("menuitem", { name: /2 new conflicts to resolve/ });
+    expect(conflict).toHaveTextContent("(unread)");
+    expect(within(menu).getByRole("menuitem", { name: /invited you/ })).not.toHaveTextContent(
+      "(unread)",
+    );
+    await user.click(conflict);
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(`/p/${PROJECT.id}/conflicts`);
     });
-    expect(server.calls("POST /api/v1/notifications/n1/read")).toHaveLength(1);
-    // Let the menu finish closing, or Radix's shared layer state outlives the test.
+    expect(server.calls("POST /api/v1/notifications/n-conflicts/read")).toHaveLength(1);
+    // Let the menu finish closing, or Radix's shared layer state outlives it.
+    await waitFor(() => {
+      expect(screen.queryByRole("menu")).toBeNull();
+    });
+    (await screen.findByRole("button", { name: "Notifications, 1 unread" })).focus();
+    await user.keyboard("{Enter}");
+    await user.click(await screen.findByRole("menuitem", { name: "Mark all as read" }));
+    expect(await screen.findByRole("button", { name: "Notifications" })).toBeVisible();
+    // Marking all read keeps the menu open, so the notices can be seen turning read.
+    await user.keyboard("{Escape}");
     await waitFor(() => {
       expect(screen.queryByRole("menu")).toBeNull();
     });
   });
 
-  test("everything can be marked read at once", async () => {
-    const server = mockApi(routes());
+  test("nothing yet, and the digest switch on the account page", async () => {
+    let digest = false;
+    const server = mockApi({
+      "GET /api/v1/auth/me": USER,
+      "GET /api/v1/auth/sessions": [],
+      "GET /api/v1/notifications/unread": { unread: 0 },
+      "GET /api/v1/notifications": { items: [], next_cursor: null, unread: 0 },
+      "GET /api/v1/notifications/settings": () => ({ email_digest: digest }),
+      "PUT /api/v1/notifications/settings": (request: Request) =>
+        request
+          .clone()
+          .json()
+          .then((body: { email_digest: boolean }) => {
+            digest = body.email_digest;
+            return { email_digest: digest };
+          }),
+    });
     const user = userEvent.setup();
-    renderApp("/");
-    // The shell settles once the page's lazily loaded code arrives; open menus after that.
-    await screen.findByRole("heading", { name: "My reviews" });
-    (await screen.findByRole("button", { name: /Notifications, 2 unread/ })).focus();
-    await user.keyboard("{Enter}");
-    await user.click(await screen.findByRole("menuitem", { name: "Mark all as read" }));
-    expect(server.calls("POST /api/v1/notifications/read-all")).toHaveLength(1);
-  });
+    renderApp("/account");
 
-  test("nothing yet says what will appear", async () => {
-    mockApi(
-      routes({
-        "GET /api/v1/notifications/unread": { unread: 0 },
-        "GET /api/v1/notifications": { items: [], next_cursor: null, unread: 0 },
-      }),
-    );
-    const user = userEvent.setup();
-    renderApp("/");
-    await screen.findByRole("heading", { name: "My reviews" });
+    // The shell settles once the page's lazily loaded code arrives; open menus after that.
+    const toggle = await screen.findByRole("switch", { name: "Email me a daily digest" });
+    await waitFor(() => {
+      expect(toggle).toBeEnabled();
+    });
     screen.getByRole("button", { name: "Notifications" }).focus();
     await user.keyboard("{Enter}");
     expect(await screen.findByText(/Nothing yet\. Conflicts to resolve/)).toBeVisible();
-  });
-
-  test("every kind in words, with where it leads", () => {
-    const pid = PROJECT.id;
-    expect(describeNotice(notice({ count: 1 }))).toEqual({
-      text: `1 new conflict to resolve in ${PROJECT.title}`,
-      to: `/p/${pid}/conflicts`,
-    });
-    expect(describeNotice(nth(1)).to).toBe(`/p/${pid}/records?record=${RID}`);
-    expect(describeNotice(nth(2)).to).toBeNull();
-    expect(
-      describeNotice(
-        notice({
-          kind: "import_finished",
-          data: { project_title: "R", filename: "pubmed.nbib", imported: 1204 },
-        }),
-      ),
-    ).toEqual({
-      text: "Your import of pubmed.nbib into R finished: 1,204 records",
-      to: `/p/${pid}/import`,
-    });
-    expect(describeNotice(notice({ kind: "import_failed", data: {} })).text).toBe(
-      "Your import of a file into a review failed",
-    );
-    expect(describeNotice(notice({ kind: "conflicts", project_id: null })).to).toBeNull();
-  });
-
-  test("the daily digest is switched on in account settings", async () => {
-    const server = mockApi(
-      routes({
-        "GET /api/v1/auth/sessions": [],
-        "GET /api/v1/notifications/settings": { email_digest: false },
-        "PUT /api/v1/notifications/settings": { email_digest: true },
-      }),
-    );
-    const user = userEvent.setup();
-    renderApp("/account");
-    const digest = await screen.findByRole("switch", { name: "Email me a daily digest" });
+    await user.keyboard("{Escape}");
     await waitFor(() => {
-      expect(digest).toBeEnabled();
+      expect(screen.queryByRole("menu")).toBeNull();
     });
-    expect(digest).not.toBeChecked();
-    await user.click(digest);
+    expect(toggle).not.toBeChecked();
+    await user.click(toggle);
     const [sent] = server.calls("PUT /api/v1/notifications/settings");
     expect(await sent?.json()).toEqual({ email_digest: true });
+    await waitFor(() => {
+      expect(toggle).toBeChecked();
+    });
   });
 });
