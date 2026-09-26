@@ -84,11 +84,11 @@ async def test_conflict_counts_keep_working_after_postgres_plans_generically(
         me = await db.scalar(select(User.id).where(User.email == OWNER))
         assert me is not None
         for _ in range(8):
-            await notify(
-                db, [me], NotificationKind.CONFLICTS, project_id=uuid.UUID(project["id"])
-            )
+            await notify(db, [me], NotificationKind.CONFLICTS, project_id=uuid.UUID(project["id"]))
         await db.commit()
-        counts = list(await db.scalars(select(Notification.count).where(Notification.user_id == me)))
+        counts = list(
+            await db.scalars(select(Notification.count).where(Notification.user_id == me))
+        )
         assert counts == [8]
 
 
