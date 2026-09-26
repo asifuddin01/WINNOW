@@ -10,12 +10,12 @@ export function redirectSearch(search: Record<string, unknown>): { redirect?: st
 export function signInSearch(search: Record<string, unknown>): {
   redirect?: string;
   error?: string;
-  step?: "google-2fa";
+  step?: "google-2fa" | "orcid-2fa";
 } {
   return {
     ...redirectSearch(search),
     ...(typeof search.error === "string" && { error: search.error }),
-    ...(search.step === "google-2fa" && { step: "google-2fa" as const }),
+    ...((search.step === "google-2fa" || search.step === "orcid-2fa") && { step: search.step }),
   };
 }
 

@@ -88,6 +88,24 @@ The "Continue with Google" button appears once Winnow has Google credentials:
 A Google sign-in joins the Winnow account with the same verified email, or creates one if
 registration is open. Accounts with two-factor authentication still ask for their code.
 
+## Sign in with ORCID (optional)
+
+The "Continue with ORCID" button, and a "Link your ORCID iD" section under Account, appear
+once Winnow has ORCID credentials:
+
+1. Sign in at [orcid.org](https://orcid.org) and open **Developer tools** from your name to
+   register a public API client (free). To try it first, do the same on
+   [sandbox.orcid.org](https://sandbox.orcid.org) and set `ORCID_BASE_URL` to
+   `https://sandbox.orcid.org`.
+2. Add the redirect URI `https://your-domain/api/v1/auth/orcid/callback`. ORCID accepts
+   only HTTPS addresses in production.
+3. Put the client ID and secret in `.env` as `ORCID_CLIENT_ID` and `ORCID_CLIENT_SECRET`,
+   then restart.
+
+ORCID shares no email address, so it signs in only to an account that has linked its iD
+from Account. It never creates accounts. Accounts with two-factor authentication still ask
+for their code.
+
 ## What runs where
 
 | Service | Role |

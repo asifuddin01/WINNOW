@@ -63,12 +63,3 @@ async def user_for_google(
     audit.record(db, "auth.identity.linked", actor, user_id=user.id, after={"provider": PROVIDER})
     await db.flush()
     return user
-
-
-async def google_linked(db: AsyncSession, user: User) -> bool:
-    found = await db.scalar(
-        select(UserIdentity.id).where(
-            UserIdentity.user_id == user.id, UserIdentity.provider == PROVIDER
-        )
-    )
-    return found is not None

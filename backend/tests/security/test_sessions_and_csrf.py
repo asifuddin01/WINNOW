@@ -36,8 +36,9 @@ PUBLIC_ROUTES = {
     ("POST", "/api/v1/auth/logout"),
     ("POST", "/api/v1/auth/password/forgot"),
     ("POST", "/api/v1/auth/password/reset"),
-    # Authorized by the short-lived cookie a Google sign-in sets, not by a session.
+    # Authorized by the short-lived cookie a Google or ORCID sign-in sets, not by a session.
     ("POST", "/api/v1/auth/google/two-factor"),
+    ("POST", "/api/v1/auth/orcid/two-factor"),
     # The invitation token is the secret; the page shows it before anyone signs in.
     ("GET", "/api/v1/invites/{token}"),
 }

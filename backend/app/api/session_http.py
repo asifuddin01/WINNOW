@@ -11,7 +11,7 @@ from app.schemas.auth import UserOut
 from app.security import csrf
 from app.security.sessions import SESSION_COOKIE, SessionStore, session_key
 from app.services.audit import Actor
-from app.services.google_accounts import google_linked
+from app.services.identities import linked
 
 # Pages a sign-in must never send you back to (they would loop or leak a token).
 _NOT_A_DESTINATION = re.compile(r"^/(api|login|register|setup|forgot|reset|verify)\b")
@@ -73,6 +73,7 @@ def end_session_cookie(response: Response) -> None:
 
 
 async def user_out(db: AsyncSession, user: User) -> UserOut:
+    identities = await linked(db, user)
     return UserOut(
         id=user.id,
         name=user.name,
@@ -82,7 +83,8 @@ async def user_out(db: AsyncSession, user: User) -> UserOut:
         recovery_codes_left=user.recovery_codes_left,
         is_instance_admin=user.is_instance_admin,
         has_password=user.has_password,
-        google_linked=await google_linked(db, user),
+        google_linked="google" in identities,
+        orcid=identities.get("orcid"),
         created_at=user.created_at,
     )
 

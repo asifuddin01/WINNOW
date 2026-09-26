@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 
 import {
   authOptionsQuery,
-  googleStartUrl,
+  startUrl,
   isApiError,
   loadAuthOptions,
   loadMe,
@@ -113,7 +113,7 @@ function Register() {
         {problem && <FormAlert>{problem}</FormAlert>}
         {options?.google_enabled && (
           <>
-            <GoogleButton href={googleStartUrl()} label="Sign up with Google" />
+            <GoogleButton href={startUrl("google")} label="Sign up with Google" />
             <OrDivider />
           </>
         )}

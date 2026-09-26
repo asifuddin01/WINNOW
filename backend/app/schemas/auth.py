@@ -62,6 +62,8 @@ class UserOut(BaseModel):
     is_instance_admin: bool
     has_password: bool
     google_linked: bool
+    # The linked ORCID iD, such as 0000-0002-1825-0097.
+    orcid: str | None
     created_at: datetime
 
 
@@ -87,6 +89,7 @@ class AuthOptions(BaseModel):
     needs_setup: bool
     email_enabled: bool
     google_enabled: bool
+    orcid_enabled: bool
     llm_available: bool
     # Which kind of provider suggestions are sent to, so the page can say so (guide 8.11).
     llm_provider: Literal["anthropic", "openai_compatible"] | None = None
@@ -116,7 +119,14 @@ class TwoFactorEnabled(RecoveryCodesOut, CsrfOut):
     pass
 
 
-class GoogleSignedIn(SignedIn):
-    """A Google sign-in finished with a second factor; `redirect` is where it started."""
+class ExternalSignedIn(SignedIn):
+    """A Google or ORCID sign-in finished with a second factor; `redirect` is where it
+    started."""
 
     redirect: str
+
+
+class OrcidLinkStart(BaseModel):
+    """Where to send the browser to link an ORCID iD."""
+
+    url: str

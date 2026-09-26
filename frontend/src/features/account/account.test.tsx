@@ -1,8 +1,8 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
-import { USER, json, mockApi, signedOut } from "@/test/api";
+import { OPTIONS, USER, json, mockApi, signedOut } from "@/test/api";
 import { renderApp } from "@/test/render-app";
 
 /** Queries scoped to the account-page section with this heading. */
@@ -203,5 +203,70 @@ describe("accounts created with Google", () => {
     expect(await server.calls("POST /api/v1/auth/password/forgot")[0]?.json()).toEqual({
       email: USER.email,
     });
+  });
+});
+
+describe("ORCID", () => {
+  const ORCID_ON = { ...OPTIONS, orcid_enabled: true };
+
+  test("linking sends the browser to ORCID", async () => {
+    // jsdom cannot leave the page, and says so on the console.
+    const quiet = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const server = mockApi({
+      "GET /api/v1/auth/me": USER,
+      "GET /api/v1/auth/options": ORCID_ON,
+      "GET /api/v1/auth/sessions": SESSIONS,
+      "POST /api/v1/auth/orcid/link": { url: "https://orcid.org/oauth/authorize?state=s" },
+    });
+    const user = userEvent.setup();
+    renderApp("/account");
+    await user.click(await screen.findByRole("button", { name: "Link your ORCID iD" }));
+    await waitFor(() => {
+      expect(server.calls("POST /api/v1/auth/orcid/link")).toHaveLength(1);
+    });
+    quiet.mockRestore();
+  });
+
+  test("a linked iD shows, says how the link went, and can be unlinked", async () => {
+    let orcid: string | null = "0000-0002-1825-0097";
+    const server = mockApi({
+      "GET /api/v1/auth/me": () => ({ ...USER, orcid }),
+      "GET /api/v1/auth/options": ORCID_ON,
+      "GET /api/v1/auth/sessions": SESSIONS,
+      "DELETE /api/v1/auth/orcid": () => {
+        orcid = null;
+        return new Response(null, { status: 204 });
+      },
+    });
+    const user = userEvent.setup();
+    renderApp("/account?orcid=linked");
+    await screen.findByRole("heading", { name: "ORCID" });
+    const panel = section("ORCID");
+    expect(panel.getByRole("status")).toHaveTextContent("Your ORCID iD is linked");
+    expect(panel.getByRole("link", { name: /0000-0002-1825-0097/ })).toHaveAttribute(
+      "href",
+      "https://orcid.org/0000-0002-1825-0097",
+    );
+    expect(section("Profile").getByText("ORCID")).toBeVisible();
+    await user.click(panel.getByRole("button", { name: "Unlink" }));
+    expect(await panel.findByRole("button", { name: "Link your ORCID iD" })).toBeVisible();
+    expect(server.calls("DELETE /api/v1/auth/orcid")).toHaveLength(1);
+  });
+
+  test("a failed link says why", async () => {
+    mockApi({
+      "GET /api/v1/auth/me": USER,
+      "GET /api/v1/auth/options": ORCID_ON,
+      "GET /api/v1/auth/sessions": SESSIONS,
+    });
+    renderApp("/account?orcid=orcid_taken");
+    expect(await screen.findByText(/already linked to another Winnow account/)).toBeVisible();
+  });
+
+  test("is not offered on an instance without ORCID", async () => {
+    mockApi({ "GET /api/v1/auth/me": USER, "GET /api/v1/auth/sessions": SESSIONS });
+    renderApp("/account");
+    await screen.findByRole("heading", { name: "Password" });
+    expect(screen.queryByRole("heading", { name: "ORCID" })).not.toBeInTheDocument();
   });
 });

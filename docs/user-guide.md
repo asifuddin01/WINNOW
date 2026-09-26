@@ -22,6 +22,9 @@ any page, review, record or action.
   - Two-factor sign-in with an authenticator app, plus recovery codes. Keep them
     somewhere safe.
   - Where you are signed in: end any session you don't recognise.
+  - Your ORCID iD, if your instance offers ORCID. Once linked, **Continue with ORCID**
+    signs you in. ORCID shares no email address, so it only works for an account that
+    has linked its iD.
   - Your notification digest (see [Notifications](#notifications)).
 - **Colour theme.** Light, dark, or follow your system, from the sun and moon icon.
 

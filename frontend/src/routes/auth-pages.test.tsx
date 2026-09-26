@@ -283,7 +283,7 @@ describe("sign in with Google", () => {
 
   test("an unknown error code still gets a sentence", async () => {
     renderApp("/login?error=something_new");
-    expect(await screen.findByRole("alert")).toHaveTextContent("Google sign-in did not finish");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Signing in did not finish");
   });
 
   test("a two-factor account finishes with its code", async () => {
@@ -330,5 +330,43 @@ describe("sign in with Google", () => {
       "href",
       "/api/v1/auth/google/start",
     );
+  });
+});
+
+describe("sign in with ORCID", () => {
+  const ORCID_ON = { ...OPTIONS, orcid_enabled: true };
+
+  test("offers ORCID when the instance has it, keeping the destination", async () => {
+    mockApi({ "GET /api/v1/auth/options": ORCID_ON });
+    renderApp("/login?redirect=%2Faccount");
+    const orcid = await screen.findByRole("link", { name: "Continue with ORCID" });
+    expect(orcid).toHaveAttribute("href", "/api/v1/auth/orcid/start?redirect=%2Faccount");
+    expect(screen.queryByRole("link", { name: "Continue with Google" })).not.toBeInTheDocument();
+  });
+
+  test("an iD nobody linked says how to link one", async () => {
+    renderApp("/login?error=orcid_not_linked");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "No Winnow account is linked to that ORCID iD",
+    );
+  });
+
+  test("a two-factor account finishes with its code", async () => {
+    let me: object = signedOut;
+    const server = mockApi({
+      "GET /api/v1/auth/options": ORCID_ON,
+      "GET /api/v1/auth/me": () => me,
+      "POST /api/v1/auth/orcid/two-factor": () => {
+        me = USER;
+        return { user: USER, csrf_token: "t", redirect: "/account" };
+      },
+    });
+    const user = userEvent.setup();
+    renderApp("/login?step=orcid-2fa");
+    expect(await screen.findByText(/ORCID confirmed who you are/)).toBeVisible();
+    await user.type(screen.getByLabelText("Authentication code"), "123456");
+    await user.click(screen.getByRole("button", { name: "Verify and sign in" }));
+    expect(await screen.findByRole("heading", { name: "Account and security" })).toBeVisible();
+    expect(server.calls("POST /api/v1/auth/orcid/two-factor")).toHaveLength(1);
   });
 });

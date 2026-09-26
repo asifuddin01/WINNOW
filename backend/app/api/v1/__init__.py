@@ -18,6 +18,7 @@ from app.api.v1 import (
     invites,
     llm,
     notifications,
+    orcid,
     presence,
     projects,
     ranking,
@@ -33,6 +34,7 @@ api_router = APIRouter(dependencies=[Depends(verify_csrf)])
 api_router.include_router(health.router)
 api_router.include_router(auth.router)
 api_router.include_router(google.router)
+api_router.include_router(orcid.router)
 api_router.include_router(projects.router)
 api_router.include_router(setup.router)
 api_router.include_router(imports.router)

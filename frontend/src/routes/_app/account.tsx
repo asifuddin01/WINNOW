@@ -5,18 +5,23 @@ import { CircleCheckIcon, MailWarningIcon } from "lucide-react";
 import { meQuery } from "@/api/auth";
 import { Badge } from "@/components/ui/badge";
 import { NotificationsSection } from "@/features/account/NotificationsSection";
+import { OrcidSection } from "@/features/account/OrcidSection";
 import { PasswordSection } from "@/features/account/PasswordSection";
 import { Section } from "@/features/account/Section";
 import { SessionsSection } from "@/features/account/SessionsSection";
 import { TwoFactorSection } from "@/features/account/TwoFactorSection";
 
 export const Route = createFileRoute("/_app/account")({
+  // ?orcid= says how linking an ORCID iD came back from ORCID.
+  validateSearch: (search: Record<string, unknown>): { orcid?: string } =>
+    typeof search.orcid === "string" ? { orcid: search.orcid } : {},
   component: Account,
   staticData: { title: "Account" },
 });
 
 function Account() {
   const { data: me } = useQuery(meQuery);
+  const { orcid: linkResult } = Route.useSearch();
   if (!me) return null;
   return (
     <div className="mx-auto grid w-full max-w-3xl gap-6 px-4 py-8 md:px-8">
@@ -47,10 +52,12 @@ function Account() {
           <dd className="flex flex-wrap gap-2">
             {me.has_password && <Badge variant="secondary">Password</Badge>}
             {me.google_linked && <Badge variant="secondary">Google</Badge>}
+            {me.orcid && <Badge variant="secondary">ORCID</Badge>}
           </dd>
         </dl>
       </Section>
       <PasswordSection />
+      <OrcidSection result={linkResult} />
       <TwoFactorSection />
       <SessionsSection />
       <NotificationsSection />

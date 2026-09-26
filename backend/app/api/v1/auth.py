@@ -72,6 +72,7 @@ async def auth_options(accounts: AccountsDep, settings: SettingsDep, db: Session
         needs_setup=await accounts.needs_setup(),
         email_enabled=settings.email_enabled,
         google_enabled=settings.google_enabled,
+        orcid_enabled=settings.orcid_enabled,
         llm_available=llm_configured(settings),
         llm_provider=(
             None

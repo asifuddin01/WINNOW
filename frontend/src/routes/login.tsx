@@ -6,20 +6,23 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import {
-  GOOGLE_ERRORS,
+  PROVIDER_NAMES,
+  SIGN_IN_ERRORS,
   authOptionsQuery,
-  finishGoogleSignIn,
-  googleStartUrl,
+  finishExternalSignIn,
   isApiError,
   loadAuthOptions,
   loadMe,
   meQuery,
   safeRedirect,
   signIn,
+  startUrl,
+  type Provider,
 } from "@/api/auth";
 import { errorMessage } from "@/api/client";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { GoogleButton, OrDivider } from "@/components/auth/GoogleButton";
+import { OrcidButton } from "@/components/auth/OrcidButton";
 import { TextLink } from "@/components/auth/TextLink";
 import { FormAlert } from "@/components/forms/FormAlert";
 import { PasswordField } from "@/components/forms/PasswordField";
@@ -51,18 +54,21 @@ function SignIn() {
     if (options?.needs_setup) void navigate({ to: "/setup", replace: true });
     else if (me) void navigate({ href: safeRedirect(search.redirect), replace: true });
   }, [options, me, navigate, search.redirect]);
-  if (search.step === "google-2fa") return <GoogleTwoFactor />;
+  if (search.step)
+    return <ExternalTwoFactor provider={search.step === "orcid-2fa" ? "orcid" : "google"} />;
   return <PasswordSignIn />;
 }
 
 function PasswordSignIn() {
-  const { redirect: target, error: googleError } = Route.useSearch();
+  const { redirect: target, error: externalError } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: options } = useQuery(authOptionsQuery);
   const [step, setStep] = useState<"password" | "code">("password");
   const [problem, setProblem] = useState<string | null>(
-    googleError ? (GOOGLE_ERRORS[googleError] ?? GOOGLE_ERRORS.google_failed ?? null) : null,
+    externalError
+      ? (SIGN_IN_ERRORS[externalError] ?? "Signing in did not finish. Try again.")
+      : null,
   );
   const form = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),
@@ -115,9 +121,12 @@ function PasswordSignIn() {
     >
       <form noValidate onSubmit={(event) => void onSubmit(event)} className="grid gap-4">
         {problem && <FormAlert>{problem}</FormAlert>}
-        {step === "password" && options?.google_enabled && (
+        {step === "password" && options && (options.google_enabled || options.orcid_enabled) && (
           <>
-            <GoogleButton href={googleStartUrl(target)} label="Continue with Google" />
+            {options.google_enabled && (
+              <GoogleButton href={startUrl("google", target)} label="Continue with Google" />
+            )}
+            {options.orcid_enabled && <OrcidButton href={startUrl("orcid", target)} />}
             <OrDivider />
           </>
         )}
@@ -173,8 +182,9 @@ function PasswordSignIn() {
   );
 }
 
-/** A Google sign-in reached an account with two-factor authentication: ask for the code. */
-function GoogleTwoFactor() {
+/** A Google or ORCID sign-in reached an account with two-factor authentication: ask for
+ * the code. */
+function ExternalTwoFactor({ provider }: { provider: Provider }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [code, setCode] = useState("");
@@ -189,12 +199,12 @@ function GoogleTwoFactor() {
     }
     setBusy(true);
     try {
-      const { redirect: next } = await finishGoogleSignIn(queryClient, code.trim());
+      const { redirect: next } = await finishExternalSignIn(queryClient, provider, code.trim());
       await navigate({ href: next, replace: true });
     } catch (error) {
       setProblem({
         message: errorMessage(error),
-        expired: isApiError(error, "google_pending_expired"),
+        expired: isApiError(error, `${provider}_pending_expired`),
       });
     } finally {
       setBusy(false);
@@ -204,7 +214,7 @@ function GoogleTwoFactor() {
   return (
     <AuthLayout
       title="Two-step verification"
-      description="Google confirmed who you are. Your account also asks for a code."
+      description={`${PROVIDER_NAMES[provider]} confirmed who you are. Your account also asks for a code.`}
       footer={<TextLink to="/login">Start over</TextLink>}
     >
       <form

@@ -16,6 +16,7 @@ export const USER: User = {
   is_instance_admin: false,
   has_password: true,
   google_linked: false,
+  orcid: null,
   created_at: "2026-09-01T10:00:00Z",
 };
 
@@ -170,6 +171,7 @@ export const OPTIONS = {
   needs_setup: false,
   email_enabled: true,
   google_enabled: false,
+  orcid_enabled: false,
 } as const;
 
 type Reply = Response | object | (() => Response | object);

@@ -962,7 +962,126 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GoogleSignedIn"
+                  "$ref": "#/components/schemas/ExternalSignedIn"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/orcid/link": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Orcid Link",
+        "description": "Start linking an ORCID iD to the signed-in account: send the browser to `url`.",
+        "operationId": "orcid_link",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrcidLinkStart"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/orcid": {
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Orcid Unlink",
+        "description": "Unlink the account's ORCID iD. Works even after the instance stops offering ORCID.",
+        "operationId": "orcid_unlink",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/orcid/two-factor": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Orcid Two Factor",
+        "description": "Finish an ORCID sign-in on an account with two-factor authentication.",
+        "operationId": "orcid_two_factor",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalSignedIn"
                 }
               }
             }
@@ -14160,6 +14279,10 @@
             "type": "boolean",
             "title": "Google Enabled"
           },
+          "orcid_enabled": {
+            "type": "boolean",
+            "title": "Orcid Enabled"
+          },
           "llm_available": {
             "type": "boolean",
             "title": "Llm Available"
@@ -14191,6 +14314,7 @@
           "needs_setup",
           "email_enabled",
           "google_enabled",
+          "orcid_enabled",
           "llm_available",
           "owner_two_factor_required"
         ],
@@ -16113,6 +16237,29 @@
         ],
         "title": "ExportOut"
       },
+      "ExternalSignedIn": {
+        "properties": {
+          "csrf_token": {
+            "type": "string",
+            "title": "Csrf Token"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserOut"
+          },
+          "redirect": {
+            "type": "string",
+            "title": "Redirect"
+          }
+        },
+        "type": "object",
+        "required": [
+          "csrf_token",
+          "user",
+          "redirect"
+        ],
+        "title": "ExternalSignedIn",
+        "description": "A Google or ORCID sign-in finished with a second factor; `redirect` is where it\nstarted."
+      },
       "ExtractionExportIn": {
         "properties": {
           "form_id": {
@@ -16596,29 +16743,6 @@
         ],
         "title": "FulltextSummary",
         "description": "The full-text stage at a glance: how many records have their PDF."
-      },
-      "GoogleSignedIn": {
-        "properties": {
-          "csrf_token": {
-            "type": "string",
-            "title": "Csrf Token"
-          },
-          "user": {
-            "$ref": "#/components/schemas/UserOut"
-          },
-          "redirect": {
-            "type": "string",
-            "title": "Redirect"
-          }
-        },
-        "type": "object",
-        "required": [
-          "csrf_token",
-          "user",
-          "redirect"
-        ],
-        "title": "GoogleSignedIn",
-        "description": "A Google sign-in finished with a second factor; `redirect` is where it started."
       },
       "HealthOut": {
         "properties": {
@@ -18504,6 +18628,20 @@
           "candidates"
         ],
         "title": "OpenAccessFinds"
+      },
+      "OrcidLinkStart": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "OrcidLinkStart",
+        "description": "Where to send the browser to link an ORCID iD."
       },
       "OtherDecision": {
         "properties": {
@@ -22007,6 +22145,17 @@
             "type": "boolean",
             "title": "Google Linked"
           },
+          "orcid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orcid"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -22024,6 +22173,7 @@
           "is_instance_admin",
           "has_password",
           "google_linked",
+          "orcid",
           "created_at"
         ],
         "title": "UserOut"

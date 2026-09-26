@@ -424,6 +424,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/orcid/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Orcid Link
+         * @description Start linking an ORCID iD to the signed-in account: send the browser to `url`.
+         */
+        post: operations["orcid_link"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/orcid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Orcid Unlink
+         * @description Unlink the account's ORCID iD. Works even after the instance stops offering ORCID.
+         */
+        delete: operations["orcid_unlink"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/orcid/two-factor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Orcid Two Factor
+         * @description Finish an ORCID sign-in on an account with two-factor authentication.
+         */
+        post: operations["orcid_two_factor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects": {
         parameters: {
             query?: never;
@@ -2828,6 +2888,8 @@ export interface components {
             email_enabled: boolean;
             /** Google Enabled */
             google_enabled: boolean;
+            /** Orcid Enabled */
+            orcid_enabled: boolean;
             /** Llm Available */
             llm_available: boolean;
             /** Llm Provider */
@@ -3517,6 +3579,18 @@ export interface components {
             /** Expires At */
             expires_at: string | null;
         };
+        /**
+         * ExternalSignedIn
+         * @description A Google or ORCID sign-in finished with a second factor; `redirect` is where it
+         *     started.
+         */
+        ExternalSignedIn: {
+            /** Csrf Token */
+            csrf_token: string;
+            user: components["schemas"]["UserOut"];
+            /** Redirect */
+            redirect: string;
+        };
         /** ExtractionExportIn */
         ExtractionExportIn: {
             /**
@@ -3716,17 +3790,6 @@ export interface components {
             scanner: boolean;
             /** Open Access */
             open_access: boolean;
-        };
-        /**
-         * GoogleSignedIn
-         * @description A Google sign-in finished with a second factor; `redirect` is where it started.
-         */
-        GoogleSignedIn: {
-            /** Csrf Token */
-            csrf_token: string;
-            user: components["schemas"]["UserOut"];
-            /** Redirect */
-            redirect: string;
         };
         /** HealthOut */
         HealthOut: {
@@ -4419,6 +4482,14 @@ export interface components {
             candidates: components["schemas"]["OpenAccessCandidate"][];
             /** Note */
             note?: string | null;
+        };
+        /**
+         * OrcidLinkStart
+         * @description Where to send the browser to link an ORCID iD.
+         */
+        OrcidLinkStart: {
+            /** Url */
+            url: string;
         };
         /**
          * OtherDecision
@@ -5619,6 +5690,8 @@ export interface components {
             has_password: boolean;
             /** Google Linked */
             google_linked: boolean;
+            /** Orcid */
+            orcid: string | null;
             /**
              * Created At
              * Format: date-time
@@ -6518,7 +6591,114 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GoogleSignedIn"];
+                    "application/json": components["schemas"]["ExternalSignedIn"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    orcid_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrcidLinkStart"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    orcid_unlink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    orcid_two_factor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalSignedIn"];
                 };
             };
             /** @description Unauthorized */

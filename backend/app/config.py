@@ -71,6 +71,11 @@ class Settings(BaseSettings):
     # "Sign in with Google" (OpenID Connect). Both empty: the button is not offered.
     google_client_id: str | None = None
     google_client_secret: SecretStr | None = None
+    # "Sign in with ORCID" for accounts that link their iD. Both empty: not offered.
+    # ORCID_BASE_URL=https://sandbox.orcid.org tries it with ORCID's test registry.
+    orcid_client_id: str | None = None
+    orcid_client_secret: SecretStr | None = None
+    orcid_base_url: Literal["https://orcid.org", "https://sandbox.orcid.org"] = "https://orcid.org"
 
     max_upload_mb: int = Field(default=200, ge=1, le=10_000)
     # How many search exports one upload may carry. A search usually comes out of a
@@ -160,6 +165,10 @@ class Settings(BaseSettings):
     @property
     def google_enabled(self) -> bool:
         return bool(self.google_client_id and self.google_client_secret)
+
+    @property
+    def orcid_enabled(self) -> bool:
+        return bool(self.orcid_client_id and self.orcid_client_secret)
 
     @property
     def email_enabled(self) -> bool:

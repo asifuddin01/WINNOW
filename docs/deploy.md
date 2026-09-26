@@ -52,6 +52,7 @@ Optional:
 | `UNPAYWALL_EMAIL` | Finding open-access PDFs |
 | `LLM_*` | AI screening suggestions |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | "Sign in with Google" |
+| `ORCID_CLIENT_ID`, `ORCID_CLIENT_SECRET` | "Sign in with ORCID", for accounts that link their iD (README) |
 
 Then:
 
