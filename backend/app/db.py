@@ -29,7 +29,13 @@ log = structlog.get_logger(__name__)
 
 
 def create_engine(settings: Settings) -> AsyncEngine:
-    return create_async_engine(settings.database_url, pool_pre_ping=True)
+    # Ten connections kept open per process, five more when busy. With SQLAlchemy's default
+    # (five, and ten more closed as soon as they are returned) a busy API opened and closed
+    # connections all the time, and each new one repeats asyncpg's type look-ups (0.4 s).
+    # Four API workers and the worker stay well inside PostgreSQL's 100 connections.
+    return create_async_engine(
+        settings.database_url, pool_pre_ping=True, pool_size=10, max_overflow=5
+    )
 
 
 def create_sessionmaker(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
