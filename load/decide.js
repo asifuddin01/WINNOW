@@ -2,19 +2,31 @@
 // Run it with `make load`, which prepares the accounts and review (benchmarks/load_setup.py)
 // and removes them afterwards. Every reviewer asks for the next records and decides the
 // first, as the screen does, through Caddy, as browsers reach it.
-import { check, sleep } from "k6";
+import { check } from "k6";
 import http from "k6/http";
 
 const setup = JSON.parse(open("/load/load.json"));
 const base = __ENV.BASE_URL || "http://caddy:8080";
 const api = `${base}/api/v1/projects/${setup.project}`;
 
+// A trial of the production stack on one machine (docs/deploy.md): its Caddy answers only to
+// SITE_ADDRESS with a local certificate, so point that name at Caddy and trust the cert.
+const siteHost = base.split("://")[1].split(/[:/]/)[0];
+
 export const options = {
+  hosts: __ENV.TARGET_IP ? { [siteHost]: __ENV.TARGET_IP } : {},
+  insecureSkipTLSVerify: __ENV.INSECURE_TLS === "1",
+  // Each reviewer decides every 3 seconds on average, independently: one iteration every
+  // 3 s per reviewer, spread over time. (With a constant number of looping VUs they would
+  // all click in the same instant, forever: waves of 50 requests and then silence.)
   scenarios: {
     reviewers: {
-      executor: "constant-vus",
-      vus: setup.reviewers.length,
+      executor: "constant-arrival-rate",
+      rate: setup.reviewers.length,
+      timeUnit: "3s",
       duration: __ENV.DURATION || "10m",
+      preAllocatedVUs: setup.reviewers.length,
+      maxVUs: setup.reviewers.length,
     },
   },
   thresholds: {
@@ -41,5 +53,4 @@ export default function () {
     );
     check(decided, { decision: (r) => r.status === 200 });
   }
-  sleep(3);
 }

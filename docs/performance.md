@@ -59,9 +59,10 @@ guide's smallest server (2 vCPUs, 4 GB, SSD) has fewer cores but runs nothing el
 | Records list, 100,000 records, any filter (API p95) | < 150 ms | **12–64 ms** across 15 filters, sorts and searches; one search at **100–153 ms** across runs (see below) |
 | Screening: next record (API p95), every record scored | < 80 ms | **32–36 ms**; **85 ms** while a 100,000-record retrain runs |
 | Screening: saving a decision (API p95) | < 80 ms | **44–69 ms**; **87 ms** while a 100,000-record retrain runs |
-| Initial JS bundle, gzipped | < 200 KB | **178.4 KB** |
-| Initial page load (LCP, 4G) | < 1.5 s | measured with the production stack (Phase 9 item 10) |
-| Lighthouse Performance / Accessibility | ≥ 95 / ≥ 95 | measured with the production stack (Phase 9 item 10) |
+| Initial JS bundle, gzipped | < 200 KB | **159.8 KB** |
+| Initial page load (LCP, 4G) | < 1.5 s | **0.7 s** (sign-in page, production stack) |
+| Lighthouse Performance / Accessibility | ≥ 95 / ≥ 95 | **95 / 100** on Lighthouse's default mobile profile; **100 / 100** on 4G and on desktop |
+| Load test: 50 reviewers, one decision every 3 s each, 10 min (guide 13) | p95 < 100 ms, errors < 0.1% | **p95 37 ms**, **0 errors** in 19,920 requests |
 
 What the client saw on top of the API: p50 3.6 ms, p95 9.3 ms.
 
@@ -110,26 +111,66 @@ The audit also found that the admin health page counted only the admin's own rec
   about 0.5 ms a row here. A faster disk or more cores bring it down; there is little
   left to trim in Winnow itself.
 
+## Page load and Lighthouse (production stack)
+
+Measured with Lighthouse 12 against the production stack (`docker-compose.prod.yml`) on
+this machine, on the sign-in page, which is every visitor's first page:
+
+| Profile | Performance | Accessibility | LCP | First paint |
+| --- | --- | --- | --- | --- |
+| Lighthouse's default mobile (1.6 Mbps, 150 ms round trips, 4× slower CPU) | 95 | 100 | 2.5 s | 2.3 s |
+| 4G (9 Mbps, 60 ms, 4× slower CPU) | 100 | 100 | 0.7 s | 0.7 s |
+| Desktop | 100 | 100 | 0.5 s | 0.5 s |
+
+The default mobile profile is what Chrome calls "Fast 3G", despite Lighthouse's "slow 4G"
+label, and the page stays short of 1.5 s there. There the page waits on round trips, not
+bytes: the HTML, then the app's code, then the sign-in page's own code.
+
+Two changes helped:
+
+- **Tooltips belong to the signed-in shell.** The first-load JavaScript went from
+  178 KB to 160 KB.
+- **The sign-in page no longer waits for its two API calls before loading its code.**
+  The score went from 94 to 95.
+
 ## Load test (guide 13)
 
-`make load` (see `load/README.md`) runs 50 reviewers against one review of 20,000
-records. Each reviewer asks for the next records and decides one every 3 seconds, for
-10 minutes. The budget is p95 < 100 ms with errors under 0.1%.
+`make load` (see `load/README.md`) runs the test on one review of 20,000 records. Each of
+50 reviewers asks for the next records and decides one, every 3 seconds on average,
+independently, for 10 minutes. The acceptance run used the production stack: four API
+workers, as on the guide's smallest server, with TLS through Caddy.
 
-The acceptance run belongs to the production stack (Phase 9 item 10), together with the
-page-load and Lighthouse budgets. The development API is one Uvicorn process with
-`--reload`, so requests arriving together wait for each other. The guide's setting is
-two workers per core.
+| Measure | Result |
+| --- | --- |
+| Requests | 19,920, at 33 a second |
+| Median | 12.7 ms |
+| p90 | 22 ms |
+| p95 | **37 ms** (budget 100) |
+| Errors | **0** (budget 0.1%) |
 
-A smoke run on the development stack (5 reviewers, 45 s) found two defects, now fixed:
+k6 dropped 41 of the 10,000 planned iterations, when all 50 of its virtual reviewers were
+waiting on the slowest few requests (up to 5 s).
 
-- **The next-records query sorted every scored record once a model existed** (0.4–0.6 s
-  at 20,000). Its join to the scores lacked the review, so the index that reads the
-  best-scored records first could not be used. `make perf` had missed it: its 100,000
-  records train for longer than its screening run lasts, so it never saw scores.
-- **A burst of requests turned one slow Redis connection into a 500.** The client had
-  no retries. It now tries three times, 50 ms apart at first, before failing.
+The runs before that found four defects, all fixed:
 
-On that development stack, the first request after the API starts takes 2–3 s while its
-connections open; the ones after it take 20–150 ms, depending on how many arrive
-together.
+- **Conflict notices failed under sustained use.** The upsert that counts a reviewer's
+  new conflicts named its partial index with a bound parameter. PostgreSQL plans a
+  prepared statement for its actual values five times, then generically, and the
+  generic plan could not use the index. From then on, every decision that made a
+  conflict was a 500. `test_notifications.py` now runs it eight times on one connection.
+- **The best-scored records were sorted in full** (see the screening row above).
+- **A Redis connection slow to open became a 500.** The client now retries.
+- **GIN indexes merged their pending lists inside requests.** Status updates took up to
+  1.8 s, whoever filled a list paying for it. Bigger lists and earlier autovacuum on
+  `records` moved the merging to the background: p95 went from 120 ms to 55 ms, and
+  37 ms over the full run.
+
+A database pool that closed its spare connections as soon as they were returned was also
+fixed; it now keeps ten per process.
+
+The first runs made all 50 reviewers click in the same instant, forever, because of k6's
+looping virtual users with `sleep(3)`. That gave p95 of 450–700 ms, a measure of a wave
+of 50 simultaneous requests rather than of 50 people screening.
+
+On the development stack, a single Uvicorn process with `--reload`, requests arriving
+together queue behind each other. Measure load on the production stack.

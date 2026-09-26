@@ -1048,3 +1048,28 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   own server.
 - **The worker's health check reads its heartbeat from Redis.** `arq --check` imported
   all of Winnow, which took longer than its own timeout on a busy machine.
+
+### Load test, ZAP and the production stack (guide 12, 13, 16)
+- **The load test models independent reviewers.** k6's constant-arrival-rate runs 50
+  iterations every 3 seconds, spread over time. Looping VUs with `sleep(3)` click in the
+  same instant forever, sending waves of 50 requests and then silence, which is not how
+  50 people screen.
+- **GIN indexes merge their pending lists in the background.** A status change writes a
+  new row version and new entries in the three GIN indexes. With 4 MB pending lists and
+  autovacuum only after 20% of the table changes, the request that filled a list paid for
+  merging it (single updates up to 1.8 s). 16 MB lists and autovacuum after 2% keep that
+  in the background; every index the guide lists stays.
+- **The database pool keeps ten connections per process, plus five when busy,** so a busy
+  API does not open and close connections (each new one repeats asyncpg's type
+  look-ups).
+- **The sign-in page does not wait for its two API calls.** It shows the form while they
+  answer, and redirects a signed-in visitor or a fresh instance once they do: one round
+  trip less before first paint on slow networks.
+- **Tooltips are provided by the signed-in shell, not the whole app,** which keeps Radix's
+  positioning code (18 KB gzipped with its chunks) out of the sign-in pages.
+- **ZAP's baseline runs in CI against the end-to-end stack** and fails only on high-risk
+  alerts, as Phase 9's acceptance asks. Every alert is printed as an annotation.
+- **docker-compose.prod.yml is its own file, not an override of the development one.**
+  Production differs in nearly every service (images, workers, ports, persistence, log
+  rotation), and one self-contained file is easier to read on a server. Only Caddy is
+  published; the env file, ports and database memory can be set per server.
