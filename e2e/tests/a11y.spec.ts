@@ -452,6 +452,9 @@ async function checks(
   const where = { page: stop.name, viewport: viewport.width };
   await page.emulateMedia({ colorScheme: "light" });
   await page.goto(stop.path);
+  // The pointer stays where an earlier page clicked; a control measured under it is
+  // hovered, and part-way through its hover transition (a false contrast failure).
+  await page.mouse.move(0, 0);
   await settle(page);
   if (stop.open) await stop.open(page);
 
