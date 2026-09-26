@@ -10,6 +10,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { VerifyEmailBanner } from "@/components/layout/VerifyEmailBanner";
 import { ShellContext } from "@/components/layout/shell-context";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { readPreference, writePreference } from "@/lib/storage";
 
@@ -28,25 +29,29 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <ShellContext value={true}>
-      <SidebarProvider open={sidebarOpen} onOpenChange={onSidebarOpenChange}>
-        <SkipLink />
-        <DocumentTitle />
-        <AppSidebar />
-        <SidebarInset className="min-w-0">
-          <TopBar
-            onSearch={() => {
-              palette.setOpen(true);
-            }}
-          />
-          <StatusBanner />
-          <VerifyEmailBanner />
-          <main id="main" tabIndex={-1} className="flex flex-1 flex-col outline-none">
-            {children}
-          </main>
-          <Footer />
-        </SidebarInset>
-        <CommandPalette open={palette.open} onOpenChange={palette.setOpen} />
-      </SidebarProvider>
+      {/* Only the signed-in shell shows tooltips (the collapsed sidebar's); providing them
+          here keeps Radix's tooltip and positioning code out of the sign-in pages' bundle. */}
+      <TooltipProvider delayDuration={300}>
+        <SidebarProvider open={sidebarOpen} onOpenChange={onSidebarOpenChange}>
+          <SkipLink />
+          <DocumentTitle />
+          <AppSidebar />
+          <SidebarInset className="min-w-0">
+            <TopBar
+              onSearch={() => {
+                palette.setOpen(true);
+              }}
+            />
+            <StatusBanner />
+            <VerifyEmailBanner />
+            <main id="main" tabIndex={-1} className="flex flex-1 flex-col outline-none">
+              {children}
+            </main>
+            <Footer />
+          </SidebarInset>
+          <CommandPalette open={palette.open} onOpenChange={palette.setOpen} />
+        </SidebarProvider>
+      </TooltipProvider>
     </ShellContext>
   );
 }

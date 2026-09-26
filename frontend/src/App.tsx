@@ -4,7 +4,6 @@ import { RouterProvider } from "@tanstack/react-router";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import type { createAppRouter } from "@/router";
 
 interface AppProps {
@@ -16,10 +15,8 @@ export function App({ router, queryClient }: AppProps) {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider delayDuration={300}>
-          <RouterProvider router={router} />
-          <Toaster position="bottom-right" />
-        </TooltipProvider>
+        <RouterProvider router={router} />
+        <Toaster position="bottom-right" />
       </QueryClientProvider>
     </ThemeProvider>
   );
