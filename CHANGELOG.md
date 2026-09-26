@@ -2,6 +2,89 @@
 
 All notable changes, one section per build phase (guide Section 17).
 
+## Phase 9: Polish, hardening, launch (2026-09-26)
+
+### Added
+- A command palette (Ctrl/⌘K) for pages, reviews, records and actions.
+- Notifications: new conflicts to resolve, mentions in notes, invitations, and finished
+  or failed imports. They come as a bell with an unread count, and optionally as a daily
+  email digest.
+- Presence: who is screening which stage right now, never which record or what they
+  decided.
+- The instance admin panel:
+  - people: disable or enable an account, reset two-factor, end sessions;
+  - the settings that can change while Winnow runs;
+  - health: worker, queue, disk, database, last backup.
+- i18n: the app shell speaks from a typed i18next catalogue, and docs/i18n.md explains
+  how to add Bangla or any other language.
+- `docker-compose.prod.yml`: one server, with Caddy's automatic HTTPS, HTTP/2 and
+  HTTP/3, four API workers, the built app on nginx, tuned PostgreSQL, rotated logs, and
+  only ports 80 and 443 open. `make prod-up`, `prod-update`, `prod-create-admin`,
+  `prod-logs`, `prod-down`.
+- Instance backups (`make prod-backup`, `prod-restore`, `restore-test`):
+  - `pg_dump`, the uploaded files and the env file, encrypted with age;
+  - 7 daily, 4 weekly and 6 monthly kept;
+  - a restore test that backs up, destroys, restores and checks, which CI runs monthly
+    and on schema changes.
+- Measurement:
+  - `make perf`: every budget in guide 2.2, on the running stack.
+  - `make load`: the k6 test from guide 13.
+  - `make zap` and a CI step: the OWASP ZAP baseline.
+  - An end-to-end accessibility sweep: 43 pages × 4 breakpoints × 2 themes.
+- Documentation: docs/user-guide.md, docs/deploy.md, docs/performance.md,
+  docs/accessibility.md.
+
+### Fixed
+- Conflict notices failed once PostgreSQL planned their insert generically, after five
+  runs on one connection, and from then on every decision that made a conflict was a
+  500. The load test found it; a test now repeats it.
+- Deduplication:
+  - Titles shared by thousands of records made it quadratic and held the worker for over
+    ten minutes. Blocks are now capped.
+  - Merging 5,000 clusters took 30–44 s; it now takes 5.6 s.
+- The records list read and sorted a whole 100,000-record review for each title, year or
+  relevance page. Those orders are now read from indexes, and the "live records" index
+  matches the queries' predicate.
+- The screening queue sorted every scored record once a model existed (532 ms at p95).
+  It now reads the best scores straight off the index.
+- A settings change rewrote every record's status, changed or not.
+- Imports of 100,000 records took 93 s; they now take 49 s. The worker writes 5,000 rows
+  per COPY, two at a time, and parses ahead.
+- GIN indexes merged their pending lists inside users' requests; autovacuum now does it.
+- Accessibility:
+  - touch targets under 44 px;
+  - tables that the keyboard could not scroll;
+  - a focus ring shown only as a faint tint;
+  - a link told apart by colour alone;
+  - one text below 4.5:1 contrast;
+  - rows wider than a phone.
+- The decision toast covered the decision buttons and caught the next click.
+- Caddy's `auto_https off` would have kept production from ever getting a certificate.
+- The admin health page counted only the admin's own records.
+- The worker's health check timed out on a busy machine.
+- `VACUUM` failed for lack of shared memory in the database container.
+- A slow Redis connection became a 500.
+- The database pool closed its spare connections under load.
+
+### Measured
+- Every budget in guide 2.2 (docs/performance.md):
+  - screening p95 32–69 ms (80);
+  - the records list at 100,000 records, 12–64 ms across 15 filters, sorts and searches
+    (150);
+  - imports of 10,000 and 100,000 records in 7.1 s and 48.7 s (10, 60);
+  - deduplication of 50,000 records in 13.2 s (30);
+  - LCP on 4G 0.7 s (1.5);
+  - the initial bundle 159.8 KB (200 KB);
+  - Lighthouse 95–100 / 100 (95 / 95).
+- Two p95 tails are over, both explained: an author search on seed-large's five authors
+  (153 ms), and screening while a first 100,000-record model trains (85–87 ms).
+- Load test (guide 13), production stack, 50 reviewers each deciding every 3 s for 10
+  minutes: p95 37 ms, 0 errors in 19,920 requests.
+- Accessibility: zero serious or critical axe violations on every page, theme and
+  breakpoint.
+- OWASP ZAP baseline: no high-risk alerts.
+- Restore test: passes.
+
 ## Phase 8: Extraction, risk of bias, reporting (2026-09-25)
 
 ### Added
