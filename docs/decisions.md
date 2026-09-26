@@ -1073,3 +1073,21 @@ recorded here (CLAUDE.md: "choose the more secure and simpler option and note it
   Production differs in nearly every service (images, workers, ports, persistence, log
   rotation), and one self-contained file is easier to read on a server. Only Caddy is
   published; the env file, ports and database memory can be set per server.
+
+### Backups (guide 16.4)
+- **One Python script on the host, driving `docker compose`**, for development and
+  production alike (`COMPOSE_FILE` picks the stack). The dump runs in the database
+  container, which has `pg_dump`; the files come out through the API image. Nothing extra
+  runs on the server.
+- **Encrypted with `age` to a public key.** The server can make backups but cannot read
+  them; the private key lives elsewhere. The backup includes the env file, so a lost server
+  can be rebuilt from one file and the key.
+- **Rotation is grandfather-father-son** (7 daily, 4 weekly, 6 monthly), and nightly runs
+  come from the host's cron, not a container. Off-site copies are any sync tool's job,
+  since every file is encrypted.
+- **Restore stops the API and worker, restores in one transaction, then runs newer
+  migrations.** It first creates the row-level-security role, which is server-wide and so
+  not in the dump.
+- **The restore test runs as its own compose project** (`winnow-restoretest`). It destroys
+  its volumes as part of the test and never touches anyone's data. CI runs it monthly and
+  when the backup code or the schema changes.

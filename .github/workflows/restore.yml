@@ -1,0 +1,32 @@
+# Guide 16.4: backups are only as good as a restore. Monthly, and whenever the backup code
+# or the schema changes: back up a small review, destroy the stack's data, restore into a
+# fresh database, and check that everything came back (ops/backups.py test).
+name: Restore test
+
+on:
+  schedule:
+    - cron: "0 5 1 * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "ops/**"
+      - "docker-compose.yml"
+      - "backend/alembic/**"
+      - ".github/workflows/restore.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  restore:
+    name: Back up, destroy, restore, check
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install age
+        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends age
+      - name: Rotation and settings checks
+        run: python3 ops/test_backups.py
+      - name: Restore test
+        run: make restore-test

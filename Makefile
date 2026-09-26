@@ -15,7 +15,8 @@ API_NO_DEPS := $(COMPOSE) run --rm --no-deps api
 WEB := $(COMPOSE) run --rm --no-deps web
 
 .DEFAULT_GOAL := help
-.PHONY: help env dev up local down logs ps build migrate revision seed seed-large perf load zap prod-up prod-down prod-logs prod-create-admin \
+.PHONY: help env dev up local down logs ps build migrate revision seed seed-large perf load zap prod-up prod-down prod-logs prod-create-admin prod-update prod-backup prod-restore \
+	backup restore restore-test \
 	test test-backend test-frontend e2e lint typecheck format check api-types size clean create-admin
 
 help: ## List the targets
@@ -90,11 +91,33 @@ prod-create-admin: ## Production: the first administrator (asks for the password
 	@test -n "$(email)" -a -n "$(name)" || (echo 'Usage: make prod-create-admin email=you@example.org name="Your Name"' && exit 1)
 	$(PROD) run --rm api python -m app.cli create-admin --email "$(email)" --name "$(name)"
 
+prod-update: ## Production: pull, rebuild, migrate and restart what changed (guide 16.3)
+	git pull --ff-only
+	$(PROD) up -d --build --wait
+
+prod-backup: ## Production: an encrypted backup of the database and files; run nightly (docs/deploy.md)
+	COMPOSE_FILE=docker-compose.prod.yml python3 ops/backups.py create
+
+prod-restore: ## Production: replace everything with a backup: make prod-restore BACKUP=…
+	@test -n "$(BACKUP)" || (echo 'Usage: make prod-restore BACKUP=backups/winnow-….tar.age' && exit 1)
+	COMPOSE_FILE=docker-compose.prod.yml python3 ops/backups.py restore "$(BACKUP)"
+
 prod-down: ## Production: stop the stack (data volumes are kept)
 	$(PROD) down
 
 prod-logs: ## Production: follow the logs
 	$(PROD) logs -f --tail=100
+
+backup: .env ## An encrypted backup of the development database and files (AGE_RECIPIENT)
+	python3 ops/backups.py create
+
+restore: .env ## Replace the development data with a backup: make restore BACKUP=…
+	@test -n "$(BACKUP)" || (echo 'Usage: make restore BACKUP=backups/winnow-….tar.age' && exit 1)
+	python3 ops/backups.py restore "$(BACKUP)"
+
+restore-test: .env ## Back up, destroy, restore and check, in a throwaway project (guide 16.4)
+	python3 ops/test_backups.py
+	python3 ops/backups.py test
 
 zap: ## OWASP ZAP baseline against the running stack (guide 12); fails on a high-risk alert
 	mkdir -p zap-report && chmod 777 zap-report

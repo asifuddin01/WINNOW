@@ -43,3 +43,4 @@ backend/.cache/
 # Benchmark data fetched from SYNERGY and OpenAlex (backend/benchmarks/synergy.py)
 backend/benchmarks/data/
 zap-report/
+backups/

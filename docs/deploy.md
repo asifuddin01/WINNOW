@@ -69,9 +69,11 @@ PDF uploads wait for their scan.
 ## Updating
 
 ```bash
-git pull          # or check out a release tag
-make prod-up      # rebuilds what changed; migrations run before the API starts
+make prod-update   # git pull, rebuild what changed, migrate, restart
 ```
+
+Migrations run before the new API starts. To move to a particular release instead,
+check out its tag and run `make prod-up`.
 
 ## Day to day
 
@@ -82,6 +84,9 @@ make prod-up      # rebuilds what changed; migrations run before the API starts
 - **Backups.** See [Backups](#backups).
 
 ## What is exposed, and what is not
+
+- **The firewall** (guide 16.3) allows 80 and 443, TCP and UDP, and SSH with keys only
+  (`PasswordAuthentication no`). Everything else is closed.
 
 - **Caddy** redirects HTTP to HTTPS and sends HSTS (preload), a strict Content Security
   Policy and the other headers in `Caddyfile`. It speaks HTTP/2 and HTTP/3.
@@ -117,4 +122,59 @@ own data volumes (project `winnow-prod`) and never touches the development ones.
 
 ## Backups
 
-Covered by Phase 9 item 11 (`make backup`, `make restore`).
+`make prod-backup` writes one encrypted file, `backups/winnow-<date>T<time>Z.tar.age`,
+holding four things:
+
+- the database, as a `pg_dump` in custom format;
+- every uploaded file;
+- a copy of `.env`, secrets included, so the file is all you need after losing the
+  server;
+- a manifest.
+
+The file is encrypted with [age](https://age-encryption.org) to a public key, so a
+stolen backup is useless without the private key, which never goes on the server.
+
+Rotation keeps the newest backup of each of the last 7 days, 4 weeks and 6 months. The
+admin health page shows the last backup.
+
+**Set up once:**
+
+1. **Make the key pair on your own computer**, not on the server. Keep `winnow-backup.key`
+   somewhere safe and separate (a password manager): without it, no backup can be read.
+
+   ```bash
+   age-keygen -o winnow-backup.key
+   ```
+
+2. **Tell the server the public key.** `age-keygen` prints it as `Public key: age1…`. In
+   the server's `.env`, set `AGE_RECIPIENT=age1…`, and optionally `BACKUP_DIR` (default
+   `backups`). Install age on the server with `sudo apt install age`.
+
+3. **Back up nightly** with cron (`crontab -e` as the user that runs Docker):
+
+   ```
+   15 2 * * * cd /srv/winnow && make prod-backup >> backups/backup.log 2>&1
+   ```
+
+4. **Copy backups off the server**, since a backup on the same disk dies with it. Every
+   file in `backups/` is encrypted, so any storage will do. For example:
+
+   ```bash
+   rclone sync /srv/winnow/backups remote:winnow-backups
+   ```
+
+**Restoring,** on the same server or a new one set up as above. Copy the backup and the
+private key there, then run:
+
+```bash
+AGE_IDENTITY=/path/to/winnow-backup.key make prod-restore BACKUP=backups/winnow-….tar.age
+```
+
+It stops the API and the worker and replaces the database and the files. Then it starts
+them again, running any newer migrations first. It also saves the backed-up env file
+beside the backup, so you can compare it with the current one; delete it afterwards.
+
+**The restore itself is tested.** `make restore-test` backs up a small review, destroys
+the data, restores it into a fresh database and checks that everything came back. It runs
+as a separate Docker project and touches nothing else. CI runs it monthly, and whenever
+the backup code or the schema changes (`.github/workflows/restore.yml`).
