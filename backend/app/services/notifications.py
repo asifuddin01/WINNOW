@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import func, literal, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -56,7 +56,14 @@ async def notify(
         await db.execute(
             statement.on_conflict_do_update(
                 index_elements=[Notification.user_id, Notification.project_id],
-                index_where=(Notification.kind == NotificationKind.CONFLICTS.value)
+                # The index's own predicate, with the kind written into the SQL: as a bound
+                # parameter, PostgreSQL's generic plan (used after a statement's fifth run
+                # on a connection) cannot match it to the partial index, and every
+                # conflict after that failed (found by the Phase 9 load test).
+                index_where=(
+                    Notification.kind
+                    == literal(NotificationKind.CONFLICTS.value, literal_execute=True)
+                )
                 & Notification.read_at.is_(None),
                 set_={"count": Notification.count + 1, "updated_at": func.now()},
             )

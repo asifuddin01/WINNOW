@@ -8,12 +8,13 @@ from fastapi import FastAPI
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Notification, User
+from app.models import Notification, NotificationKind, User
+from app.services.notifications import notify
 from app.workers.digests import send_digests
 from tests.conftest import MemoryMailer
 from tests.integration.test_fulltext import FakeQueue
 from tests.integration.test_imports import run, upload
-from tests.project_helpers import OWNER, REVIEWER, api, get, person, post
+from tests.project_helpers import OWNER, REVIEWER, api, create_project, get, person, post
 from tests.screening_helpers import THIRD, decide, settings, team
 
 
@@ -70,6 +71,25 @@ async def test_new_conflicts_tell_those_who_resolve_them_counted(
         assert (await get(t.owner, "/notifications/unread")).json() == {"unread": 0}
         # Nobody can read another person's notice.
         assert (await post(t.reviewer, f"/notifications/{notice['id']}/read")).status_code == 404
+
+
+async def test_conflict_counts_keep_working_after_postgres_plans_generically(
+    db_app: FastAPI, db: AsyncSession, mailer: MemoryMailer
+) -> None:
+    """PostgreSQL plans a prepared statement for its values five times, then generically. The
+    count-up insert must still find its partial index then: at the load test, every new
+    conflict after the fifth on a connection failed with a 500."""
+    async with person(db_app, mailer, OWNER) as owner:
+        project = await create_project(owner)
+        me = await db.scalar(select(User.id).where(User.email == OWNER))
+        assert me is not None
+        for _ in range(8):
+            await notify(
+                db, [me], NotificationKind.CONFLICTS, project_id=uuid.UUID(project["id"])
+            )
+        await db.commit()
+        counts = list(await db.scalars(select(Notification.count).where(Notification.user_id == me)))
+        assert counts == [8]
 
 
 async def test_the_person_who_made_the_conflict_is_not_told(
